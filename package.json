@@ -1,0 +1,30 @@
+{
+  "name": "codiit-backend",
+  "version": "1.0.0",
+  "main": "src/server.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nb02-CODIIT-team2/CODIIT-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nb02-CODIIT-team2/CODIIT-backend/issues"
+  },
+  "homepage": "https://github.com/nb02-CODIIT-team2/CODIIT-backend#readme",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.16.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "prisma": "^6.16.1"
+  }
+}
