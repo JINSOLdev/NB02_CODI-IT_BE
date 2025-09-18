@@ -13,8 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/* =========================
+   User
+========================= */
 model User {
-  id              Int              @id @default(autoincrement())
+  id            String              @id @default(cuid())
   nickname      String
   email         String             @unique
   passwordHash  String
@@ -59,7 +62,7 @@ enum GradeLevel {
 }
 
 model Session {
-  id           Int         @id @default(autoincrement())
+  id           String         @id @default(cuid())
   userId       Int
   refreshToken String
   expiresAt    DateTime
@@ -73,7 +76,7 @@ model Session {
 
 /// 포인트 트랜잭션 (사용/적립 기록)
 model PointTransaction {
-  id        Int            @id @default(autoincrement())
+  id        String            @id @default(cuid())
   userId    Int
   delta     Int
   reason    String
@@ -86,8 +89,11 @@ model PointTransaction {
   @@index([orderId])
 }
 
+/* =========================
+   Store
+========================= */
 model Store {
-  id             Int              @id @default(autoincrement())
+  id             String              @id @default(cuid())
   name           String
   address        String
   detailAddress  String
@@ -103,13 +109,41 @@ model Store {
 }
 
 model FavoriteStore {
-  id        Int      @id @default(autoincrement())
-  storeId   Int
-  userId    Int
+  id        String      @id @default(cuid())
+  storeId   String
+  userId    String
   createdAt DateTime @default(now())
 
   user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   store  Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
+}
+
+/* =========================
+   Cart
+========================= */
+model Cart {
+  id        String      @id @default(cuid())
+  userId    String      @unique 
+  createdAt DateTime @default(now()) 
+  updatedAt DateTime? 
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+}
+
+model CartItem {
+  id        String      @id @default(cuid())
+  cartId    String      
+  productId String      
+  quantity  Int
+  createdAt DateTime @default(now()) 
+  updatedAt DateTime @updatedAt      
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, productId])
 }
