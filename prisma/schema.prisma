@@ -15,9 +15,75 @@ datasource db {
 
 model User {
   id              Int              @id @default(autoincrement())
+  nickname      String
+  email         String             @unique
+  passwordHash  String
+  role          UserRole           @default(BUYER)
+  image         String?     
+  points        Int                @default(0)    // 현재 보유 포인트
+  gradeLevel    GradeLevel         @default(GREEN)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  deletedAt     DateTime?   
   
-  stores          Store[]
-  FavoriteStore  FavoriteStore[]
+  sessions      Session[]                   
+  store         Store?             @relation("StoreOwner") 
+  favoriteStores FavoriteStore[]                 
+  notifications Notification[]     @relation("UserNotifications")
+
+  cart          Cart?                        
+  orders        Order[]                        
+  reviews       Review[]                       
+  inquiries     Inquiry[]          @relation("InquiryAuthor") 
+  answers       Answer[]           @relation("AnswerAuthor")  
+  addresses     Address[]                       
+  pointLedger   PointTransaction[] // 포인트 사용/적립 내역              
+
+  @@index([role])
+  
+}
+
+// 회원 유형 (권한 분기: SELLER만 스토어/상품 관리 가능)
+enum UserRole {
+  BUYER
+  SELLER
+}
+
+// 등급 레벨 (Green(신규) < Orange(10만) < Red(30만) < Black(50만) < VIP(100만))
+enum GradeLevel {
+  GREEN 
+  ORANGE
+  RED
+  BLACK
+  VIP
+}
+
+model Session {
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  
+  @@index([expiresAt])
+}
+
+/// 포인트 트랜잭션 (사용/적립 기록)
+model PointTransaction {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  delta     Int
+  reason    String
+  orderId   Int?
+  createdAt DateTime       @default(now())
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
 }
 
 model Store {
