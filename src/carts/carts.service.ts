@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Cart } from '@prisma/client';
 import { CartsRepository } from './carts.repository';
 
@@ -6,28 +10,23 @@ import { CartsRepository } from './carts.repository';
 export class CartsService {
   constructor(private cartsRepository: CartsRepository) {}
 
+  // 사용자의 장바구니를 생성하거나 이미 존재하는 장바구니를 반환
   async createCart(userId: string): Promise<Cart> {
-    if (!userId) {
-      throw new BadRequestException('사용자 ID가 필요합니다');
-    }
-    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+    if (typeof userId !== 'string' || userId.trim() === '') {
       throw new BadRequestException('유효한 사용자 ID가 필요합니다');
     }
-    const userCart = await this.cartsRepository.getCartByUserId(userId);
-    if (userCart) {
-      return userCart;
-    }
     try {
-      const cart = await this.cartsRepository.createCart(userId);
+      const cart = await this.cartsRepository.createOrGetCart(userId);
       return cart;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new BadRequestException(`장바구니 생성 실패: ${error.message}`);
-      } else {
-        throw new BadRequestException(
-          '장바구니 생성 중 알 수 없는 오류가 발생했습니다',
+      if (error instanceof Error && error.message.includes('database')) {
+        throw new InternalServerErrorException(
+          '데이터베이스 오류로 장바구니 생성에 실패했습니다',
         );
       }
+      throw new BadRequestException(
+        `장바구니 생성 실패: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }
