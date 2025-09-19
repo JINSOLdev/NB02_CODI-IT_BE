@@ -1,10 +1,10 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
-import { CartsService } from './carts.service';
+import { CartService } from './cart.service';
 import { Cart } from '@prisma/client';
 
-@Controller('carts')
-export class CartsController {
-  constructor(private cartService: CartsService) {}
+@Controller('cart')
+export class CartController {
+  constructor(private cartService: CartService) {}
   @Get()
   findAll(): object {
     return {

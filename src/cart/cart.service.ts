@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { Cart } from '@prisma/client';
-import { CartsRepository } from './carts.repository';
+import { CartRepository } from './cart.repository';
 
 @Injectable()
-export class CartsService {
-  constructor(private cartsRepository: CartsRepository) {}
+export class CartService {
+  constructor(private cartRepository: CartRepository) {}
 
   async createCart(userId: string): Promise<Cart> {
     if (!userId) {
@@ -13,12 +13,12 @@ export class CartsService {
     if (!userId || typeof userId !== 'string' || userId.trim() === '') {
       throw new BadRequestException('유효한 사용자 ID가 필요합니다');
     }
-    const userCart = await this.cartsRepository.getCartByUserId(userId);
+    const userCart = await this.cartRepository.getCartByUserId(userId);
     if (userCart) {
       return userCart;
     }
     try {
-      const cart = await this.cartsRepository.createCart(userId);
+      const cart = await this.cartRepository.createCart(userId);
       return cart;
     } catch (error) {
       if (error instanceof Error) {
