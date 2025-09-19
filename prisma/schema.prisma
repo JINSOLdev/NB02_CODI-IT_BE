@@ -38,8 +38,7 @@ model User {
   orders        Order[]                        
   reviews       Review[]                       
   inquiries     Inquiry[]          @relation("InquiryAuthor") 
-  answers       Answer[]           @relation("AnswerAuthor")  
-  addresses     Address[]                       
+  answers       Answer[]           @relation("AnswerAuthor")                        
   pointLedger   PointTransaction[] // 포인트 사용/적립 내역              
 
   @@index([role])
@@ -63,7 +62,7 @@ enum GradeLevel {
 
 model Session {
   id           String         @id @default(cuid())
-  userId       Int
+  userId       String
   refreshToken String
   expiresAt    DateTime
   createdAt    DateTime    @default(now())
@@ -77,10 +76,10 @@ model Session {
 /// 포인트 트랜잭션 (사용/적립 기록)
 model PointTransaction {
   id        String            @id @default(cuid())
-  userId    Int
+  userId    String
   delta     Int
   reason    String
-  orderId   Int?
+  orderId   String?
   createdAt DateTime       @default(now())
 
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
