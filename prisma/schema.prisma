@@ -147,3 +147,25 @@ model CartItem {
 
   @@unique([cartId, productId])
 }
+
+/* =========================
+   Product
+========================= */
+model Product {
+  id                String      @id @default(cuid())
+  storeId           String
+  name              String
+  content           String?        // 제품 상세 정보 
+  price             Int
+  image             String?        
+  discountRate      Float?         // 할인율
+  discountStartTime DateTime?      // 할인 시작 날짜
+  discountEndTime   DateTime?      // 할인 종료 날짜
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  cartItems   CartItem[]
+  reviews     Review[]
+  orderItems  OrderItem[]
+}
