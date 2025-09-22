@@ -106,8 +106,9 @@ model Store {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sellerId  String          @unique
-  seller    User            @relation("StoreOwner", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId String @unique
+  seller   User   @relation("StoreOwner", fields: [sellerId], references: [id], onDelete: Cascade)
+
   favorites FavoriteStore[]
   Product   Product[]
   Order     Order[]
