@@ -11,12 +11,12 @@ export class CartService {
   constructor(private cartRepository: CartRepository) {}
 
   // 사용자의 장바구니를 생성하거나 이미 존재하는 장바구니를 반환
-  async createCart(userId: string): Promise<Cart> {
-    if (typeof userId !== 'string' || userId.trim() === '') {
-      throw new BadRequestException('유효한 사용자 ID가 필요합니다');
+  async createCart(buyerId: string): Promise<Cart> {
+    if (typeof buyerId !== 'string' || buyerId.trim() === '') {
+      throw new BadRequestException('유효한 buyerId가 필요합니다');
     }
     try {
-      const cart = await this.cartRepository.createOrGetCart(userId);
+      const cart = await this.cartRepository.createOrGetCart(buyerId);
       return cart;
     } catch (error) {
       if (error instanceof Error && error.message.includes('database')) {
