@@ -30,7 +30,7 @@ model User {
   deletedAt     DateTime?   
   
   sessions      Session[]                   
-  store         Store?             @relation("StoreOwner") 
+  store         Store?             @relation("StoreOwner")
   favoriteStores FavoriteStore[]                 
   notifications Notification[]     @relation("UserNotifications")
 
@@ -102,9 +102,11 @@ model Store {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  sellerId       Int
+  sellerId       String
   seller         User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   favorites      FavoriteStore[]
+
+  Order Order[]
 }
 
 model FavoriteStore {
@@ -266,4 +268,56 @@ enum NotificationType {
   SYSTEM_ALERT
 }
 
+/* =========================
+   Review
+========================= */
+model Review {
+  id        String   @id @default(cuid())
+  content   String
+  rating    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+}
+
+/* =========================
+   Inquiry & Answer
+========================= */
+
+enum AnswerStatus {
+  WaitingAnswer
+  CompletedAnswer
+}
+
+model Inquiry {
+  id        String      @id @default(cuid())
+  title     String
+  content   String
+  status    AnswerStatus @default(WaitingAnswer)
+  isSecret  Boolean     @default(false)
+  createdAt DateTime    @default(now())
+
+  userId    String
+  user      User    @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  answer   Answer[]
+}
+
+model Answer {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation("AnswerAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  inquiryId String
+  inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+}
 
