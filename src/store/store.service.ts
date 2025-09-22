@@ -5,14 +5,14 @@ import {
 } from '@nestjs/common';
 import { StoreRepository } from './store.repository';
 import { CreateStoreDto } from './dto/create-store.dto';
-import { UserRole, Prisma } from '@prisma/client';
+import { UserType, Prisma } from '@prisma/client';
 
 @Injectable()
 export class StoreService {
   constructor(private readonly storeRepo: StoreRepository) {}
 
-  async create(sellerId: string, role: UserRole, dto: CreateStoreDto) {
-    if (role !== UserRole.SELLER) {
+  async create(sellerId: string, role: UserType, dto: CreateStoreDto) {
+    if (role !== UserType.SELLER) {
       throw new ForbiddenException('SELLER만 스토어를 생성할 수 있습니다.');
     }
 
