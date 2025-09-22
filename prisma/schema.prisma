@@ -73,7 +73,7 @@ model Session {
   @@index([expiresAt])
 }
 
-/// 포인트 트랜잭션 (사용/적립 기록)
+// 포인트 트랜잭션 (사용/적립 기록)
 model PointTransaction {
   id      String  @id @default(cuid())
   userId  String
@@ -341,57 +341,4 @@ model Answer {
   inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
 }
 
-/**
- * =========================
- * Review
- * =========================
- */
-model Review {
-  id        String   @id @default(cuid())
-  content   String
-  rating    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-/**
- * =========================
- * Inquiry & Answer
- * =========================
- */
-
-enum AnswerStatus {
-  WaitingAnswer
-  CompletedAnswer
-}
-
-model Inquiry {
-  id        String       @id @default(cuid())
-  title     String
-  content   String
-  status    AnswerStatus @default(WaitingAnswer)
-  isSecret  Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  userId    String
-  user      User         @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-  reply     Answer[]
-}
-
-model Answer {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId    String
-  user      User    @relation("AnswerAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  inquiryId String
-  inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
-}
