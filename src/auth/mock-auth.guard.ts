@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
-import { UserRole } from '@prisma/client';
+import { UserType } from '@prisma/client';
 
 @Injectable()
 export class MockAuthGuard implements CanActivate {
@@ -9,7 +9,7 @@ export class MockAuthGuard implements CanActivate {
 
     const id = req.header('x-user-id') ?? 'seller_demo';
     const role =
-      (req.header('x-user-role') as UserRole | undefined) ?? UserRole.SELLER;
+      (req.header('x-user-role') as UserType | undefined) ?? UserType.SELLER;
 
     req.user = { id, role };
     return true;

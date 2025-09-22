@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +10,7 @@ async function main() {
     create: {
       id: 'dev_seller_id',
       email: 'dev-seller@example.com',
-      role: UserRole.SELLER,
+      role: UserType.SELLER,
       nickname: 'DevSeller',
       passwordHash: 'dev-hash',
     },
