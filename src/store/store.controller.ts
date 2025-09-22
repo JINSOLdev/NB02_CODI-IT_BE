@@ -12,6 +12,7 @@ import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { StoreDetailDto } from './dto/store-detail.dto';
 import { MockAuthGuard } from '../auth/mock-auth.guard';
+import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('api/stores')
 export class StoreController {
@@ -26,7 +27,9 @@ export class StoreController {
   }
 
   @Get(':storeId')
-  getStoreDetail(@Param('storeId') storeId: string): Promise<StoreDetailDto> {
+  getStoreDetail(
+    @Param('storeId', ParseCuidPipe) storeId: string,
+  ): Promise<StoreDetailDto> {
     return this.storeService.getStoreDetail(storeId);
   }
 }
