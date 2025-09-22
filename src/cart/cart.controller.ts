@@ -2,7 +2,7 @@ import { Controller, Post, Body, Get } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { Cart } from '@prisma/client';
 
-@Controller('cart')
+@Controller('api/cart')
 export class CartController {
   constructor(private cartService: CartService) {}
   @Get()
