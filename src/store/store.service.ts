@@ -14,13 +14,13 @@ import { UserType, Prisma } from '@prisma/client';
 export class StoreService {
   constructor(private readonly storeRepo: StoreRepository) {}
 
-  async create(sellerId: string, role: UserType, dto: CreateStoreDto) {
-    if (role !== UserType.SELLER) {
+  async createStore(sellerId: string, userType: UserType, dto: CreateStoreDto) {
+    if (userType !== UserType.SELLER) {
       throw new ForbiddenException('SELLER만 스토어를 생성할 수 있습니다.');
     }
 
-    const exst_strs = await this.storeRepo.getBySellerId(sellerId);
-    if (exst_strs)
+    const existStore = await this.storeRepo.getBySellerId(sellerId);
+    if (existStore)
       throw new ConflictException('이미 등록된 스토어가 있습니다.');
 
     const data: Prisma.StoreCreateInput = {
@@ -33,7 +33,7 @@ export class StoreService {
       seller: { connect: { id: sellerId } },
     };
 
-    return this.storeRepo.create(data);
+    return this.storeRepo.createStore(data);
   }
 
   async getStoreDetail(storeId: string): Promise<StoreDetailDto> {
@@ -60,9 +60,9 @@ export class StoreService {
 
   async getMyStoreDetail(
     sellerId: string,
-    role: UserType,
+    usertype: UserType,
   ): Promise<MyStoreDetailDto> {
-    if (role !== UserType.SELLER)
+    if (usertype !== UserType.SELLER)
       throw new ForbiddenException('판매자만 조회할 수 있습니다.');
 
     const store = await this.storeRepo.findBySellerId(sellerId);
