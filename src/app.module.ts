@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { StoreModule } from './store/store.module';
 import { CartsModule } from './cart/cart.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import { S3Module } from './s3/s3.module';
 import { ConfigModule } from '@nestjs/config';
 
@@ -17,6 +19,8 @@ import { ConfigModule } from '@nestjs/config';
     CartsModule,
     S3Module,
     StoreModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
