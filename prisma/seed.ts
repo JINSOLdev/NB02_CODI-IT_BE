@@ -10,7 +10,7 @@ async function main() {
     create: {
       id: 'dev_seller_id',
       email: 'dev-seller@example.com',
-      role: UserType.SELLER,
+      type: UserType.SELLER,
       nickname: 'DevSeller',
       passwordHash: 'dev-hash',
     },
