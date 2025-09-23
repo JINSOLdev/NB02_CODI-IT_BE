@@ -13,7 +13,7 @@ export class CartController {
   }
 
   @Post()
-  async create(@Body('userId') userId: string): Promise<Cart> {
-    return this.cartService.createCart(userId);
+  async create(@Body('buyerId') buyerId: string): Promise<Cart> {
+    return this.cartService.createCart(buyerId);
   }
 }

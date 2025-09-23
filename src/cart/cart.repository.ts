@@ -6,11 +6,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class CartRepository {
   constructor(private prisma: PrismaService) {}
 
-  async createOrGetCart(userId: string): Promise<Cart> {
+  async createOrGetCart(buyerId: string): Promise<Cart> {
     try {
       const existingCart = await this.prisma.cart.findUnique({
         where: {
-          userId,
+          buyerId,
         },
       });
       if (existingCart) {
@@ -18,7 +18,7 @@ export class CartRepository {
       }
       return await this.prisma.cart.create({
         data: {
-          userId,
+          buyerId,
         },
       });
     } catch (error) {

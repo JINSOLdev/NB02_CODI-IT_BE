@@ -1,10 +1,12 @@
 import {
   ConflictException,
   ForbiddenException,
+  NotFoundException,
   Injectable,
 } from '@nestjs/common';
 import { StoreRepository } from './store.repository';
 import { CreateStoreDto } from './dto/create-store.dto';
+import { StoreDetailDto } from './dto/store-detail.dto';
 import { UserType, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -32,5 +34,27 @@ export class StoreService {
     };
 
     return this.storeRepo.create(data);
+  }
+
+  async getStoreDetail(storeId: string): Promise<StoreDetailDto> {
+    const store = await this.storeRepo.findById(storeId);
+    if (!store) throw new NotFoundException('스토어를 찾을 수 없습니다.');
+
+    const favoriteCount = await this.storeRepo.countFavorites(storeId);
+
+    const result: StoreDetailDto = {
+      id: store.id,
+      name: store.name,
+      createdAt: store.createdAt,
+      updatedAt: store.updatedAt,
+      userId: store.sellerId,
+      address: store.address,
+      detailAddress: store.detailAddress,
+      phoneNumber: store.phoneNumber,
+      content: store.content,
+      image: store.image ?? undefined,
+      favoriteCount,
+    };
+    return result;
   }
 }
