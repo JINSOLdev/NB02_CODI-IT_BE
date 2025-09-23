@@ -13,7 +13,7 @@ export class StoreRepository {
     });
   }
 
-  async create(data: Prisma.StoreCreateInput): Promise<Store> {
+  async createStore(data: Prisma.StoreCreateInput): Promise<Store> {
     return await this.prisma.store.create({ data });
   }
 
