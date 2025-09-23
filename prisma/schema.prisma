@@ -13,36 +13,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* =========================
-   User
-========================= */
+/**
+ * =========================
+ * User
+ * =========================
+ */
 model User {
-  id            String              @id @default(cuid())
-  nickname      String
-  email         String             @unique
-  passwordHash  String
-  role          UserRole           @default(BUYER)
-  image         String?     
-  points        Int                @default(0)    // 현재 보유 포인트
-  gradeLevel    GradeLevel         @default(GREEN)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  deletedAt     DateTime?   
-  
-  sessions      Session[]                   
-  store         Store?             @relation("StoreOwner") 
-  favoriteStores FavoriteStore[]                 
-  notifications Notification[]     @relation("UserNotifications")
+  id           String     @id @default(cuid())
+  nickname     String
+  email        String     @unique
+  passwordHash String
+  role         UserRole   @default(BUYER)
+  image        String?
+  points       Int        @default(0) // 현재 보유 포인트
+  gradeLevel   GradeLevel @default(GREEN)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
 
-  cart          Cart?                        
-  orders        Order[]                        
-  reviews       Review[]                       
-  inquiries     Inquiry[]          @relation("InquiryAuthor") 
-  answers       Answer[]           @relation("AnswerAuthor")                       
-  pointLedger   PointTransaction[] // 포인트 사용/적립 내역              
+  sessions       Session[]
+  store          Store?          @relation("StoreOwner")
+  favoriteStores FavoriteStore[]
+  notifications  Notification[]  @relation("UserNotifications")
+
+  cart        Cart?
+  orders      Order[]
+  reviews     Review[]
+  inquiries   Inquiry[]          @relation("InquiryAuthor")
+  answers     Answer[]           @relation("AnswerAuthor")
+  pointLedger PointTransaction[] // 포인트 사용/적립 내역              
+  Store       Store[]
 
   @@index([role])
-  
 }
 
 // 회원 유형 (권한 분기: SELLER만 스토어/상품 관리 가능)
@@ -53,7 +55,7 @@ enum UserRole {
 
 // 등급 레벨 (Green(신규) < Orange(10만) < Red(30만) < Black(50만) < VIP(100만))
 enum GradeLevel {
-  GREEN 
+  GREEN
   ORANGE
   RED
   BLACK
@@ -61,85 +63,96 @@ enum GradeLevel {
 }
 
 model Session {
-  id           String         @id @default(cuid())
-  userId       Int
+  id           String   @id @default(cuid())
+  userId       String
   refreshToken String
   expiresAt    DateTime
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime @default(now())
 
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  
   @@index([expiresAt])
 }
 
 /// 포인트 트랜잭션 (사용/적립 기록)
 model PointTransaction {
-  id        String            @id @default(cuid())
-  userId    Int
-  delta     Int
-  reason    String
-  orderId   Int?
-  createdAt DateTime       @default(now())
+  id      String  @id @default(cuid())
+  userId  String
+  delta   Int
+  reason  String
+  orderId String?
 
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order     Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
 }
 
-/* =========================
-   Store
-========================= */
+/**
+ * =========================
+ * Store
+ * =========================
+ */
 model Store {
-  id             String              @id @default(cuid())
-  name           String
-  address        String
-  detailAddress  String
-  phoneNumber    String
-  content        String
-  image          String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  address       String
+  detailAddress String
+  phoneNumber   String
+  content       String
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  sellerId       Int
-  seller         User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  favorites      FavoriteStore[]
+  sellerId String @unique
+  seller   User   @relation("StoreOwner", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  favorites FavoriteStore[]
+  Product   Product[]
+  Order     Order[]
+  User      User?           @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
 model FavoriteStore {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   storeId   String
   userId    String
   createdAt DateTime @default(now())
 
-  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store  Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
+  @@index([storeId])
+  @@index([userId])
 }
 
-/* =========================
-   Cart
-========================= */
+/**
+ * =========================
+ * Cart
+ * =========================
+ */
 model Cart {
-  id        String      @id @default(cuid())
-  userId    String      @unique 
-  createdAt DateTime @default(now()) 
-  updatedAt DateTime? 
+  id        String   @id @default(cuid())
+  buyerId   String   @unique
+  quantity  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buyer User       @relation(fields: [buyerId], references: [id], onDelete: Cascade)
   items CartItem[]
-
 }
 
 model CartItem {
-  id        String      @id @default(cuid())
-  cartId    String      
-  productId String      
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
   quantity  Int
-  createdAt DateTime @default(now()) 
-  updatedAt DateTime @updatedAt      
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -147,31 +160,74 @@ model CartItem {
   @@unique([cartId, productId])
 }
 
-/* =========================
-   Product
-========================= */
+/**
+ * =========================
+ * Product
+ * =========================
+ */
 model Product {
-  id                String      @id @default(cuid())
+  id                String    @id @default(cuid())
   storeId           String
   name              String
   content           String?        // 제품 상세 정보 
   price             Int
-  image             String?        
-  discountRate      Float?         // 할인율
-  discountStartTime DateTime?      // 할인 시작 날짜
-  discountEndTime   DateTime?      // 할인 종료 날짜
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  discountPrice     Int?
+  discountRate      Int?
+  discountStartTime DateTime?
+  discountEndTime   DateTime?
+  sales             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  cartItems   CartItem[]
-  reviews     Review[]
-  orderItems  OrderItem[]
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  stocks     Stock[]
+  reviews    Review[]
+  inquiries  Inquiry[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 }
 
-/* =========================
-   Order
-========================= */
+model Category {
+  id       String       @id @default(cuid())
+  name     CategoryType
+  products Product[]
+}
+
+enum CategoryType {
+  TOP
+  BOTTOM
+  DRESS
+  OUTER
+  SKIRT
+  SHOES
+  ACC
+}
+
+model Stock {
+  id        String   @id @default(cuid())
+  productId String
+  size      SizeType
+  quantity  Int
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum SizeType {
+  Free
+  XS
+  S
+  M
+  L
+  XL
+}
+
+/**
+ * =========================
+ * Order
+ * =========================
+ */
 model Order {
   id             String   @id @default(cuid())  
   userId         String
@@ -195,28 +251,47 @@ model Order {
   payments    Payment?
 }
 
+model Payment {
+  id        String         @id @default(cuid())
+  orderId   String         @unique
+  price     Int
+  status    PaymentStatus  @default(PENDING)
+  createdAt DateTime       @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
 model OrderItem {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   orderId   String
   productId String
   quantity  Int
   price     Int        // 주문 당시 가격 (할인 반영 가능)
 
-  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 }
 
 enum OrderStatus {
-  PENDING      // 결제 대기
-  PAID         // 결제 완료
-  SHIPPED      // 배송 중
-  DELIVERED    // 배송 완료
-  CANCELED     // 주문 취소
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELED
 }
 
-/* =========================
-   Notification
-========================= */
+/**
+ * =========================
+ * Notification
+ * =========================
+ */
 model Notification {
   id        String           @id @default(cuid())
   userId    String
@@ -225,12 +300,67 @@ model Notification {
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
-  ORDER_STATUS   // 주문 상태 변경
-  POINT          // 포인트 적립/차감
-  EVENT          // 이벤트/프로모션
-  SYSTEM         // 시스템 알림
+  ORDER_UPDATE
+  PROMOTION
+  SYSTEM_ALERT
+}
+
+/**
+ * =========================
+ * Review
+ * =========================
+ */
+model Review {
+  id        String   @id @default(cuid())
+  content   String
+  rating    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * =========================
+ * Inquiry & Answer
+ * =========================
+ */
+
+enum AnswerStatus {
+  WaitingAnswer
+  CompletedAnswer
+}
+
+model Inquiry {
+  id        String       @id @default(cuid())
+  title     String
+  content   String
+  status    AnswerStatus @default(WaitingAnswer)
+  isSecret  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  userId    String
+  user      User     @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reply     Answer[]
+}
+
+model Answer {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation("AnswerAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  inquiryId String
+  inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
 }
