@@ -18,20 +18,20 @@ import { AuthGuard } from '@nestjs/passport';
 export class AuthController {
   constructor(private auth: AuthService) {}
 
-  /** 로그인: POST /api/auth/login */
+  // 로그인: POST /api/auth/login
   @Post('login')
   @HttpCode(HttpStatus.CREATED)
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto.email, dto.password);
   }
 
-  /** 토큰 재발급: POST /api/auth/refresh */
+  // 토큰 재발급: POST /api/auth/refresh
   @Post('refresh')
   refresh(@Body() dto: RefreshDto) {
     return this.auth.refresh(dto.refreshToken);
   }
 
-  /** 로그아웃: POST /api/auth/logout */
+  // 로그아웃: POST /api/auth/logout
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   logout(@Req() req: any) {

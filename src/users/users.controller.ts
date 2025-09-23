@@ -7,7 +7,7 @@ import { UserPayload } from './users.mapper';
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
-  /** 회원가입: POST /api/users */
+  // 회원가입: POST /api/users
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async signup(@Body() dto: CreateUserDto): Promise<{ user: UserPayload }> {

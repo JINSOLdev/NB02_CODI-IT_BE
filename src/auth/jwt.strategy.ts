@@ -3,23 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../users/users.service';
 import { GRADE_MAP, GradeLevel } from '../grades/grade.constants';
-import { UserType } from '@prisma/client';
-
-type JwtPayload = {
-  sub?: string;
-  id?: string;
-  userId?: string;
-  email?: string;
-  type?: UserType;
-};
-
-type RequestUser = {
-  userId: string;
-  email: string;
-  type: UserType;
-  points: number;
-  grade: { id: string; name: string; rate: number; minAmount: number };
-};
+import { AuthUser, JwtPayloadCompat } from './auth.types';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -31,19 +15,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<RequestUser> {
+  async validate(payload: JwtPayloadCompat): Promise<AuthUser> {
     const subject = payload.sub ?? payload.userId ?? payload.id;
-    if (!subject) {
+    if (!subject)
       throw new UnauthorizedException('Invalid token: missing subject (sub)');
-    }
 
     const user = await this.usersService.findById(subject);
-    if (!user) {
+    if (!user)
       throw new UnauthorizedException('User not found or invalid token');
-    }
 
     const gradeKey = user.gradeLevel as GradeLevel;
-
     return {
       userId: user.id,
       email: user.email,
