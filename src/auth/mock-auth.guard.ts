@@ -8,10 +8,10 @@ export class MockAuthGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<Request>();
 
     const id = req.header('x-user-id') ?? 'seller_demo';
-    const role =
+    const type =
       (req.header('x-user-role') as UserType | undefined) ?? UserType.SELLER;
 
-    req.user = { id, role };
+    req.user = { id, type };
     return true;
   }
 }

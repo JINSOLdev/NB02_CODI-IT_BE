@@ -231,7 +231,7 @@ model Order {
   userId     String
   storeId    String
   totalPrice Int
-  status     OrderStatus @default(PENDING)
+  status     OrderStatus @default(PROCESSING)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -253,11 +253,10 @@ model OrderItem {
 }
 
 enum OrderStatus {
-  PENDING
-  PAID
-  SHIPPED
-  DELIVERED
+  COMPLETEDPAYMENT
   CANCELED
+  PROCESSING
+  SHIPPED
 }
 
 /**
