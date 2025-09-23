@@ -7,31 +7,31 @@ import {
   Get,
   Param,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import type { AuthUser } from '../auth/auth.types';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { StoreDetailDto } from './dto/store-detail.dto';
 import { MyStoreDetailDto } from './dto/mystore-detail.dto';
-import { MockAuthGuard } from '../auth/mock-auth.guard';
 import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('api/stores')
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
-  @UseGuards(MockAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Req() req: Request, @Body() dto: CreateStoreDto) {
-    const user = req.user!;
+  create(@Req() req: { user: AuthUser }, @Body() dto: CreateStoreDto) {
+    const user = req.user;
 
-    return this.storeService.create(user.id, user.type, dto);
+    return this.storeService.create(user.userId, user.type, dto);
   }
 
-  @UseGuards(MockAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('detail/my')
-  getMyStoreDetail(@Req() req: Request): Promise<MyStoreDetailDto> {
-    const user = req.user!;
-    return this.storeService.getMyStoreDetail(user.id, user.type);
+  getMyStoreDetail(@Req() req: { user: AuthUser }): Promise<MyStoreDetailDto> {
+    const user = req.user;
+    return this.storeService.getMyStoreDetail(user.userId, user.type);
   }
 
   @Get(':storeId')
