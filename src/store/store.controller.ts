@@ -24,7 +24,7 @@ export class StoreController {
   create(@Req() req: { user: AuthUser }, @Body() dto: CreateStoreDto) {
     const user = req.user;
 
-    return this.storeService.create(user.userId, user.type, dto);
+    return this.storeService.createStore(user.userId, user.type, dto);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -14,7 +14,7 @@ import { UserType, Prisma } from '@prisma/client';
 export class StoreService {
   constructor(private readonly storeRepo: StoreRepository) {}
 
-  async create(sellerId: string, userType: UserType, dto: CreateStoreDto) {
+  async createStore(sellerId: string, userType: UserType, dto: CreateStoreDto) {
     if (userType !== UserType.SELLER) {
       throw new ForbiddenException('SELLER만 스토어를 생성할 수 있습니다.');
     }
