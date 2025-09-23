@@ -23,7 +23,7 @@ model User {
   nickname     String
   email        String     @unique
   passwordHash String
-  role         UserRole   @default(BUYER)
+  type         UserType   @default(BUYER)
   image        String?
   points       Int        @default(0) // 현재 보유 포인트
   gradeLevel   GradeLevel @default(GREEN)
@@ -41,14 +41,13 @@ model User {
   reviews     Review[]
   inquiries   Inquiry[]          @relation("InquiryAuthor")
   answers     Answer[]           @relation("AnswerAuthor")
-  pointLedger PointTransaction[] // 포인트 사용/적립 내역              
-  Store       Store[]
+  pointLedger PointTransaction[] // 포인트 사용/적립 내역             
 
-  @@index([role])
+  @@index([type])
 }
 
 // 회원 유형 (권한 분기: SELLER만 스토어/상품 관리 가능)
-enum UserRole {
+enum UserType {
   BUYER
   SELLER
 }
@@ -65,7 +64,7 @@ enum GradeLevel {
 model Session {
   id           String   @id @default(cuid())
   userId       String
-  refreshToken String
+  refreshToken String   @unique
   expiresAt    DateTime
   createdAt    DateTime @default(now())
 
@@ -74,7 +73,7 @@ model Session {
   @@index([expiresAt])
 }
 
-/// 포인트 트랜잭션 (사용/적립 기록)
+// 포인트 트랜잭션 (사용/적립 기록)
 model PointTransaction {
   id      String  @id @default(cuid())
   userId  String
@@ -112,8 +111,6 @@ model Store {
   favorites FavoriteStore[]
   Product   Product[]
   Order     Order[]
-  User      User?           @relation(fields: [userId], references: [id])
-  userId    String?
 }
 
 model FavoriteStore {
@@ -317,9 +314,9 @@ enum NotificationType {
 model Review {
   id        String   @id @default(cuid())
   content   String
-  rating    String
+  rating    Int
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   userId    String
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -345,6 +342,7 @@ model Inquiry {
   status    AnswerStatus @default(WaitingAnswer)
   isSecret  Boolean      @default(false)
   createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   userId    String
   user      User     @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
@@ -357,7 +355,7 @@ model Answer {
   id        String   @id @default(cuid())
   content   String
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   userId    String
   user      User    @relation("AnswerAuthor", fields: [userId], references: [id], onDelete: Cascade)
