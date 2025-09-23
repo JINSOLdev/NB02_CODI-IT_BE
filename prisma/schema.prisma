@@ -166,7 +166,8 @@ model Product {
   id                String    @id @default(cuid())
   storeId           String
   name              String
-  content           String?        // 제품 상세 정보 
+  content           String?        
+  image             String?
   price             Int
   discountPrice     Int?
   discountRate      Int?
