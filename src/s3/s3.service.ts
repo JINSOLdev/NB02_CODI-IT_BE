@@ -31,20 +31,24 @@ export class S3Service {
     const ext = path.extname(file.originalname);
     const key = `upload/${Date.now()}${ext}`;
 
-    await this.s3Client.send(
-      new PutObjectCommand({
-        Bucket: this.configService.get<string>('AWS_BUCKET_NAME'),
-        Key: key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      })
-    );
+    try { 
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.configService.get<string>('AWS_BUCKET_NAME'),
+          Key: key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+        })
+      );
+    } catch (error) {
+      console.error('File upload failed:', error);
+      throw new InternalServerErrorException('File upload failed');
+    }
 
     return {
-      message: "업로드 성공",
+      message: '업로드 성공',
       url: `https://s3.${this.configService.get<string>('AWS_REGION')}.amazonaws.com/${this.configService.get<string>('AWS_BUCKET_NAME')}/${key}`,
-      key: key
-    }
+      key: key,
+    };
   }
-
 }
