@@ -18,11 +18,4 @@ export class S3Controller {
     const imageUrl = await this.s3Service.uploadFile(file);
     return { imageUrl };
   }
-
-  @Get('upload')
-  findAll() {
-    return {
-      message: 'success',
-    };
-  }
 }
