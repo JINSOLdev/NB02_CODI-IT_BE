@@ -13,17 +13,16 @@ export class S3Controller {
   constructor(private readonly s3Service: S3Service) {}
 
   @Post('upload')
-	@UseInterceptors(FileInterceptor('file'))
-	async uploadImage(@UploadedFile() file: Express.Multer.File) {
-		const imageUrl = await this.s3Service.uploadFile(file);
-		return { imageUrl };
-	}
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    const imageUrl = await this.s3Service.uploadFile(file);
+    return { imageUrl };
+  }
 
-	@Get('upload')
-	findAll() {
-		return {
-			message: 'success',
-		}
-	}
-	
+  @Get('upload')
+  findAll() {
+    return {
+      message: 'success',
+    };
+  }
 }
