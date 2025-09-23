@@ -11,6 +11,7 @@ import type { Request } from 'express';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { StoreDetailDto } from './dto/store-detail.dto';
+import { MyStoreDetailDto } from './dto/mystore-detail.dto';
 import { MockAuthGuard } from '../auth/mock-auth.guard';
 import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
@@ -23,7 +24,14 @@ export class StoreController {
   create(@Req() req: Request, @Body() dto: CreateStoreDto) {
     const user = req.user!;
 
-    return this.storeService.create(user.id, user.role, dto);
+    return this.storeService.create(user.id, user.type, dto);
+  }
+
+  @UseGuards(MockAuthGuard)
+  @Get('detail/my')
+  getMyStoreDetail(@Req() req: Request): Promise<MyStoreDetailDto> {
+    const user = req.user!;
+    return this.storeService.getMyStoreDetail(user.id, user.type);
   }
 
   @Get(':storeId')
