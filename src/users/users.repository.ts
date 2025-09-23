@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma, User } from '@prisma/client';
 
-// 로그인 비교 등에 쓰기 위한 최소 필드 세트
-export type UserWithPassword = Pick<
+export type UserForAuth = Pick<
   User,
   'id' | 'email' | 'nickname' | 'type' | 'gradeLevel' | 'passwordHash'
 >;
@@ -17,10 +16,17 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  /**
-   * 이메일로 사용자 조회 (비밀번호 검증 용도이므로 passwordHash 포함)
-   */
-  async findByEmail(email: string): Promise<UserWithPassword | null> {
+  // 이메일 중복 확인용
+  async existsByEmail(email: string): Promise<boolean> {
+    const r = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    return !!r;
+  }
+
+  // 로그인용 (해시 포함)
+  async findByEmailForAuth(email: string): Promise<UserForAuth | null> {
     return this.prisma.user.findUnique({
       where: { email },
       select: {
@@ -32,6 +38,10 @@ export class UsersRepository {
         passwordHash: true,
       },
     });
+  }
+
+  async findByEmail(email: string): Promise<UserForAuth | null> {
+    return this.findByEmailForAuth(email);
   }
 
   async create(data: Prisma.UserCreateInput): Promise<User> {

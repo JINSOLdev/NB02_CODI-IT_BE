@@ -11,7 +11,6 @@ export type UserPayload = {
   grade: { id: string; name: string; rate: number; minAmount: number };
 };
 
-// 굳이 변환 함수 필요 없음 -> 그대로 매핑
 export const toUserPayload = (u: User): UserPayload => ({
   id: u.id,
   email: u.email,

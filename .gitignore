@@ -15,7 +15,7 @@ lerna-debug.log*
 # OS
 .DS_Store
 
-# Tests
+# Tests / Coverage
 /coverage
 /.nyc_output
 
@@ -59,16 +59,13 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.tsbuildinfo
 
 # Prisma
+# 로컬 SQLite 등 개발용 DB 파일만 제외
 prisma/dev.db
 prisma/*.db-journal
-prisma/migrations/*/migration.sql
-prisma/**/migration_lock.toml
+
+# Caches (optional)
+.cache
+.eslintcache
 
 # Debug
 *.tgz
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# Optional caches
-.cache
