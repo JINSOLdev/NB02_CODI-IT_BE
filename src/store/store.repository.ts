@@ -13,8 +13,19 @@ export class StoreRepository {
     });
   }
 
+  async findByStoreId(id: string): Promise<Store | null> {
+    return await this.prisma.store.findUnique({ where: { id } });
+  }
+
   async createStore(data: Prisma.StoreCreateInput): Promise<Store> {
     return await this.prisma.store.create({ data });
+  }
+
+  async updateStore(id: string, data: Prisma.StoreUpdateInput): Promise<Store> {
+    return await this.prisma.store.update({
+      where: { id },
+      data,
+    });
   }
 
   async getBySellerId(sellerId: string): Promise<boolean> {
@@ -22,10 +33,6 @@ export class StoreRepository {
       where: { sellerId },
     });
     return storeCount > 0;
-  }
-
-  async findById(id: string): Promise<Store | null> {
-    return await this.prisma.store.findUnique({ where: { id } });
   }
 
   async favoriteCounts(storeId: string): Promise<number> {
