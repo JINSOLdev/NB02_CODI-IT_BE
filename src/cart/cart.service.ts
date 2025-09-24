@@ -3,13 +3,9 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Cart, CartItem } from '@prisma/client';
+import { Cart } from '@prisma/client';
 import { CartRepository } from './cart.repository';
-import type { Request } from 'express';
-import {
-  createOrUpdateCartItemDto,
-  createOrUpdateCartItemInputDto,
-} from './cart.dto';
+import { createOrUpdateCartItemsDto } from './cart.dto';
 @Injectable()
 export class CartService {
   constructor(private cartRepository: CartRepository) {}
@@ -34,25 +30,19 @@ export class CartService {
     }
   }
 
-  async createOrUpdateCartItem(
-    createOrUpdateCartItemInputDto: createOrUpdateCartItemInputDto,
+  async createOrUpdateCartItemAndReturnCart(
     buyerId: string,
-  ): Promise<CartItem[]> {
-    const cartId = await this.cartRepository.getCartIdByBuyerId(buyerId);
-    const sizes = createOrUpdateCartItemInputDto.sizes;
-    const cartItems: CartItem[] = [];
+    createOrUpdateCartItemsDto: createOrUpdateCartItemsDto,
+  ): Promise<Cart> {
+    const cart = await this.cartRepository.getCartIdByBuyerId(buyerId);
     try {
-      for (const size of sizes) {
-        cartItems.push(
-          await this.cartRepository.createOrUpdateCartItem(
-            cartId,
-            createOrUpdateCartItemInputDto.productId,
-            size.sizeId,
-            size.quantity,
-          ),
+      // 장바구니 업데이트
+      const updatedCart =
+        await this.cartRepository.createOrUpdateCartItemAndReturnCart(
+          cart.id,
+          createOrUpdateCartItemsDto,
         );
-      }
-      return cartItems;
+      return updatedCart;
     } catch (error) {
       if (error instanceof Error && error.message.includes('database')) {
         throw new InternalServerErrorException(

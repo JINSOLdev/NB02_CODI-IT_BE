@@ -49,6 +49,59 @@ async function main() {
   });
 
   console.log(`Seeded! SELLER: dev_seller_id, BUYER: dev_buyer_id}`);
+
+  await prisma.category.create({
+    data: {
+      id: 'dev_category_id',
+      name: 'TOP',
+    },
+  });
+
+  await prisma.store.create({
+    data: {
+      id: 'dev_store_id',
+      name: 'DevStore',
+      address: 'DevAddress',
+      detailAddress: 'DevDetailAddress',
+      phoneNumber: 'DevPhoneNumber',
+      content: 'DevContent',
+      image: 'DevImage',
+      sellerId: 'dev_seller_id',
+    },
+  });
+
+  await prisma.product.create({
+    data: {
+      id: 'dev_product_id',
+      name: 'DevProduct',
+      content: 'DevProductContent',
+      image: 'DevProductImage',
+      price: 10000,
+      discountPrice: 8000,
+      discountRate: 20,
+      discountStartTime: new Date(),
+      discountEndTime: new Date(),
+      sales: 0,
+      storeId: 'dev_store_id',
+      categoryId: 'dev_category_id',
+    },
+  });
+
+  await prisma.stock.create({
+    data: {
+      id: 'dev_stock_id',
+      productId: 'dev_product_id',
+      sizeId: 'dev_size_id',
+      quantity: 10,
+    },
+  });
+
+  await prisma.stockSize.create({
+    data: {
+      id: 'dev_size_id',
+      name: 'DevSize',
+    },
+  });
 }
 
 main()

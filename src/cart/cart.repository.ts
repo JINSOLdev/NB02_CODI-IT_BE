@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Cart, CartItem } from '@prisma/client';
+import { Cart } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { createOrUpdateCartItemDto } from './cart.dto';
+import { createOrUpdateCartItemsDto } from './cart.dto';
 
 @Injectable()
 export class CartRepository {
   constructor(private prisma: PrismaService) {}
 
-  async getCartIdByBuyerId(buyerId: string): Promise<string> {
+  // buyerId로 장바구니 ID 조회
+  async getCartIdByBuyerId(buyerId: string): Promise<Cart> {
     try {
       const cart = await this.prisma.cart.findUnique({
         where: {
@@ -17,7 +18,7 @@ export class CartRepository {
       if (!cart) {
         throw new BadRequestException('장바구니를 찾을 수 없습니다');
       }
-      return cart.id;
+      return cart;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(
@@ -28,6 +29,7 @@ export class CartRepository {
     }
   }
 
+  // buyerId로 장바구니 생성
   async createOrGetCart(buyerId: string): Promise<Cart> {
     try {
       const existingCart = await this.prisma.cart.findUnique({
@@ -53,40 +55,41 @@ export class CartRepository {
     }
   }
 
-  async createOrUpdateCartItem(
-    createOrUpdateCartItemDto: createOrUpdateCartItemDto,
+  // cartId와 productId, {sizeId, quantity}로 장바구니 아이템 업데이트
+  async createOrUpdateCartItemAndReturnCart(
     cartId: string,
-  ): Promise<CartItem> {
+    createOrUpdateCartItemsDto: createOrUpdateCartItemsDto,
+  ): Promise<Cart> {
+    const sizes = createOrUpdateCartItemsDto.sizes;
     try {
-      const existingCartItem = await this.prisma.cartItem.findUnique({
-        where: {
-          cartId_productId_sizeId: {
-            cartId,
-            productId: createOrUpdateCartItemDto.productId,
-            sizeId: createOrUpdateCartItemDto.sizeId,
-          },
-        },
-      });
-      if (existingCartItem) {
-        return await this.prisma.cartItem.update({
-          where: {
-            cartId_productId_sizeId: {
-              cartId,
-              productId: createOrUpdateCartItemDto.productId,
-              sizeId: createOrUpdateCartItemDto.sizeId,
+      await this.prisma.$transaction(
+        sizes.map((size) => {
+          return this.prisma.cartItem.upsert({
+            where: {
+              cartId_productId_sizeId: {
+                cartId,
+                productId: createOrUpdateCartItemsDto.productId,
+                sizeId: size.sizeId,
+              },
             },
-          },
-          data: {
-            quantity: createOrUpdateCartItemDto.quantity,
-          },
-        });
-      }
-      return await this.prisma.cartItem.create({
-        data: {
-          cartId,
-          productId: createOrUpdateCartItemDto.productId,
-          sizeId: createOrUpdateCartItemDto.sizeId,
-          quantity: createOrUpdateCartItemDto.quantity,
+            create: {
+              cartId,
+              productId: createOrUpdateCartItemsDto.productId,
+              sizeId: size.sizeId,
+              quantity: size.quantity,
+            },
+            update: {
+              quantity: size.quantity,
+            },
+          });
+        }),
+      );
+      return await this.prisma.cart.findUniqueOrThrow({
+        where: {
+          id: cartId,
+        },
+        include: {
+          items: true,
         },
       });
     } catch (error) {
