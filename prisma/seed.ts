@@ -3,8 +3,28 @@ import { PrismaClient, UserType } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  //모든 데이터 제거
+  await prisma.$transaction([
+    prisma.user.deleteMany(),
+    prisma.store.deleteMany(),
+    prisma.category.deleteMany(),
+    prisma.product.deleteMany(),
+    prisma.stock.deleteMany(),
+    prisma.stockSize.deleteMany(),
+    prisma.cart.deleteMany(),
+    prisma.cartItem.deleteMany(),
+    prisma.order.deleteMany(),
+    prisma.orderItem.deleteMany(),
+    prisma.review.deleteMany(),
+    prisma.inquiry.deleteMany(),
+    prisma.answer.deleteMany(),
+    prisma.notification.deleteMany(),
+    prisma.pointTransaction.deleteMany(),
+    prisma.favoriteStore.deleteMany(),
+  ]);
+
   // dev용 판매자 생성 (DevAuthGuard와 맞추기 위해 id 고정)
-  const user1 = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { id: 'dev_seller_id' },
     update: {},
     create: {
@@ -16,7 +36,7 @@ async function main() {
     },
   });
 
-  const user2 = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { id: 'dev_buyer_id' },
     update: {},
     create: {
@@ -28,7 +48,7 @@ async function main() {
     },
   });
 
-  console.log(`Seeded! SELLER: user1, BUYER: user2}`);
+  console.log(`Seeded! SELLER: dev_seller_id, BUYER: dev_buyer_id}`);
 }
 
 main()
