@@ -2,26 +2,7 @@ import { PrismaClient, UserType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  //모든 데이터 제거
-  await prisma.$transaction([
-    prisma.user.deleteMany(),
-    prisma.store.deleteMany(),
-    prisma.category.deleteMany(),
-    prisma.product.deleteMany(),
-    prisma.stock.deleteMany(),
-    prisma.stockSize.deleteMany(),
-    prisma.cart.deleteMany(),
-    prisma.cartItem.deleteMany(),
-    prisma.order.deleteMany(),
-    prisma.orderItem.deleteMany(),
-    prisma.review.deleteMany(),
-    prisma.inquiry.deleteMany(),
-    prisma.answer.deleteMany(),
-    prisma.notification.deleteMany(),
-    prisma.pointTransaction.deleteMany(),
-    prisma.favoriteStore.deleteMany(),
-  ]);
+async function main(){
 
   // dev용 판매자 생성 (DevAuthGuard와 맞추기 위해 id 고정)
   await prisma.user.upsert({
@@ -50,15 +31,19 @@ async function main() {
 
   console.log(`Seeded! SELLER: dev_seller_id, BUYER: dev_buyer_id}`);
 
-  await prisma.category.create({
-    data: {
+  await prisma.category.upsert({
+    where: { id: 'dev_category_id' },
+    update: {},
+    create: {
       id: 'dev_category_id',
       name: 'TOP',
     },
   });
 
-  await prisma.store.create({
-    data: {
+  await prisma.store.upsert({
+    where: { id: 'dev_store_id' },
+    update: {},
+    create: {
       id: 'dev_store_id',
       name: 'DevStore',
       address: 'DevAddress',
@@ -70,8 +55,10 @@ async function main() {
     },
   });
 
-  await prisma.product.create({
-    data: {
+  await prisma.product.upsert({
+    where: { id: 'dev_product_id' },
+    update: {},
+    create: {
       id: 'dev_product_id',
       name: 'DevProduct',
       content: 'DevProductContent',
@@ -87,8 +74,10 @@ async function main() {
     },
   });
 
-  await prisma.stock.create({
-    data: {
+  await prisma.stock.upsert({
+    where: { id: 'dev_stock_id' },
+    update: {},
+    create: {
       id: 'dev_stock_id',
       productId: 'dev_product_id',
       sizeId: 'dev_size_id',
@@ -96,8 +85,10 @@ async function main() {
     },
   });
 
-  await prisma.stockSize.create({
-    data: {
+  await prisma.stockSize.upsert({
+    where: { id: 'dev_size_id' },
+    update: {},
+    create: {
       id: 'dev_size_id',
       name: 'DevSize',
     },
