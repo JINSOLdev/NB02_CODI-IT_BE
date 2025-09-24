@@ -111,7 +111,9 @@ export class AuthService {
   }
 
   // 토큰 재발급
-  async refresh(refreshToken: string): Promise<{ accessToken: string }> {
+  async refresh(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const session = await this.prisma.session.findUnique({
       where: { refreshToken },
     });
@@ -127,7 +129,15 @@ export class AuthService {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    await this.prisma.session.delete({ where: { refreshToken } });
+    // RT 로테이션 + 슬라이딩 만료
+    const newRefreshToken = crypto.randomUUID();
+    const refreshDays = getNumberEnv('REFRESH_EXPIRES_DAYS', 7);
+    const newExpiresAt = addDays(new Date(), refreshDays);
+
+    await this.prisma.session.update({
+      where: { refreshToken },
+      data: { refreshToken: newRefreshToken, expiresAt: newExpiresAt },
+    });
 
     const accessToken = await this.jwt.signAsync(
       {
@@ -143,7 +153,7 @@ export class AuthService {
       },
     );
 
-    return { accessToken };
+    return { accessToken, refreshToken: newRefreshToken };
   }
 
   // 로그아웃(세션삭제)
