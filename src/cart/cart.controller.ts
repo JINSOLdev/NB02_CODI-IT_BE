@@ -1,19 +1,47 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
-import { Cart } from '@prisma/client';
-
+import { Cart, UserType } from '@prisma/client';
+import { createOrUpdateCartItemsDto } from './cart.dto';
+import { AuthUser } from 'src/auth/auth.types';
+import { JwtAuthGuard } from 'src/auth/jwt.guard';
 @Controller('api/cart')
 export class CartController {
   constructor(private cartService: CartService) {}
-  @Get()
-  findAll(): object {
-    return {
-      message: 'ok',
-    };
+
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  async create(@Req() req: { user: AuthUser }): Promise<Cart> {
+    const user = req.user;
+    if (user.type !== UserType.BUYER) {
+      throw new UnauthorizedException('do not buyer');
+    }
+    return this.cartService.createCart(user.userId);
   }
 
-  @Post()
-  async create(@Body('buyerId') buyerId: string): Promise<Cart> {
-    return this.cartService.createCart(buyerId);
+  @UseGuards(JwtAuthGuard)
+  @Patch()
+  async updateCartItem(
+    @Req() req: { user: AuthUser },
+    @Body() createOrUpdateCartItemsDto: createOrUpdateCartItemsDto,
+  ): Promise<Cart> {
+    const user = req.user;
+    if (user.type !== UserType.BUYER) {
+      throw new ForbiddenException('do not buyer');
+    }
+    const updatedCart =
+      await this.cartService.createOrUpdateCartItemAndReturnCart(
+        user.userId,
+        createOrUpdateCartItemsDto,
+      );
+    return updatedCart;
   }
 }
