@@ -11,13 +11,13 @@ import {
 import { CartService } from './cart.service';
 import { Cart, UserType } from '@prisma/client';
 import { createOrUpdateCartItemsDto } from './cart.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthUser } from 'src/auth/auth.types';
+import { JwtAuthGuard } from 'src/auth/jwt.guard';
 @Controller('api/cart')
 export class CartController {
   constructor(private cartService: CartService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Req() req: { user: AuthUser }): Promise<Cart> {
     const user = req.user;
@@ -27,7 +27,7 @@ export class CartController {
     return this.cartService.createCart(user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Patch()
   async updateCartItem(
     @Req() req: { user: AuthUser },
