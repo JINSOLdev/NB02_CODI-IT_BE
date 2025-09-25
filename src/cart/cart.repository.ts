@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, Injectable } from '@nestjs/common';
 import { Cart } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { createOrUpdateCartItemsDto } from './cart.dto';
@@ -21,11 +21,13 @@ export class CartRepository {
       return cart;
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(
+        throw new InternalServerErrorException(
           `장바구니 ID 조회 중 오류가 발생했습니다: ${error.message}`,
         );
       }
-      throw new Error('장바구니 ID 조회 중 알 수 없는 오류가 발생했습니다');
+      throw new InternalServerErrorException(
+        '장바구니 ID 조회 중 알 수 없는 오류가 발생했습니다',
+      );
     }
   }
 
@@ -47,11 +49,13 @@ export class CartRepository {
       });
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(
+        throw new InternalServerErrorException(
           `장바구니 생성 중 오류가 발생했습니다: ${error.message}`,
         );
       }
-      throw new Error('장바구니 생성 중 알 수 없는 오류가 발생했습니다');
+      throw new InternalServerErrorException(
+        '장바구니 생성 중 알 수 없는 오류가 발생했습니다',
+      );
     }
   }
 
@@ -98,7 +102,9 @@ export class CartRepository {
           `장바구니 업데이트 중 오류가 발생했습니다: ${error.message}`,
         );
       }
-      throw new Error('장바구니 업데이트 중 알 수 없는 오류가 발생했습니다');
+      throw new InternalServerErrorException(
+        '장바구니 업데이트 중 알 수 없는 오류가 발생했습니다',
+      );
     }
   }
 }
