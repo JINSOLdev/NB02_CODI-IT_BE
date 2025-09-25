@@ -2,11 +2,11 @@ import {
   Controller,
   Post,
   Body,
-  Get,
   Patch,
   UseGuards,
   Req,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { Cart, UserType } from '@prisma/client';
@@ -35,7 +35,7 @@ export class CartController {
   ): Promise<Cart> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
-      throw new UnauthorizedException('do not buyer');
+      throw new ForbiddenException('do not buyer');
     }
     const updatedCart =
       await this.cartService.createOrUpdateCartItemAndReturnCart(
