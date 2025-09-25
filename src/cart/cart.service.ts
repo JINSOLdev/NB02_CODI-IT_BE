@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CartRepository } from './cart.repository';
 import { createOrUpdateCartItemsDto } from './cart.dto';
@@ -65,7 +66,7 @@ export class CartService {
   async getCartItem(userId: string, cartItemId: string) {
     const cartItem = await this.cartRepository.getCartItem(cartItemId);
     if (cartItem.cart.buyerId !== userId) {
-      throw new BadRequestException('장바구니 아이템 조회 권한이 없습니다');
+      throw new ForbiddenException('장바구니 아이템 조회 권한이 없습니다');
     }
     return cartItem;
   }
