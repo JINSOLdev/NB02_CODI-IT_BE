@@ -51,4 +51,8 @@ export class UsersRepository {
   async createUnchecked(data: Prisma.UserUncheckedCreateInput): Promise<User> {
     return this.prisma.user.create({ data });
   }
+
+  async updateById(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    return this.prisma.user.update({ where: { id }, data });
+  }
 }
