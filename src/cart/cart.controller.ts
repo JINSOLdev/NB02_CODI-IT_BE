@@ -24,7 +24,7 @@ export class CartController {
   async create(@Req() req: { user: AuthUser }): Promise<Cart> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
-      throw new ForbiddenException('do not buyer');
+      throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     return this.cartService.createCart(user.userId);
   }
@@ -37,9 +37,6 @@ export class CartController {
     @Param('cartItemId') cartItemId: string,
   ): Promise<CartItem> {
     const user = req.user;
-    if (user.type !== UserType.BUYER) {
-      throw new ForbiddenException('구매자만 접근 가능합니다');
-    }
     return this.cartService.getCartItem(user.userId, cartItemId);
   }
 
@@ -73,5 +70,4 @@ export class CartController {
       );
     return updatedCart;
   }
-
 }
