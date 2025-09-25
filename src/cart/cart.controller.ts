@@ -5,7 +5,7 @@ import {
   Patch,
   UseGuards,
   Req,
-  UnauthorizedException,
+  ForbiddenException,
   Get,
   Param,
 } from '@nestjs/common';
@@ -24,7 +24,7 @@ export class CartController {
   async create(@Req() req: { user: AuthUser }): Promise<Cart> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
-      throw new UnauthorizedException('do not buyer');
+      throw new ForbiddenException('do not buyer');
     }
     return this.cartService.createCart(user.userId);
   }
@@ -38,7 +38,7 @@ export class CartController {
   ): Promise<CartItem> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
-      throw new UnauthorizedException('구매자만 접근 가능합니다');
+      throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     return this.cartService.getCartItem(user.userId, cartItemId);
   }
@@ -46,12 +46,13 @@ export class CartController {
   //사용자의 장바구니를 조회합니다. 장바구니가 없으면 빈 배열을 반환합니다.
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getCart(@Req() req: { user: AuthUser }): Promise<Cart> {
+  async getCart(@Req() req: { user: AuthUser }) {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
-      throw new UnauthorizedException('구매자만 접근 가능합니다');
+      throw new ForbiddenException('구매자만 접근 가능합니다');
     }
-    return this.cartService.getCart(user.userId);
+    const cart = await this.cartService.getCart(user.userId);
+    return cart;
   }
 
   //사용자의 장바구니를 업데이트합니다.
@@ -63,7 +64,7 @@ export class CartController {
   ): Promise<Cart> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
-      throw new UnauthorizedException('구매자만 접근 가능합니다');
+      throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     const updatedCart =
       await this.cartService.createOrUpdateCartItemAndReturnCart(

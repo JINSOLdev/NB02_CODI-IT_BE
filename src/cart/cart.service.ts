@@ -30,7 +30,10 @@ export class CartService {
   }
 
   async getCart(buyerId: string) {
-    const cart = await this.cartRepository.getCartByBuyerIdOrThrow(buyerId);
+    const cart = await this.cartRepository.getCartByBuyerId(buyerId);
+    if (!cart) {
+      return [];
+    }
     return cart;
   }
 

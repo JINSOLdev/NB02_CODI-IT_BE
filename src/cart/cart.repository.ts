@@ -63,9 +63,9 @@ export class CartRepository {
   }
 
   // buyerId로 장바구니 조회
-  async getCartByBuyerIdOrThrow(buyerId: string) {
+  async getCartByBuyerId(buyerId: string) {
     try {
-      const cart = await this.prisma.cart.findUniqueOrThrow({
+      const cart = await this.prisma.cart.findUnique({
         where: {
           buyerId,
         },
@@ -82,9 +82,6 @@ export class CartRepository {
           },
         },
       });
-      if (!cart) {
-        throw new BadRequestException('장바구니를 찾을 수 없습니다');
-      }
       return cart;
     } catch (error) {
       if (error instanceof Error) {
@@ -107,6 +104,7 @@ export class CartRepository {
     try {
       await this.prisma.$transaction(async (prisma) => {
         for (const size of sizes) {
+          //장바구니 아이템 업데이트
           await prisma.cartItem.upsert({
             where: {
               cartId_productId_sizeId: {
@@ -126,15 +124,31 @@ export class CartRepository {
             },
           });
         }
+        //장바구니 아이템 조회
+        const cartItems = await prisma.cart.findUniqueOrThrow({
+          where: {
+            id: cartId,
+          },
+          select: {
+            items: true,
+          },
+        });
+        //장바구니의 총 수량 계산
+        const totalQuantityForCart = cartItems.items.reduce(
+          (total, item) => total + item.quantity,
+          0,
+        );
+        //장바구니의 총 수량 업데이트
         await prisma.cart.update({
           where: {
             id: cartId,
           },
           data: {
-            quantity: sizes.reduce((total, size) => total + size.quantity, 0),
+            quantity: totalQuantityForCart,
           },
         });
       });
+      //장바구니 조회
       const cart = await this.prisma.cart.findUniqueOrThrow({
         where: {
           id: cartId,
@@ -146,7 +160,7 @@ export class CartRepository {
       return cart;
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(
+        throw new InternalServerErrorException(
           `장바구니 업데이트 중 오류가 발생했습니다: ${error.message}`,
         );
       }
@@ -156,6 +170,7 @@ export class CartRepository {
     }
   }
 
+  //장바구니 아이템 조회
   async getCartItem(cartItemId: string) {
     try {
       const cartItem = await this.prisma.cartItem.findUniqueOrThrow({
