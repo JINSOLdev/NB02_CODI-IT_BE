@@ -135,6 +135,7 @@ model FavoriteStore {
 model Cart {
   id        String   @id @default(cuid())
   buyerId   String   @unique
+  quantity  Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -211,6 +212,7 @@ model Stock {
   quantity  Int
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
 }
 
 model StockSize {
