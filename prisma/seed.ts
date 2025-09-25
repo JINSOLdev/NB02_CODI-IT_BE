@@ -74,6 +74,15 @@ async function main(){
     },
   });
 
+  await prisma.stockSize.upsert({
+    where: { id: 'dev_size_id' },
+    update: {},
+    create: {
+      id: 'dev_size_id',
+      name: 'DevSize',
+    },
+  });
+
   await prisma.stock.upsert({
     where: { id: 'dev_stock_id' },
     update: {},
@@ -82,15 +91,6 @@ async function main(){
       productId: 'dev_product_id',
       sizeId: 'dev_size_id',
       quantity: 10,
-    },
-  });
-
-  await prisma.stockSize.upsert({
-    where: { id: 'dev_size_id' },
-    update: {},
-    create: {
-      id: 'dev_size_id',
-      name: 'DevSize',
     },
   });
 }
