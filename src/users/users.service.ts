@@ -1,9 +1,18 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import type { User, UserType } from '@prisma/client';
 import { toUserPayload, UserPayload } from './users.mapper';
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -23,7 +32,6 @@ export class UsersService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const userType: UserType = (dto.type ?? 'BUYER') as UserType;
 
     const created = await this.usersRepo.create({
@@ -35,5 +43,31 @@ export class UsersService {
     });
 
     return { user: toUserPayload(created) };
+  }
+
+  async getMe(userId: string): Promise<UserPayload> {
+    const user = await this.usersRepo.findById(userId);
+    if (!user) throw new NotFoundException('유저 정보를 찾을 수 없습니다.');
+    return toUserPayload(user);
+  }
+
+  async updateMe(userId: string, dto: UpdateUserDto): Promise<UserPayload> {
+    const user = await this.usersRepo.findById(userId);
+    if (!user) throw new NotFoundException('유저 정보를 찾을 수 없습니다.');
+
+    const ok = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!ok) {
+      throw new UnauthorizedException('현재 비밀번호가 일치하지 않습니다.');
+    }
+
+    const data: any = {};
+    if (dto.name) data.nickname = dto.name;
+    if (dto.image) data.image = dto.image;
+    if (dto.password) {
+      data.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+
+    const updated = await this.usersRepo.updateById(userId, data);
+    return toUserPayload(updated);
   }
 }
