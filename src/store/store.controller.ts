@@ -1,18 +1,21 @@
 import {
-  Body,
   Controller,
+  UseGuards,
+  Patch,
+  Param,
+  Body,
   Post,
   Req,
-  UseGuards,
   Get,
-  Param,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { AuthUser } from '../auth/auth.types';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
+import { UpdateStoreDto } from './dto/update-store.dto';
 import { StoreDetailDto } from './dto/store-detail.dto';
 import { MyStoreDetailDto } from './dto/mystore-detail.dto';
+import { StoreResponseDto } from './dto/store-response.dto';
 import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('api/stores')
@@ -39,5 +42,16 @@ export class StoreController {
     @Param('storeId', ParseCuidPipe) storeId: string,
   ): Promise<StoreDetailDto> {
     return this.storeService.getStoreDetail(storeId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':storeId')
+  updateStore(
+    @Param('storeId', ParseCuidPipe) storeId: string,
+    @Req() req: Request & { user: { userId: string; type: any } },
+    @Body() dto: UpdateStoreDto,
+  ): Promise<StoreResponseDto> {
+    const user = req.user;
+    return this.storeService.updateStore(storeId, user.userId, user.type, dto);
   }
 }
