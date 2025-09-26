@@ -1,42 +1,41 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class FindProductsQueryDto {
+  @ApiPropertyOptional({ description: '상품 이름 검색' })
+  @IsOptional()
   @IsString()
-  @IsOptional()
-  search?: string; // 상품명 검색
+  name?: string;
 
+  @ApiPropertyOptional({ description: '최소 가격' })
+  @IsOptional()
   @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  @IsOptional()
-  page: number = 1; // 기본값 1
+  minPrice?: number;
 
+  @ApiPropertyOptional({ description: '최대 가격' })
+  @IsOptional()
   @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  @IsOptional()
-  pageSize: number = 10; // 기본값 10
+  maxPrice?: number;
 
-  @IsNumber()
-  @Type(() => Number)
+  @ApiPropertyOptional({ description: '카테고리 ID' })
   @IsOptional()
-  priceMin?: number;
-
-  @IsNumber()
-  @Type(() => Number)
-  @IsOptional()
-  priceMax?: number;
-
   @IsString()
-  @IsOptional()
-  categoryName?: string; // CategoryType enum 값
+  categoryId?: string;
 
-  @IsString()
+  @ApiPropertyOptional({ description: '페이지네이션 skip', default: 0 })
   @IsOptional()
-  size?: string; // SizeType enum 값
+  @IsNumber()
+  skip?: number;
 
-  @IsString()
+  @ApiPropertyOptional({ description: '페이지네이션 take', default: 10 })
   @IsOptional()
-  sort?: string; // 정렬 옵션: recent, lowPrice, highPrice, salesRanking 등
+  @IsNumber()
+  take?: number;
+
+  @ApiPropertyOptional({
+    description: '정렬 옵션 (lowPrice | highPrice | recent | salesRanking)',
+  })
+  @IsOptional()
+  @IsString()
+  sort?: string;
 }

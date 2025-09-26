@@ -4,13 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
-import {
-  Product,
-  Inquiry,
-  Prisma,
-  CategoryType,
-  StockSize,
-} from '@prisma/client';
+import { Inquiry, Prisma, CategoryType, StockSize } from '@prisma/client';
 import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 
 /** 상품 목록 조회용 타입 */
@@ -35,7 +29,7 @@ export interface ProductWithCategory {
     productId: string;
     sizeId: string;
     quantity: number;
-    size: StockSize; // ✅ include: { size: true } 로 함께 가져옴
+    size: StockSize;
   }[];
   category: {
     id: string;
@@ -74,7 +68,7 @@ export class ProductsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /** 상품 등록 */
-  async create(dto: CreateProductDto): Promise<Product> {
+  async create(dto: CreateProductDto): Promise<ProductWithCategory> {
     return this.prisma.product.create({
       data: {
         storeId: dto.storeId,
@@ -83,7 +77,7 @@ export class ProductsRepository {
         image: dto.image,
         price: dto.price,
         discountRate: dto.discountRate,
-        discountPrice: dto.discountRate,
+        discountPrice: dto.discountPrice,
         discountStartTime: dto.discountStartTime
           ? new Date(dto.discountStartTime)
           : null,
@@ -99,7 +93,7 @@ export class ProductsRepository {
         },
       },
       include: {
-        stocks: { include: { size: true } }, // ✅ StockSize join
+        stocks: { include: { size: true } },
         category: true,
       },
     });
@@ -109,21 +103,19 @@ export class ProductsRepository {
   async findAll(query: FindProductsQueryDto): Promise<ProductWithCategory[]> {
     return this.prisma.product.findMany({
       where: {
-        name: query.search ? { contains: query.search } : undefined,
+        name: query.name ? { contains: query.name } : undefined,
         price: {
-          gte: query.priceMin ?? undefined,
-          lte: query.priceMax ?? undefined,
+          gte: query.minPrice ?? undefined,
+          lte: query.maxPrice ?? undefined,
         },
-        category: query.categoryName
-          ? { name: query.categoryName as CategoryType }
-          : undefined,
+        categoryId: query.categoryId ?? undefined,
       },
       include: {
-        stocks: { include: { size: true } }, // ✅ 통일
+        stocks: { include: { size: true } },
         category: true,
       },
-      skip: (query.page - 1) * query.pageSize,
-      take: query.pageSize,
+      skip: query.skip ?? 0,
+      take: query.take ?? 10,
       orderBy: this.mapSortOption(query.sort),
     });
   }
@@ -133,7 +125,7 @@ export class ProductsRepository {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
-        stocks: { include: { size: true } }, // ✅ 통일
+        stocks: { include: { size: true } },
         category: true,
         store: true,
         reviews: true,
@@ -154,7 +146,10 @@ export class ProductsRepository {
   }
 
   /** 상품 수정 */
-  async update(productId: string, dto: UpdateProductDto): Promise<Product> {
+  async update(
+    productId: string,
+    dto: UpdateProductDto,
+  ): Promise<ProductWithCategory> {
     return this.prisma.product.update({
       where: { id: productId },
       data: {
@@ -204,7 +199,7 @@ export class ProductsRepository {
         title: dto.title,
         content: dto.content,
         isSecret: dto.isSecret,
-        userId: 'TEMP_USER_ID', // TODO: 로그인 유저 연결
+        userId: dto.userId,
       },
     });
   }

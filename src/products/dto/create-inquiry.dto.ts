@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateInquiryDto {
   @IsString()
@@ -11,5 +11,9 @@ export class CreateInquiryDto {
 
   @IsBoolean()
   @IsOptional()
-  isSecret?: boolean = false;
+  isSecret?: boolean;
+
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
 }
