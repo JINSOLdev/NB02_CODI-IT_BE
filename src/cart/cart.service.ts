@@ -70,4 +70,15 @@ export class CartService {
     }
     return cartItem;
   }
+
+  async deleteCartItem(userId: string, cartItemId: string) {
+    const cartItem = await this.cartRepository.getCartItem(cartItemId);
+    if (!cartItem) {
+      throw new BadRequestException('장바구니 아이템이 존재하지 않습니다');
+    }
+    if (cartItem.cart.buyerId !== userId) {
+      throw new ForbiddenException('장바구니 아이템 삭제 권한이 없습니다');
+    }
+    return this.cartRepository.deleteCartItem(cartItemId);
+  }
 }

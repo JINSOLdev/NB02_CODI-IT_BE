@@ -8,6 +8,7 @@ import {
   ForbiddenException,
   Get,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { Cart, UserType, CartItem } from '@prisma/client';
@@ -69,5 +70,22 @@ export class CartController {
         createOrUpdateCartItemsDto,
       );
     return updatedCart;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':cartItemId')
+  async deleteCartItem(
+    @Req() req: { user: AuthUser },
+    @Param('cartItemId') cartItemId: string,
+  ) {
+    const user = req.user;
+    if (user.type !== UserType.BUYER) {
+      throw new ForbiddenException('구매자만 접근 가능합니다');
+    }
+    const deletedCartItem = await this.cartService.deleteCartItem(
+      user.userId,
+      cartItemId,
+    );
+    return deletedCartItem;
   }
 }
