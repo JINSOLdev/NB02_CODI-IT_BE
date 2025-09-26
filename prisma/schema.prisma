@@ -206,19 +206,19 @@ enum CategoryType {
 model Stock {
   id        String   @id @default(cuid())
   productId String
-  size      SizeType
+  sizeId    String
+  size      StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
   quantity  Int
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-enum SizeType {
-  Free
-  XS
-  S
-  M
-  L
-  XL
+model StockSize {
+  id String @id @default(cuid())
+  name String
+
+  stocks    Stock[]
+  //cartItems CartItem[]
 }
 
 /**
