@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   BadRequestException,
   Body,
@@ -14,31 +12,21 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { RequestWithCookies, RequestWithUser } from './auth.types';
+import {
+  REFRESH_COOKIE_NAME,
+  setRefreshCookie,
+  clearRefreshCookie,
+} from './cookie.util';
 
 @Controller('api/auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  // 쿠키 옵션 (HttpOnly RT)
-  private cookieOptions() {
-    const days = Number(process.env.REFRESH_EXPIRES_DAYS ?? 7);
-    return {
-      httpOnly: true,
-      sameSite: 'lax' as const,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: days * 24 * 60 * 60 * 1000,
-    };
-  }
-
-  private setRefreshCookie(res: Response, token: string) {
-    res.cookie('refreshToken', token, this.cookieOptions());
-  }
-
   // 로그인: POST /api/auth/login
   @Post('login')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -47,7 +35,7 @@ export class AuthController {
       dto.email,
       dto.password,
     );
-    this.setRefreshCookie(res, refreshToken);
+    setRefreshCookie(res, refreshToken);
     return { user, accessToken };
   }
 
@@ -55,15 +43,14 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
-    @Req() req: Request,
+    @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const rt = req.cookies?.refreshToken as string | undefined;
+    const rt = req.cookies[REFRESH_COOKIE_NAME];
     if (!rt) throw new BadRequestException('Refresh token cookie missing');
 
     const { accessToken, refreshToken: newRT } = await this.auth.refresh(rt);
-
-    this.setRefreshCookie(res, newRT); // 새 RT로 교체 저장
+    setRefreshCookie(res, newRT); // 새 RT로 교체 저장
     return { accessToken };
   }
 
@@ -71,9 +58,12 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    await this.auth.logout(req.user.userId);
-    res.clearCookie('refreshToken', this.cookieOptions());
+  async logout(
+    @Req() req: RequestWithUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.auth.logout(String(req.user.userId));
+    clearRefreshCookie(res);
     return { message: '성공적으로 로그아웃되었습니다.' };
   }
 }
