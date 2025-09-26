@@ -202,4 +202,25 @@ export class CartRepository {
       );
     }
   }
+
+  //장바구니 아이템 삭제
+  async deleteCartItem(cartItemId: string) {
+    try {
+      const cartItem = await this.prisma.cartItem.delete({
+        where: {
+          id: cartItemId,
+        },
+      });
+      return cartItem;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          `장바구니 아이템 삭제 중 오류가 발생했습니다: ${error.message}`,
+        );
+      }
+      throw new InternalServerErrorException(
+        '장바구니 아이템 삭제 중 알 수 없는 오류가 발생했습니다',
+      );
+    }
+  }
 }
