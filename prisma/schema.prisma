@@ -34,7 +34,7 @@ model User {
   sessions       Session[]
   store          Store?          @relation("StoreOwner")
   favoriteStores FavoriteStore[]
-  notifications  Notification[]  @relation("UserNotifications")
+  notifications  Notification[]
 
   cart        Cart?
   orders      Order[]
@@ -147,14 +147,15 @@ model CartItem {
   id        String   @id @default(cuid())
   cartId    String
   productId String
+  sizeId    String
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-
-  @@unique([cartId, productId])
+  size    StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+  @@unique([cartId, productId, sizeId])
 }
 
 /**
@@ -211,6 +212,7 @@ model Stock {
   quantity  Int
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
 }
 
 model StockSize {
@@ -218,8 +220,9 @@ model StockSize {
   name String
 
   stocks    Stock[]
-  //cartItems CartItem[]
+  cartItems CartItem[]
 }
+
 
 /**
  * =========================
@@ -227,7 +230,7 @@ model StockSize {
  * =========================
  */
 model Order {
-  id             String   @id @default(cuid())  
+   id             String   @id @default(cuid())  
   userId         String
   storeId        String
   recipientName  String   
@@ -278,11 +281,10 @@ model OrderItem {
 }
 
 enum OrderStatus {
-  PENDING
-  PAID
-  SHIPPED
-  DELIVERED
+  COMPLETEDPAYMENT
   CANCELED
+  PROCESSING
+  SHIPPED
 }
 
 /**
@@ -298,7 +300,7 @@ model Notification {
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
-  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
