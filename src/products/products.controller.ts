@@ -19,9 +19,8 @@ import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry } from '@prisma/client';
 
-// ✅ 이 컨트롤러 안에서만 사용할 타입
-interface AuthenticatedRequest extends Request {
-  user: { storeId: string };
+interface MockUserHeader {
+  id: string; // ✅ test_store_id 또는 test_buyer_id를 담는 필드
 }
 
 @Controller('products')
@@ -32,9 +31,14 @@ export class ProductsController {
   @Post()
   async create(
     @Body() dto: CreateProductDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: Request,
   ): Promise<Product> {
-    return this.productsService.create(dto, req.user.storeId);
+    const mockUser = req.headers['x-mock-user']
+      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
+      : null;
+    const storeId = mockUser?.id;
+
+    return this.productsService.create(dto, storeId!);
   }
 
   /** 상품 목록 조회 */
@@ -54,15 +58,26 @@ export class ProductsController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
+    @Req() req: Request,
   ): Promise<Product> {
-    return this.productsService.update(id, dto);
+    const mockUser = req.headers['x-mock-user']
+      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
+      : null;
+    const storeId = mockUser?.id;
+
+    return this.productsService.update(id, { ...dto, storeId: storeId! });
   }
 
   /** 상품 삭제 */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.productsService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: Request): Promise<void> {
+    const mockUser = req.headers['x-mock-user']
+      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
+      : null;
+    const storeId = mockUser?.id;
+
+    return this.productsService.remove(id, storeId!);
   }
 
   /** 상품 문의 등록 */
@@ -70,8 +85,18 @@ export class ProductsController {
   async createInquiry(
     @Param('id') productId: string,
     @Body() dto: CreateInquiryDto,
+    @Req() req: Request,
   ): Promise<Inquiry> {
-    return this.productsService.createInquiry(productId, dto);
+    const mockUser = req.headers['x-mock-user']
+      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
+      : null;
+    const userId = mockUser?.id;
+
+    return this.productsService.createInquiry(productId, {
+      ...dto,
+
+      userId: userId!,
+    });
   }
 
   /** 상품 문의 조회 */

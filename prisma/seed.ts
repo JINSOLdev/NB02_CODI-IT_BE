@@ -1,4 +1,3 @@
-// prisma/seed.ts
 import { PrismaClient, UserType } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -8,10 +7,10 @@ async function main() {
 
   // ✅ 공통: 판매자/구매자 (테스트용)
   await prisma.user.upsert({
-    where: { id: '판매자CUID' },
+    where: { id: 'test_seller_id' },
     update: {},
     create: {
-      id: '판매자CUID',
+      id: 'test_seller_id',
       nickname: '스토어주인',
       email: 'owner@test.com',
       passwordHash: 'hashed-password',
@@ -20,10 +19,10 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { id: '구매자CUID' },
+    where: { id: 'test_buyer_id' },
     update: {},
     create: {
-      id: '구매자CUID',
+      id: 'test_buyer_id',
       nickname: '테스트구매자',
       email: 'buyer@test.com',
       passwordHash: 'hashed-password',
@@ -32,38 +31,38 @@ async function main() {
   });
 
   await prisma.store.upsert({
-    where: { id: '스토어CUID' },
+    where: { id: 'test_store_id' },
     update: {},
     create: {
-      id: '스토어CUID',
+      id: 'test_store_id',
       name: '테스트 스토어',
       address: '서울시 강남구',
       detailAddress: '101호',
       phoneNumber: '010-0000-0000',
       content: '테스트 스토어 설명',
-      sellerId: '판매자CUID',
+      sellerId: 'test_seller_id',
     },
   });
 
   await prisma.category.upsert({
-    where: { id: '카테고리CUID' },
+    where: { id: 'test_category_id' },
     update: {},
     create: {
-      id: '카테고리CUID',
+      id: 'test_category_id',
       name: 'TOP',
     },
   });
 
   await prisma.stockSize.upsert({
-    where: { id: '사이즈CUID' },
+    where: { id: 'test_size_id' },
     update: {},
     create: {
-      id: '사이즈CUID',
+      id: 'test_size_id',
       name: 'M',
     },
   });
 
-  // ✅ dev 전용 시드
+  // ✅ dev 전용 시드 (그대로 유지)
   await prisma.user.upsert({
     where: { id: 'dev_seller_id' },
     update: {},

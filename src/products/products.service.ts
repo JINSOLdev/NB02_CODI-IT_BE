@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ProductsRepository } from './products.repository';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -43,10 +47,18 @@ export class ProductsService {
   }
 
   /** 상품 수정 */
-  async update(productId: string, dto: UpdateProductDto): Promise<Product> {
+  async update(
+    productId: string,
+    dto: UpdateProductDto & { storeId: string },
+  ): Promise<Product> {
     const product = await this.productsRepository.findOne(productId);
     if (!product) {
       throw new NotFoundException('상품을 찾을 수 없습니다.');
+    }
+
+    // ✅ 권한 체크
+    if (product.storeId !== dto.storeId) {
+      throw new ForbiddenException('이 상품을 수정할 권한이 없습니다.');
     }
 
     // ✅ 할인 가격 계산
@@ -63,22 +75,25 @@ export class ProductsService {
   }
 
   /** 상품 삭제 */
-  async remove(productId: string): Promise<void> {
+  async remove(productId: string, storeId: string): Promise<void> {
     const product = await this.productsRepository.findOne(productId);
     if (!product) {
       throw new NotFoundException('상품을 찾을 수 없습니다.');
     }
 
-    // TODO: 권한 체크 (storeId === currentUser.storeId)
+    // ✅ 권한 체크
+    if (product.storeId !== storeId) {
+      throw new ForbiddenException('이 상품을 삭제할 권한이 없습니다.');
+    }
+
     await this.productsRepository.remove(productId);
   }
 
   /** 상품 문의 등록 */
   async createInquiry(
     productId: string,
-    dto: CreateInquiryDto & { userId?: string },
+    dto: CreateInquiryDto & { userId: string },
   ): Promise<Inquiry> {
-    // TODO: 현재 로그인한 userId 주입 필요
     return this.productsRepository.createInquiry(productId, dto);
   }
 
