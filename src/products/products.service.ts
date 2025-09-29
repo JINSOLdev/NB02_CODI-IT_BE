@@ -88,7 +88,7 @@ export class ProductsService {
       throw new NotFoundException('상품을 찾을 수 없습니다.');
     }
 
-    // ✅ 권한 체크
+    // ✅ 권한 체크 (Swagger에는 없지만 현재 유지 중)
     if (product.storeId !== dto.storeId) {
       throw new ForbiddenException('이 상품을 수정할 권한이 없습니다.');
     }
@@ -144,6 +144,12 @@ export class ProductsService {
     productId: string,
     dto: CreateInquiryDto & { userId: string },
   ): Promise<Inquiry> {
+    // ✅ 상품 존재 여부 확인 추가
+    const product = await this.productsRepository.findOne(productId);
+    if (!product) {
+      throw new NotFoundException('상품을 찾을 수 없습니다.');
+    }
+
     try {
       return await this.productsRepository.createInquiry(productId, dto);
     } catch (error: unknown) {
@@ -158,6 +164,12 @@ export class ProductsService {
 
   /** 상품 문의 조회 */
   async findInquiries(productId: string): Promise<InquiryWithRelations[]> {
+    // ✅ 상품 존재 여부 확인 추가
+    const product = await this.productsRepository.findOne(productId);
+    if (!product) {
+      throw new NotFoundException('상품을 찾을 수 없습니다.');
+    }
+
     try {
       return await this.productsRepository.findInquiries(productId);
     } catch (error: unknown) {
