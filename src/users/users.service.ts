@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Injectable,
   ConflictException,
@@ -9,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
-import type { User, UserType } from '@prisma/client';
+import type { Prisma, User, UserType } from '@prisma/client';
 import { toUserPayload, UserPayload } from './users.mapper';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,7 +29,7 @@ export class UsersService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const userType: UserType = (dto.type ?? 'BUYER') as UserType;
+    const userType: UserType = dto.type ?? 'BUYER';
 
     const created = await this.usersRepo.create({
       nickname: dto.name,
@@ -60,14 +57,33 @@ export class UsersService {
       throw new UnauthorizedException('현재 비밀번호가 일치하지 않습니다.');
     }
 
-    const data: any = {};
+    const data: Prisma.UserUpdateInput = {};
     if (dto.name) data.nickname = dto.name;
-    if (dto.image) data.image = dto.image;
+    if (dto.image !== undefined) data.image = dto.image;
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 10);
     }
 
     const updated = await this.usersRepo.updateById(userId, data);
     return toUserPayload(updated);
+  }
+  async getMyLikes(userId: string) {
+    const rows = await this.usersRepo.findLikesByUserId(userId);
+    // 스키마 필드명 그대로 반환 (detailAddress, phoneNumber)
+    return rows.map((r) => ({
+      storeId: r.storeId,
+      userId: r.userId,
+      store: {
+        id: r.store.id,
+        name: r.store.name,
+        address: r.store.address,
+        detailAddress: r.store.detailAddress,
+        phoneNumber: r.store.phoneNumber,
+        content: r.store.content,
+        image: r.store.image ?? null,
+        createdAt: r.store.createdAt,
+        updatedAt: r.store.updatedAt,
+      },
+    }));
   }
 }
