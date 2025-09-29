@@ -33,4 +33,12 @@ export class ReviewService {
 
     return this.reviewRepository.updateReview(reviewId, rating, content);
   }
+
+  // Review 삭제
+  async deleteReview(userId: string, reviewId: string) {
+    const existingReview = await this.reviewRepository.findReviewById(reviewId);
+    if (!existingReview) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
+    if (existingReview.userId !== userId) throw new UnauthorizedException('권한이 없습니다.');
+    return this.reviewRepository.deleteReview(reviewId);
+  }
 }
