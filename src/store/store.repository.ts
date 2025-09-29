@@ -55,6 +55,7 @@ export class StoreRepository {
       where: { storeId },
       skip,
       take,
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,

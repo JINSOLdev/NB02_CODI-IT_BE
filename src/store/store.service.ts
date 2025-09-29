@@ -171,8 +171,7 @@ export class StoreService {
       take,
     );
 
-    if (products.length === 0)
-      throw new NotFoundException('등록된 상품이 없습니다.');
+    if (products.length === 0) return { list: [], totalCount };
 
     // 현재 페이지에 보여지는 productIds
     const productIds = products.map((product) => product.id);
