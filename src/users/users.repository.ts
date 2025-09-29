@@ -55,4 +55,28 @@ export class UsersRepository {
   async updateById(id: string, data: Prisma.UserUpdateInput): Promise<User> {
     return this.prisma.user.update({ where: { id }, data });
   }
+
+  async findLikesByUserId(userId: string) {
+    return this.prisma.favoriteStore.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }, // 최근 추가순
+      select: {
+        userId: true,
+        storeId: true,
+        store: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            detailAddress: true,
+            phoneNumber: true,
+            content: true,
+            image: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+  }
 }
