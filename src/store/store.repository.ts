@@ -3,6 +3,18 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Store, OrderStatus } from '@prisma/client';
 
+export type ProductListRow = {
+  id: string;
+  name: string;
+  image: string | null;
+  price: number;
+  discountPrice: number | null;
+  discountRate: number | null;
+  discountStartTime: Date | null;
+  discountEndTime: Date | null;
+  createdAt: Date;
+};
+
 @Injectable()
 export class StoreRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -15,6 +27,51 @@ export class StoreRepository {
 
   async findByStoreId(id: string): Promise<Store | null> {
     return await this.prisma.store.findUnique({ where: { id } });
+  }
+
+  async findStoreIdBySellerId(sellerId: string): Promise<string | null> {
+    const store = await this.prisma.store.findFirst({
+      where: { sellerId },
+      select: { id: true },
+    });
+    return store?.id ?? null;
+  }
+
+  async countProductByStoreId(storeId: string): Promise<number> {
+    return this.prisma.product.count({ where: { storeId } });
+  }
+
+  async findProductPageByStoreId(
+    storeId: string,
+    skip: number,
+    take: number,
+  ): Promise<ProductListRow[]> {
+    return this.prisma.product.findMany({
+      where: { storeId },
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        price: true,
+        discountPrice: true,
+        discountRate: true,
+        discountStartTime: true,
+        discountEndTime: true,
+        createdAt: true,
+      },
+    });
+  }
+  async findStockRowsForProductsIds(
+    productIds: string[],
+  ): Promise<Array<{ productId: string; quantity: number }>> {
+    if (productIds.length === 0) return [];
+    return this.prisma.stock.findMany({
+      where: { productId: { in: productIds } },
+      select: { productId: true, quantity: true },
+    });
   }
 
   async createStore(data: Prisma.StoreCreateInput): Promise<Store> {

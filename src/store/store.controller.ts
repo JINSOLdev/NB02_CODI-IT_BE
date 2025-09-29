@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   Get,
+  Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { AuthUser } from '../auth/auth.types';
@@ -17,6 +18,8 @@ import { StoreDetailDto } from './dto/store-detail.dto';
 import { MyStoreDetailDto } from './dto/mystore-detail.dto';
 import { StoreResponseDto } from './dto/store-response.dto';
 import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
+import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
+import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 
 @Controller('api/stores')
 export class StoreController {
@@ -35,6 +38,16 @@ export class StoreController {
   getMyStoreDetail(@Req() req: { user: AuthUser }): Promise<MyStoreDetailDto> {
     const user = req.user;
     return this.storeService.getMyStoreDetail(user.userId, user.type);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('detail/my/product')
+  getMyStoreProducts(
+    @Req() req: { user: AuthUser },
+    @Query() query: MyStoreProductQueryDto,
+  ): Promise<MyStoreProductListWrapperDto> {
+    const { userId, type } = req.user;
+    return this.storeService.getMyStoreProducts(userId, type, query);
   }
 
   @Get(':storeId')
