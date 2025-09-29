@@ -46,4 +46,12 @@ export class ReviewRepository {
       select: { id: true, rating: true, content: true, userId: true, productId: true, createdAt: true },
     });
   }
+
+  // Review 삭제
+  deleteReview(reviewId: string) {
+    return this.prisma.review.delete({
+      where: { id: reviewId },
+      select: { id: true, content: true, },
+    });
+  }
 }
