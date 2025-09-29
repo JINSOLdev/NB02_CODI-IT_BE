@@ -1,47 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma, User } from '@prisma/client';
+import { USER_AUTH_SELECT, FAVORITE_WITH_STORE_SELECT } from './users.select';
 
 export type UserForAuth = Pick<
   User,
   'id' | 'email' | 'nickname' | 'type' | 'gradeLevel' | 'passwordHash'
 >;
 
+// favorite + store select 결과 타입 (정적 타입 안전)
+export type FavoriteWithStoreRow = Prisma.FavoriteStoreGetPayload<{
+  select: typeof FAVORITE_WITH_STORE_SELECT;
+}>;
+
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findById(id: string): Promise<User | null>;
+  async findById(id: string | undefined | null): Promise<User | null>;
   async findById(id: string | undefined | null): Promise<User | null> {
     if (!id) return null;
     return this.prisma.user.findUnique({ where: { id } });
-  }
-
-  // 이메일 중복 확인용
-  async existsByEmail(email: string): Promise<boolean> {
-    const r = await this.prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-    return !!r;
-  }
-
-  // 로그인용 (해시 포함)
-  async findByEmailForAuth(email: string): Promise<UserForAuth | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        nickname: true,
-        type: true,
-        gradeLevel: true,
-        passwordHash: true,
-      },
-    });
-  }
-
-  async findByEmail(email: string): Promise<UserForAuth | null> {
-    return this.findByEmailForAuth(email);
   }
 
   async create(data: Prisma.UserCreateInput): Promise<User> {
@@ -56,27 +36,32 @@ export class UsersRepository {
     return this.prisma.user.update({ where: { id }, data });
   }
 
-  async findLikesByUserId(userId: string) {
+  async exists(where: Prisma.UserWhereInput): Promise<boolean> {
+    const count = await this.prisma.user.count({ where });
+    return count > 0;
+  }
+
+  async existsByEmail(email: string): Promise<boolean> {
+    return this.exists({ email });
+  }
+
+  async findByEmailForAuth(email: string): Promise<UserForAuth | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: USER_AUTH_SELECT,
+    }) as Promise<UserForAuth | null>;
+  }
+
+  async findByEmail(email: string): Promise<UserForAuth | null> {
+    return this.findByEmailForAuth(email);
+  }
+
+  // 관심 스토어 조회
+  async findLikesByUserId(userId: string): Promise<FavoriteWithStoreRow[]> {
     return this.prisma.favoriteStore.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' }, // 최근 추가순
-      select: {
-        userId: true,
-        storeId: true,
-        store: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            detailAddress: true,
-            phoneNumber: true,
-            content: true,
-            image: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
+      orderBy: { createdAt: 'desc' },
+      select: FAVORITE_WITH_STORE_SELECT,
     });
   }
 }
