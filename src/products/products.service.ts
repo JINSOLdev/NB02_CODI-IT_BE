@@ -12,9 +12,20 @@ export class ProductsService {
   constructor(private readonly productsRepository: ProductsRepository) {}
 
   /** 상품 등록 */
-  async create(dto: CreateProductDto): Promise<Product> {
-    // TODO: 현재 로그인한 사용자가 SELLER인지 확인 후 storeId 연결
-    return this.productsRepository.create(dto);
+  async create(dto: CreateProductDto, storeId: string): Promise<Product> {
+    const { price, discountRate } = dto;
+
+    // ✅ 할인 가격 계산
+    let discountPrice: number | undefined;
+    if (discountRate && discountRate > 0) {
+      discountPrice = Math.floor(price * (1 - discountRate / 100));
+    }
+
+    return this.productsRepository.create({
+      ...dto,
+      storeId,
+      discountPrice,
+    });
   }
 
   /** 상품 목록 조회 */
@@ -38,8 +49,17 @@ export class ProductsService {
       throw new NotFoundException('상품을 찾을 수 없습니다.');
     }
 
-    // TODO: 현재 로그인한 사용자가 상품 소유자인지 확인
-    return this.productsRepository.update(productId, dto);
+    // ✅ 할인 가격 계산
+    const { price, discountRate } = dto;
+    let discountPrice: number | undefined;
+    if (price && discountRate && discountRate > 0) {
+      discountPrice = Math.floor(price * (1 - discountRate / 100));
+    }
+
+    return this.productsRepository.update(productId, {
+      ...dto,
+      discountPrice,
+    });
   }
 
   /** 상품 삭제 */
@@ -56,7 +76,7 @@ export class ProductsService {
   /** 상품 문의 등록 */
   async createInquiry(
     productId: string,
-    dto: CreateInquiryDto,
+    dto: CreateInquiryDto & { userId?: string },
   ): Promise<Inquiry> {
     // TODO: 현재 로그인한 userId 주입 필요
     return this.productsRepository.createInquiry(productId, dto);

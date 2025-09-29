@@ -40,7 +40,7 @@ export class UpdateProductDto {
 
   @IsNumber()
   @IsOptional()
-  discountPrice?: number;
+  discountPrice?: number | null;
 
   @IsString()
   @IsOptional()
