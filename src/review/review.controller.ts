@@ -46,6 +46,7 @@ export class ReviewController {
   }
 
   // Review 삭제
+  @UseGuards(JwtAuthGuard)
   @Delete('/reviews/:reviewId')
   deleteReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
     const user = req.user;

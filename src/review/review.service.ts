@@ -15,6 +15,7 @@ export class ReviewService {
   async findAllByProductId(userId: string, productId: string, query: { limit: number; page: number }) {
     const product = await this.reviewRepository.findProductById(productId);
     if (!product) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
+
     return this.reviewRepository.findAllByProductId(productId, query);
   }
 
@@ -22,6 +23,7 @@ export class ReviewService {
   async findReviewById(reviewId: string) {
     const existingReview = await this.reviewRepository.findReviewById(reviewId);
     if (!existingReview) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
+
     return this.reviewRepository.findReviewById(reviewId);
   }
 
@@ -39,6 +41,7 @@ export class ReviewService {
     const existingReview = await this.reviewRepository.findReviewById(reviewId);
     if (!existingReview) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
     if (existingReview.userId !== userId) throw new UnauthorizedException('권한이 없습니다.');
+
     return this.reviewRepository.deleteReview(reviewId);
   }
 }
