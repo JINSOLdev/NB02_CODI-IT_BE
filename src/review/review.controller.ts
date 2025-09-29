@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { CreateReviewDto } from './review.dto';
 import { ReviewService } from './review.service';
 import { AuthUser } from 'src/auth/auth.types';
@@ -43,5 +43,13 @@ export class ReviewController {
     if (body.content !== undefined && body.content.length < 10) throw new Error('리뷰 내용은 최소 10자 이상이어야 합니다.');
 
     return this.reviewService.updateReview(user.userId, reviewId, body.rating, body.content);
+  }
+
+  // Review 삭제
+  @UseGuards(JwtAuthGuard)
+  @Delete('/reviews/:reviewId')
+  deleteReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
+    const user = req.user;
+    return this.reviewService.deleteReview(user.userId, reviewId);
   }
 }
