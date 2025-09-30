@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { AnswerStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetInquiriesDto } from './inquiry.dto';
 

@@ -1,5 +1,4 @@
 import { Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
-import { AnswerStatus } from "@prisma/client";
 import { JwtAuthGuard } from "src/auth/jwt.guard";
 import { AuthUser } from "src/auth/auth.types";
 import { InquiryService } from "./inquiry.service";
