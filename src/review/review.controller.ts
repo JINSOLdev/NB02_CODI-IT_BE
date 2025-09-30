@@ -27,14 +27,14 @@ export class ReviewController {
   }
 
   // Review 단건 조회
-  @Get('/reviews/:reviewId')
+  @Get('/review/:reviewId')
   findReviewById(@Param('reviewId') reviewId: string) {
     return this.reviewService.findReviewById(reviewId);
   }
 
   // Review 수정
   @UseGuards(JwtAuthGuard)
-  @Patch('/reviews/:reviewId')
+  @Patch('/review/:reviewId')
   updateReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string, @Body() body: { rating?: number; content?: string }) {
     const user = req.user;
 
@@ -47,7 +47,7 @@ export class ReviewController {
 
   // Review 삭제
   @UseGuards(JwtAuthGuard)
-  @Delete('/reviews/:reviewId')
+  @Delete('/review/:reviewId')
   deleteReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
     const user = req.user;
     return this.reviewService.deleteReview(user.userId, reviewId);
