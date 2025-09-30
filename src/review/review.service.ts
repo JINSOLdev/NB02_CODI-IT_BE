@@ -1,13 +1,19 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ReviewRepository } from './review.repository';
-import { CreateReviewDto } from './review.dto';
+import { CreateReviewDto, UpdateReviewDto } from './review.dto';
 
 @Injectable()
 export class ReviewService {
   constructor(private reviewRepository: ReviewRepository) { }
 
   // Review 등록
-  create(createReviewDto: CreateReviewDto & { userId: string; productId: string }) {
+  async create(createReviewDto: CreateReviewDto & { userId: string; productId: string }) {
+    const order = await this.reviewRepository.findOrderByCondition(createReviewDto.userId, createReviewDto.productId);
+    if (!order) throw new UnauthorizedException('해당 상품을 구매한 사용자만 리뷰를 작성할 수 있습니다.');
+
+    const existingReview = await this.reviewRepository.findReviewByCondition(createReviewDto.userId, createReviewDto.productId);
+    if (existingReview) throw new UnauthorizedException('이미 리뷰를 작성한 상품입니다.');
+
     return this.reviewRepository.create({ ...createReviewDto });
   }
 
@@ -20,20 +26,21 @@ export class ReviewService {
   }
 
   // Review 단건 조회
-  async findReviewById(reviewId: string) {
+  async findReviewById(userId: string, reviewId: string) {
     const existingReview = await this.reviewRepository.findReviewById(reviewId);
     if (!existingReview) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
+    if (existingReview.userId !== userId) throw new UnauthorizedException('인증이 필요합니다.');
 
     return this.reviewRepository.findReviewById(reviewId);
   }
 
   // Review 수정
-  async updateReview(userId: string, reviewId: string, rating?: number, content?: string) {
+  async updateReview(userId: string, reviewId: string, updateReviewDto: UpdateReviewDto) {
     const existingReview = await this.reviewRepository.findReviewById(reviewId);
     if (!existingReview) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
-    if (existingReview.userId !== userId) throw new UnauthorizedException('권한이 없습니다.');
+    if (existingReview.userId !== userId) throw new UnauthorizedException('인증이 필요합니다.');
 
-    return this.reviewRepository.updateReview(reviewId, rating, content);
+    return this.reviewRepository.updateReview(reviewId, updateReviewDto);
   }
 
   // Review 삭제
