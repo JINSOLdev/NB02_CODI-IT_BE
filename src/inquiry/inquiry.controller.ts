@@ -5,13 +5,13 @@ import { AuthUser } from "src/auth/auth.types";
 import { InquiryService } from "./inquiry.service";
 import { GetInquiriesDto } from "./inquiry.dto";
 
-@Controller('/api')
+@Controller('api/inquiries')
 export class InquiryController {
   constructor(private inquiryService: InquiryService) { }
 
   // 내가 작성한 문의 목록 조회
   @UseGuards(JwtAuthGuard)
-  @Get('/inquiries')
+  @Get()
   getMyInquiries(@Req() req: { user: AuthUser }, @Query() query: GetInquiriesDto) {
     const user = req.user;
 
