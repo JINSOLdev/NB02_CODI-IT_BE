@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateReviewDto } from './review.dto';
+import { CreateReviewDto, UpdateReviewDto } from './review.dto';
 
 @Injectable()
 export class ReviewRepository {
@@ -14,7 +14,31 @@ export class ReviewRepository {
     });
   }
 
-  // Review 등록 시, Product 존재 여부 확인
+  // Review 등록 시, Order 존재 여부 확인
+  findOrderByCondition(userId: string, productId: string) {
+    return this.prisma.order.findFirst({
+      where: {
+        userId,
+        items: {
+          some: {
+            productId,
+          },
+        },
+      },
+    });
+  }
+
+  // Review 등록 시, 기존에 작성한 Review 존재 여부 확인
+  findReviewByCondition(userId: string, productId: string) {
+    return this.prisma.review.findFirst({
+      where: {
+        userId,
+        productId,
+      },
+    });
+  }
+
+  // Review 조회 시, Product 존재 여부 확인
   findProductById(productId: string) {
     return this.prisma.product.findUnique({ where: { id: productId } });
   }
@@ -39,10 +63,10 @@ export class ReviewRepository {
   }
 
   // Review 수정
-  updateReview(reviewId: string, rating?: number, content?: string) {
+  updateReview(reviewId: string, updateReviewDto: UpdateReviewDto) {
     return this.prisma.review.update({
       where: { id: reviewId },
-      data: { rating, content },
+      data: { ...updateReviewDto },
       select: { id: true, rating: true, content: true, userId: true, productId: true, createdAt: true },
     });
   }
