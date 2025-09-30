@@ -10,6 +10,7 @@ import type { Prisma, User, UserType } from '@prisma/client';
 import { toUserPayload, UserPayload } from './users.mapper';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { toFavoriteStoreList, FavoriteStoreItemDto } from './users.mapper';
 
 @Injectable()
 export class UsersService {
@@ -67,23 +68,8 @@ export class UsersService {
     const updated = await this.usersRepo.updateById(userId, data);
     return toUserPayload(updated);
   }
-  async getMyLikes(userId: string) {
+  async getMyLikes(userId: string): Promise<FavoriteStoreItemDto[]> {
     const rows = await this.usersRepo.findLikesByUserId(userId);
-    // 스키마 필드명 그대로 반환 (detailAddress, phoneNumber)
-    return rows.map((r) => ({
-      storeId: r.storeId,
-      userId: r.userId,
-      store: {
-        id: r.store.id,
-        name: r.store.name,
-        address: r.store.address,
-        detailAddress: r.store.detailAddress,
-        phoneNumber: r.store.phoneNumber,
-        content: r.store.content,
-        image: r.store.image ?? null,
-        createdAt: r.store.createdAt,
-        updatedAt: r.store.updatedAt,
-      },
-    }));
+    return toFavoriteStoreList(rows);
   }
 }
