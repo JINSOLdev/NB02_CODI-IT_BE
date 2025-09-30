@@ -31,7 +31,7 @@ export class ReviewService {
     if (!existingReview) throw new NotFoundException('요청한 리소스를 찾을 수 없습니다.');
     if (existingReview.userId !== userId) throw new UnauthorizedException('인증이 필요합니다.');
 
-    return this.reviewRepository.findReviewById(reviewId);
+    return existingReview;
   }
 
   // Review 수정
