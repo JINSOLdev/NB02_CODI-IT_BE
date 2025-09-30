@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -49,5 +50,13 @@ export class UsersController {
   @Get('me/likes')
   getMyLikes(@Req() req: RequestWithUser) {
     return this.usersService.getMyLikes(req.user.userId);
+  }
+  // 회원 탈퇴: DELETE /api/users/delete
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('delete')
+  @HttpCode(HttpStatus.OK)
+  async deleteMe(@Req() req: RequestWithUser) {
+    await this.usersService.deleteMe(req.user.userId);
+    return { message: '회원 탈퇴가 완료되었습니다.' };
   }
 }
