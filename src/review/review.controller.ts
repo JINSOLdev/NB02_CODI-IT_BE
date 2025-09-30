@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { CreateReviewDto } from './review.dto';
+import { CreateReviewDto, UpdateReviewDto } from './review.dto';
 import { ReviewService } from './review.service';
 import { AuthUser } from 'src/auth/auth.types';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
@@ -28,21 +28,19 @@ export class ReviewController {
 
   // Review 단건 조회
   @Get('/review/:reviewId')
-  findReviewById(@Param('reviewId') reviewId: string) {
-    return this.reviewService.findReviewById(reviewId);
+  findReviewById(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
+    const user = req.user;
+
+    return this.reviewService.findReviewById(user.userId, reviewId);
   }
 
   // Review 수정
   @UseGuards(JwtAuthGuard)
   @Patch('/review/:reviewId')
-  updateReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string, @Body() body: { rating?: number; content?: string }) {
+  updateReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string, @Body() updateReviewDto: UpdateReviewDto) {
     const user = req.user;
 
-    if (body.rating !== undefined && body.rating < 1) throw new Error('리뷰 평점은 최소 1점 이상이어야 합니다.');
-    if (body.rating !== undefined && body.rating > 5) throw new Error('리뷰 평점은 최대 5점 이하이어야 합니다.');
-    if (body.content !== undefined && body.content.length < 10) throw new Error('리뷰 내용은 최소 10자 이상이어야 합니다.');
-
-    return this.reviewService.updateReview(user.userId, reviewId, body.rating, body.content);
+    return this.reviewService.updateReview(user.userId, reviewId, updateReviewDto);
   }
 
   // Review 삭제
@@ -50,6 +48,7 @@ export class ReviewController {
   @Delete('/review/:reviewId')
   deleteReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
     const user = req.user;
+
     return this.reviewService.deleteReview(user.userId, reviewId);
   }
 }
