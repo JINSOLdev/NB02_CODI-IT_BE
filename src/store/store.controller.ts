@@ -55,7 +55,7 @@ export class StoreController {
   @Post(':storeId/favorite')
   registerInterestStore(
     @Param('storeId', ParseCuidPipe) storeId: string,
-    @Req() req: Request & { user: { userId: string } },
+    @Req() req: { user: AuthUser },
   ): Promise<{ store: MyInterestStoreDto }> {
     const user = req.user;
     return this.storeService.registerInterestStore(storeId, user.userId);

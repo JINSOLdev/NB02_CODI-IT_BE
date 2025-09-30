@@ -229,10 +229,10 @@ export class StoreService {
     };
   }
 
-  private interestStoreDto(store: Store, userId: string): MyInterestStoreDto {
+  private interestStoreDto(store: Store): MyInterestStoreDto {
     return {
       id: store.id,
-      userId,
+      userId: store.sellerId,
       name: store.name,
       address: store.address,
       detailAddress: store.detailAddress ?? undefined,
@@ -261,6 +261,6 @@ export class StoreService {
 
     await this.storeRepo.registerFavoriteStore(storeId, userId);
 
-    return { store: this.interestStoreDto(store, userId) };
+    return { store: this.interestStoreDto(store) };
   }
 }
