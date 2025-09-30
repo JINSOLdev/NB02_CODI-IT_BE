@@ -10,6 +10,7 @@ import {
   startOfMonth,
   startOfYear,
 } from 'date-fns';
+import { NotFoundException } from '@nestjs/common';
 export interface SalesPeriod {
   current: { totalOrders: number; totalSales: number };
   previous: { totalOrders: number; totalSales: number };
@@ -46,7 +47,7 @@ export class DashboardService {
       where: { sellerId: userId },
     });
     if (!store) {
-      throw new Error('판매자 정보를 찾을 수 없습니다');
+      throw new NotFoundException('판매자 정보를 찾을 수 없습니다');
     }
     // 1. 일/주/월/년 판매 데이터 조회
     // 기간 구분
@@ -73,9 +74,8 @@ export class DashboardService {
       },
     ];
 
-    // 기간별 구분
-    const salesData: Partial<SalesPeriod> = {};
-    for (const period of periods) {
+    // 판매 데이터 조회
+    const salesDataPromises = periods.map(async (period) => {
       //현재 기간
       const current = await this.prisma.order.aggregate({
         where: {
@@ -103,7 +103,6 @@ export class DashboardService {
       const totalSalesCurrent = current._sum.totalPrice || 0;
       const totalOrdersPrevious = previous._count.id || 0;
       const totalSalesPrevious = previous._sum.totalPrice || 0;
-
       const orderChangeRate = totalOrdersPrevious
         ? Number(
             ((totalOrdersCurrent - totalOrdersPrevious) / totalOrdersPrevious) *
@@ -116,9 +115,7 @@ export class DashboardService {
               100,
           ).toFixed(1)
         : 0;
-
-      // 판매 데이터 저장
-      salesData[period.key] = {
+      return {
         current: {
           totalOrders: totalOrdersCurrent,
           totalSales: totalSalesCurrent,
@@ -132,89 +129,79 @@ export class DashboardService {
           totalSales: salesChangeRate,
         },
       };
-    }
+    });
+
+    const salesData = await Promise.all(salesDataPromises);
 
     // 2. 많이 팔린 상품 조회
-    // 주문순 상품 구분
-    const topSales = await this.prisma.orderItem.groupBy({
-      by: ['productId'],
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 5,
-    });
-    // 상품 정보
     const products = await this.prisma.product.findMany({
       where: {
-        id: {
-          in: topSales.map((item) => item.productId),
-        },
+        storeId: store.id, // 특정 스토어 ID로 필터링
       },
       select: {
         id: true,
         name: true,
         price: true,
+        sales: true,
+      },
+      orderBy: {
+        sales: 'desc', // 판매량(sales) 기준 내림차순
       },
     });
 
-    const topSalesData = topSales.map((item) => ({
-      totalOrders: item._count.id,
-      product: products.find((product) => product.id === item.productId),
+    const topSales = products.map((product) => ({
+      totalOrders: product.sales,
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+      },
     }));
 
     // 3. 가격대별 매출 조회
-    // 가격대 구분
-    const priceRanges = [
-      { label: '~20,000 원', min: 0, max: 20000 },
-      { label: '~50,000 원', min: 20000, max: 50000 },
-      { label: '~100,000 원', min: 50000, max: 100000 },
-      { label: '~200,000 원', min: 100000, max: 200000 },
-      { label: '200,000원 이상', min: 200000, max: 99999999 },
-    ];
 
-    // 스토어 총 매출
-    const totalSales = await this.prisma.orderItem.aggregate({
-      where: {
-        order: {
-          storeId: store.id,
-          status: 'COMPLETEDPAYMENT',
-        },
-      },
-      _sum: { price: true },
-    });
+    // 가격대별 매출 가져오기
+    const priceRangeData = await this.prisma.$queryRaw<{ price_range: string; total_sales: number }[]>`
+    SELECT
+      CASE
+        WHEN oi.price < 20000 THEN '~20,000 원'
+        WHEN oi.price < 50000 THEN '~50,000 원'
+        WHEN oi.price < 100000 THEN '~100,000 원'
+        WHEN oi.price < 200000 THEN '~200,000 원'
+        ELSE '200,000원 이상'
+      END as price_range,
+      SUM(oi.price) as total_sales
+    FROM "OrderItem" oi
+    JOIN "Order" o ON o.id = oi."orderId"
+    WHERE o."storeId" = ${store.id}
+      AND o.status = 'COMPLETEDPAYMENT'
+    GROUP BY price_range
+    ORDER BY MIN(oi.price);
+  `;
 
-    // 가격대별 매출
-    const priceRangeData: PriceRange[] = [];
-    for (const range of priceRanges) {
-      const sales = await this.prisma.orderItem.aggregate({
-        where: {
-          order: {
-            storeId: store.id,
-            status: 'COMPLETEDPAYMENT',
-          },
-          price: {
-            gte: range.min,
-            lte: range.max,
-          },
-        },
-        _sum: { price: true },
-      });
-      priceRangeData.push({
-        priceRange: range.label,
-        totalSales: sales._sum.price || 0,
-        percentage: totalSales._sum.price
-          ? (() => {
-              const ratio = (sales._sum.price || 0) / totalSales._sum.price;
-              const percentage = ratio * 100;
-              return Number(percentage.toFixed(1));
-            })()
+    // 총 매출 계산
+    const totalSales = priceRangeData.reduce(
+      (acc, cur) => acc + Number(cur.total_sales),
+      0,
+    );
+
+    // 가격대별 매출 + 매출비중 계산
+    const result = priceRangeData.map((row) => ({
+      priceRange: row.price_range,
+      totalSales: Number(row.total_sales),
+      percentage:
+        totalSales > 0
+          ? Number(((Number(row.total_sales) / totalSales) * 100).toFixed(1))
           : 0,
-      });
-    }
+    }));
 
     return {
-      salesData,
-      topSalesData,
-      priceRangeData,
+      today: salesData[0],
+      week: salesData[1],
+      month: salesData[2],
+      year: salesData[3],
+      topSales,
+      priceRange: result,
     };
   }
 }
