@@ -64,4 +64,8 @@ export class UsersRepository {
       select: FAVORITE_WITH_STORE_SELECT,
     });
   }
+
+  async deleteById(id: string): Promise<void> {
+    await this.prisma.user.delete({ where: { id } });
+  }
 }
