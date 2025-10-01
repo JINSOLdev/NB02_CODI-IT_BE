@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { S3Module } from './s3/s3.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
+import { InquiryModule } from './inquiry/inquiry.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UsersModule,
     AuthModule,
     ReviewModule,
+    InquiryModule,
     DashboardModule,
   ],
   controllers: [AppController],
