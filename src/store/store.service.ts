@@ -16,7 +16,7 @@ import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
 import { MyStoreProductListItemDto } from './dto/store-product-list.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 import { DateTime } from 'luxon';
-
+import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 @Injectable()
 export class StoreService {
   constructor(private readonly storeRepo: StoreRepository) {}
@@ -225,5 +225,20 @@ export class StoreService {
       createdAt: createdAtUTC ?? product.createdAt.toISOString(),
       isSoldOut: stockSum <= 0,
     };
+  }
+
+  async deleteInterestStore(
+    storeId: string,
+    userId: string,
+  ): Promise<{ store: MyInterestStoreDto }> {
+    const store = await this.storeRepo.findByStoreId(storeId);
+
+    if (!store) throw new NotFoundException('스토어를 찾을 수 없습니다.');
+
+    if (!userId) throw new UnauthorizedException('로그인이 필요합니다.');
+
+    await this.storeRepo.deleteFavoriteStore(storeId, userId);
+
+    return { store: this.interestStoreDto(store) };
   }
 }
