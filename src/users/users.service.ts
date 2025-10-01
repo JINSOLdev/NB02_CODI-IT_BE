@@ -72,4 +72,9 @@ export class UsersService {
     const rows = await this.usersRepo.findLikesByUserId(userId);
     return toFavoriteStoreList(rows);
   }
+  async deleteMe(userId: string): Promise<void> {
+    const user = await this.usersRepo.findById(userId);
+    if (!user) throw new NotFoundException('유저를 찾을 수 없습니다.');
+    await this.usersRepo.deleteById(userId);
+  }
 }
