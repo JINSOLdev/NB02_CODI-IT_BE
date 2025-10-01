@@ -10,8 +10,8 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { ProductsService, ProductWithStore } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -19,10 +19,8 @@ import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry } from '@prisma/client';
 import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
-
-interface MockUserHeader {
-  id: string; // 로그인 유저 ID (sellerId 또는 buyerId)
-}
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import type { RequestWithUser } from '../auth/auth.types';
 
 @Controller('products')
 export class ProductsController {
@@ -30,25 +28,21 @@ export class ProductsController {
 
   /** 상품 등록 */
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() dto: CreateProductDto,
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
   ): Promise<Product> {
-    const mockUser = req.headers['x-mock-user']
-      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
-      : null;
-    const sellerId = mockUser?.id; // ✅ sellerId
-
-    return this.productsService.create(dto, sellerId!);
+    return this.productsService.create(dto, req.user.userId);
   }
 
-  /** 상품 목록 조회 */
+  /** 상품 목록 조회 (비로그인 가능) */
   @Get()
   async findAll(@Query() query: FindProductsQueryDto): Promise<Product[]> {
     return this.productsService.findAll(query);
   }
 
-  /** 상품 상세 조회 */
+  /** 상품 상세 조회 (비로그인 가능) */
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ProductWithStore> {
     return this.productsService.findOne(id);
@@ -56,57 +50,44 @@ export class ProductsController {
 
   /** 상품 수정 */
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
   ): Promise<Product> {
-    const mockUser = req.headers['x-mock-user']
-      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
-      : null;
-    const sellerId = mockUser?.id;
-
-    return this.productsService.update(id, dto, sellerId!);
+    return this.productsService.update(id, dto, req.user.userId);
   }
 
   /** 상품 삭제 */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string, @Req() req: Request): Promise<void> {
-    const mockUser = req.headers['x-mock-user']
-      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
-      : null;
-    const sellerId = mockUser?.id;
-
-    return this.productsService.remove(id, sellerId!);
+  async remove(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+  ): Promise<void> {
+    return this.productsService.remove(id, req.user.userId);
   }
 
   /** 상품 문의 등록 */
   @Post(':id/inquiries')
+  @UseGuards(JwtAuthGuard)
   async createInquiry(
     @Param('id') productId: string,
     @Body() dto: CreateInquiryDto,
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
   ): Promise<Inquiry> {
-    const mockUser = req.headers['x-mock-user']
-      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
-      : null;
-    const userId = mockUser?.id;
-
-    return this.productsService.createInquiry(productId, dto, userId!);
+    return this.productsService.createInquiry(productId, dto, req.user.userId);
   }
 
   /** 상품 문의 조회 */
   @Get(':id/inquiries')
+  @UseGuards(JwtAuthGuard)
   async findInquiries(
     @Param('id') productId: string,
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
   ): Promise<InquiryWithRelations[]> {
-    const mockUser = req.headers['x-mock-user']
-      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
-      : null;
-    const userId = mockUser?.id;
-
-    return this.productsService.findInquiries(productId, userId!);
+    return this.productsService.findInquiries(productId, req.user.userId);
   }
 }
