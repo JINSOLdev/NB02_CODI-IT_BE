@@ -10,6 +10,7 @@ import { S3Module } from './s3/s3.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
 import { InquiryModule } from './inquiry/inquiry.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { InquiryModule } from './inquiry/inquiry.module';
     AuthModule,
     ReviewModule,
     InquiryModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
