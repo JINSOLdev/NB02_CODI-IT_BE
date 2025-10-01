@@ -190,7 +190,7 @@ model Product {
 
 model Category {
   id       String       @id @default(cuid())
-  name     CategoryType
+  name     CategoryType @unique
   products Product[]
 }
 

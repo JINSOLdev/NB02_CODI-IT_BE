@@ -12,15 +12,16 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { ProductsService } from './products.service';
+import { ProductsService, ProductWithStore } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry } from '@prisma/client';
+import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 
 interface MockUserHeader {
-  id: string; // ✅ test_store_id 또는 test_buyer_id를 담는 필드
+  id: string; // 로그인 유저 ID (sellerId 또는 buyerId)
 }
 
 @Controller('products')
@@ -36,9 +37,9 @@ export class ProductsController {
     const mockUser = req.headers['x-mock-user']
       ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
       : null;
-    const storeId = mockUser?.id;
+    const sellerId = mockUser?.id; // ✅ sellerId
 
-    return this.productsService.create(dto, storeId!);
+    return this.productsService.create(dto, sellerId!);
   }
 
   /** 상품 목록 조회 */
@@ -49,7 +50,7 @@ export class ProductsController {
 
   /** 상품 상세 조회 */
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Product> {
+  async findOne(@Param('id') id: string): Promise<ProductWithStore> {
     return this.productsService.findOne(id);
   }
 
@@ -63,9 +64,9 @@ export class ProductsController {
     const mockUser = req.headers['x-mock-user']
       ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
       : null;
-    const storeId = mockUser?.id;
+    const sellerId = mockUser?.id;
 
-    return this.productsService.update(id, { ...dto, storeId: storeId! });
+    return this.productsService.update(id, dto, sellerId!);
   }
 
   /** 상품 삭제 */
@@ -75,9 +76,9 @@ export class ProductsController {
     const mockUser = req.headers['x-mock-user']
       ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
       : null;
-    const storeId = mockUser?.id;
+    const sellerId = mockUser?.id;
 
-    return this.productsService.remove(id, storeId!);
+    return this.productsService.remove(id, sellerId!);
   }
 
   /** 상품 문의 등록 */
@@ -92,16 +93,20 @@ export class ProductsController {
       : null;
     const userId = mockUser?.id;
 
-    return this.productsService.createInquiry(productId, {
-      ...dto,
-
-      userId: userId!,
-    });
+    return this.productsService.createInquiry(productId, dto, userId!);
   }
 
   /** 상품 문의 조회 */
   @Get(':id/inquiries')
-  async findInquiries(@Param('id') productId: string): Promise<Inquiry[]> {
-    return this.productsService.findInquiries(productId);
+  async findInquiries(
+    @Param('id') productId: string,
+    @Req() req: Request,
+  ): Promise<InquiryWithRelations[]> {
+    const mockUser = req.headers['x-mock-user']
+      ? (JSON.parse(req.headers['x-mock-user'] as string) as MockUserHeader)
+      : null;
+    const userId = mockUser?.id;
+
+    return this.productsService.findInquiries(productId, userId!);
   }
 }

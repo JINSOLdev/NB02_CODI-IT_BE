@@ -7,10 +7,8 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { Express } from 'express';
 
 // ✅ 시드 파일 기준 test_* ID 사용
-const mockStoreId = 'test_store_id';
-const mockUserId = 'test_buyer_id';
-const mockCategoryId = 'test_category_id';
-const mockSizeId = 'test_size_id';
+const mockUserId = 'test_buyer_id'; // 구매자 유저 ID
+const mockSellerId = 'test_seller_id'; // 판매자 유저 ID (스토어 주인)
 
 describe('Products API (e2e)', () => {
   let app: INestApplication;
@@ -34,15 +32,15 @@ describe('Products API (e2e)', () => {
   it('/products (POST) 상품 등록', async () => {
     const res: Response = await request(server)
       .post('/products')
-      // ✅ 헤더에 JSON 문자열 전달
-      .set('x-mock-user', JSON.stringify({ id: mockStoreId }))
+      // ✅ 반드시 판매자 유저 ID로 등록해야 store를 찾을 수 있음
+      .set('x-mock-user', JSON.stringify({ id: mockSellerId }))
       .send({
         name: '테스트 상품',
         price: 10000,
         content: '상품 설명',
-        categoryId: mockCategoryId,
+        categoryName: 'TOP',
         discountRate: 20,
-        stocks: [{ sizeId: mockSizeId, quantity: 5 }],
+        stocks: [{ sizeName: 'M', quantity: 5 }],
       })
       .expect(201);
 
@@ -56,7 +54,7 @@ describe('Products API (e2e)', () => {
     productId = body.id;
     expect(body).toHaveProperty('id');
     expect(body.name).toBe('테스트 상품');
-    expect(body.discountPrice).toBe(8000); // 10000 - 20% = 8000
+    expect(body.discountPrice).toBe(8000);
   });
 
   it('/products (GET) 상품 목록 조회', async () => {
@@ -75,11 +73,13 @@ describe('Products API (e2e)', () => {
   it('/products/:id (PATCH) 상품 수정', async () => {
     const res: Response = await request(server)
       .patch(`/products/${productId}`)
-      .set('x-mock-user', JSON.stringify({ id: mockStoreId }))
+      .set('x-mock-user', JSON.stringify({ id: mockSellerId })) // ✅ 판매자 유저 ID
       .send({
         name: '수정된 상품',
         price: 15000,
         discountRate: 10,
+        categoryName: 'TOP',
+        stocks: [{ sizeName: 'M', quantity: 3 }],
       })
       .expect(200);
 
@@ -92,13 +92,12 @@ describe('Products API (e2e)', () => {
 
     expect(body.name).toBe('수정된 상품');
     expect(body.price).toBe(15000);
-    expect(body.discountPrice).toBe(13500); // 15000 - 10% = 13500
+    expect(body.discountPrice).toBe(13500);
   });
 
   it('/products/:id/inquiries (POST) 상품 문의 등록', async () => {
     const res: Response = await request(server)
       .post(`/products/${productId}/inquiries`)
-      // ✅ 유저도 헤더에 JSON 문자열로 전달
       .set('x-mock-user', JSON.stringify({ id: mockUserId }))
       .send({
         title: '배송 문의',
@@ -118,34 +117,86 @@ describe('Products API (e2e)', () => {
     expect(body.productId).toBe(productId);
   });
 
-  it('/products/:id/inquiries (GET) 상품 문의 목록 조회', async () => {
+  it('/products/:id/inquiries (POST) 비밀글 문의 등록', async () => {
     const res: Response = await request(server)
-      .get(`/products/${productId}/inquiries`)
-      .expect(200);
+      .post(`/products/${productId}/inquiries`)
+      .set('x-mock-user', JSON.stringify({ id: mockUserId }))
+      .send({
+        title: '비밀 문의',
+        content: '비밀 내용입니다.',
+        isSecret: true,
+      })
+      .expect(201);
 
     const body = res.body as {
       id: string;
       title: string;
       content: string;
       productId: string;
+      isSecret: boolean;
+    };
+
+    inquiryId = body.id;
+    expect(body.isSecret).toBe(true);
+    expect(body.productId).toBe(productId);
+  });
+
+  it('/products/:id/inquiries (GET) 비밀글 조회 (작성자 → ✅ 허용)', async () => {
+    const res: Response = await request(server)
+      .get(`/products/${productId}/inquiries`)
+      .set('x-mock-user', JSON.stringify({ id: mockUserId }))
+      .expect(200);
+
+    const body = res.body as {
+      id: string;
+      title: string;
+      isSecret: boolean;
     }[];
 
-    expect(Array.isArray(body)).toBe(true);
-    expect(body[0].id).toBe(inquiryId);
+    expect(body.find((inq) => inq.id === inquiryId)).toBeTruthy();
+  });
+
+  it('/products/:id/inquiries (GET) 비밀글 조회 (판매자 → ✅ 허용)', async () => {
+    const res: Response = await request(server)
+      .get(`/products/${productId}/inquiries`)
+      .set('x-mock-user', JSON.stringify({ id: mockSellerId })) // ✅ 판매자 유저 ID
+      .expect(200);
+
+    const body = res.body as { id: string; title: string; isSecret: boolean }[];
+    expect(body.find((inq) => inq.id === inquiryId)).toBeTruthy();
+  });
+
+  it('/products/:id/inquiries (GET) 비밀글 조회 (다른 구매자 → ❌ 403)', async () => {
+    const anotherUser = 'test_other_buyer';
+    await prisma.user.upsert({
+      where: { id: anotherUser },
+      update: {},
+      create: {
+        id: anotherUser,
+        email: 'other@test.com',
+        nickname: '다른구매자',
+        passwordHash: 'hash',
+        type: 'BUYER',
+      },
+    });
+
+    await request(server)
+      .get(`/products/${productId}/inquiries`)
+      .set('x-mock-user', JSON.stringify({ id: anotherUser }))
+      .expect(403);
   });
 
   it('/products/:id (DELETE) 상품 삭제', async () => {
     await request(server)
       .delete(`/products/${productId}`)
-      .set('x-mock-user', JSON.stringify({ id: mockStoreId }))
+      .set('x-mock-user', JSON.stringify({ id: mockSellerId })) // ✅ 판매자 유저 ID
       .expect(204);
 
-    // 삭제 확인: 다시 조회하면 404
     await request(server).get(`/products/${productId}`).expect(404);
   });
 
   afterAll(async () => {
     await app.close();
-    await prisma.$disconnect(); // ✅ Prisma 연결 종료
+    await prisma.$disconnect();
   });
 });
