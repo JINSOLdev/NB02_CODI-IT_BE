@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
 import { AuthUser } from 'src/auth/auth.types';
 import { InquiryService } from './inquiry.service';
@@ -18,5 +18,11 @@ export class InquiryController {
     const user = req.user;
 
     return this.inquiryService.getMyInquiries(user.userId, query);
+  }
+
+  // 문의 상세 조회
+  @Get(':inquiryId')
+  getInquiryDetail(@Param('inquiryId') inquiryId: string) {
+    return this.inquiryService.getInquiryDetail(inquiryId);
   }
 }

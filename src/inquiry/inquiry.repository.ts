@@ -50,4 +50,32 @@ export class InquiryRepository {
 
     return result;
   }
+
+  // 문의 상세 조회
+  async getInquiryById(inquiryId: string) {
+    return this.prisma.inquiry.findUnique({
+      where: { id: inquiryId },
+      select: {
+        id: true,
+        userId: true,
+        productId: true,
+        title: true,
+        content: true,
+        status: true,
+        isSecret: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { nickname: true } },
+        reply: {
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
+            user: { select: { nickname: true } },
+          },
+        },
+      },
+    });
+  }
 }
