@@ -6,19 +6,18 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { DateTime } from 'luxon';
 import { UserType, Prisma, Store } from '@prisma/client';
 import { StoreRepository, ProductListRow } from './store.repository';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { StoreDetailDto } from './dto/store-detail.dto';
-import { MyStoreDetailDto } from './dto/mystore-detail.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { MyStoreDetailDto } from './dto/mystore-detail.dto';
 import { StoreResponseDto } from './dto/store-response.dto';
 import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
 import { MyStoreProductListItemDto } from './dto/store-product-list.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
-import { DateTime } from 'luxon';
-import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 
 @Injectable()
 export class StoreService {
@@ -229,8 +228,8 @@ export class StoreService {
       isSoldOut: stockSum <= 0,
     };
   }
-  
- private interestStoreDto(store: Store): MyInterestStoreDto {
+
+  private interestStoreDto(store: Store): MyInterestStoreDto {
     return {
       id: store.id,
       userId: store.sellerId,
@@ -244,7 +243,7 @@ export class StoreService {
       updatedAt: store.updatedAt,
     };
   }
-    
+
   async registerInterestStore(
     storeId: string,
     userId: string,
@@ -264,7 +263,7 @@ export class StoreService {
 
     return { store: this.interestStoreDto(store) };
   }
-  
+
   async deleteInterestStore(
     storeId: string,
     userId: string,
@@ -279,6 +278,4 @@ export class StoreService {
 
     return { store: this.interestStoreDto(store) };
   }
-  
-
 }
