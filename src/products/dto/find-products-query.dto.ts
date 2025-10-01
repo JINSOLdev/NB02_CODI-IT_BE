@@ -1,41 +1,65 @@
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { CategoryType } from '@prisma/client';
 
 export class FindProductsQueryDto {
-  @ApiPropertyOptional({ description: '상품 이름 검색' })
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiPropertyOptional({ description: '최소 가격' })
+  @ApiPropertyOptional({ description: '페이지 번호 (기본값: 1)' })
   @IsOptional()
   @IsNumber()
-  minPrice?: number;
+  page?: number;
 
-  @ApiPropertyOptional({ description: '최대 가격' })
+  @ApiPropertyOptional({ description: '페이지 크기 (기본값: 10)' })
   @IsOptional()
   @IsNumber()
-  maxPrice?: number;
-
-  @ApiPropertyOptional({ description: '카테고리 ID' })
-  @IsOptional()
-  @IsString()
-  categoryId?: string;
-
-  @ApiPropertyOptional({ description: '페이지네이션 skip', default: 0 })
-  @IsOptional()
-  @IsNumber()
-  skip?: number;
-
-  @ApiPropertyOptional({ description: '페이지네이션 take', default: 10 })
-  @IsOptional()
-  @IsNumber()
-  take?: number;
+  pageSize?: number;
 
   @ApiPropertyOptional({
-    description: '정렬 옵션 (lowPrice | highPrice | recent | salesRanking)',
+    description:
+      '정렬 옵션 (recent | lowPrice | highPrice | salesRanking | highRating | mostReviewed)',
   })
   @IsOptional()
   @IsString()
   sort?: string;
+
+  @ApiPropertyOptional({ description: '검색어' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: '최소 가격' })
+  @IsOptional()
+  @IsNumber()
+  priceMin?: number;
+
+  @ApiPropertyOptional({ description: '최대 가격' })
+  @IsOptional()
+  @IsNumber()
+  priceMax?: number;
+
+  @ApiPropertyOptional({ description: '사이즈 (예: S, M, L, Free)' })
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @ApiPropertyOptional({ description: '즐겨찾기 스토어 ID' })
+  @IsOptional()
+  @IsString()
+  favoriteStore?: string;
+
+  @ApiPropertyOptional({
+    description:
+      '카테고리 이름 (TOP | BOTTOM | DRESS | OUTER | SKIRT | SHOES | ACC)',
+  })
+  @IsOptional()
+  @IsEnum(CategoryType)
+  categoryName?: CategoryType;
+
+  /** 🔧 내부 계산용 (Prisma skip/take 매핑) */
+  get skip(): number {
+    return this.page && this.pageSize ? (this.page - 1) * this.pageSize : 0;
+  }
+
+  get take(): number {
+    return this.pageSize ?? 10;
+  }
 }

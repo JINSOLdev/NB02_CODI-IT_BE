@@ -4,59 +4,36 @@ import {
   IsOptional,
   IsArray,
   ValidateNested,
+  IsEnum,
+  IsNotEmpty,
 } from 'class-validator';
+import { PartialType, OmitType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { CategoryType } from '@prisma/client';
+import { CreateProductDto } from './create-product.dto';
 
+/** UpdateStockDto - 사이즈명은 항상 필수 */
 export class UpdateStockDto {
   @IsString()
-  @IsOptional()
-  sizeId?: string; //
+  @IsNotEmpty()
+  sizeName: string;
 
   @IsNumber()
   @IsOptional()
   quantity?: number;
 }
 
-export class UpdateProductDto {
-  @IsString()
+/** UpdateProductDto */
+export class UpdateProductDto extends PartialType(
+  OmitType(CreateProductDto, ['stocks'] as const),
+) {
   @IsOptional()
-  name?: string;
+  @IsEnum(CategoryType)
+  categoryName?: CategoryType;
 
-  @IsString()
   @IsOptional()
-  content?: string;
-
-  @IsString()
-  @IsOptional()
-  image?: string;
-
-  @IsNumber()
-  @IsOptional()
-  price?: number;
-
-  @IsNumber()
-  @IsOptional()
-  discountRate?: number;
-
-  @IsNumber()
-  @IsOptional()
-  discountPrice?: number | null;
-
-  @IsString()
-  @IsOptional()
-  discountStartTime?: string;
-
-  @IsString()
-  @IsOptional()
-  discountEndTime?: string;
-
-  @IsString()
-  @IsOptional()
-  categoryId?: string;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateStockDto)
-  @IsOptional()
   stocks?: UpdateStockDto[];
 }
