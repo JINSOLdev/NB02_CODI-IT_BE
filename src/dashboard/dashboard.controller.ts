@@ -12,7 +12,6 @@ import { DashboardService } from './dashboard.service';
 import { UserType } from '@prisma/client';
 
 @Controller('api/dashboard')
-@UseGuards(JwtAuthGuard)
 export class DashboardController {
   constructor(private dashboardService: DashboardService) {}
 

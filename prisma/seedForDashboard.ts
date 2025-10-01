@@ -265,7 +265,7 @@ async function main() {
       email: 'test-buyer@example.com',
       type: UserType.BUYER,
       nickname: 'TestBuyer',
-      passwordHash: 'test-hash',
+      passwordHash: hash,
     },
   });
 
