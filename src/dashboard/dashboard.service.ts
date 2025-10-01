@@ -41,16 +41,19 @@ export interface SalesReport {
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
-  async getDashboard(userId: string) {
-    // 스토어 정보 가져오기
+  private async getStoreBySellerId(userId: string) {
     const store = await this.prisma.store.findUnique({
       where: { sellerId: userId },
     });
     if (!store) {
       throw new NotFoundException('판매자 정보를 찾을 수 없습니다');
     }
-    // 1. 일/주/월/년 판매 데이터 조회
-    // 기간 구분
+    return store;
+  }
+
+  // 날짜별 판매 데이터 조회
+  private async getSalesDataByPeriods(userId: string) {
+    const store = await this.getStoreBySellerId(userId);
     const periods = [
       {
         key: 'today',
@@ -74,7 +77,6 @@ export class DashboardService {
       },
     ];
 
-    // 판매 데이터 조회
     const salesDataPromises = periods.map(async (period) => {
       //현재 기간
       const current = await this.prisma.order.aggregate({
@@ -133,10 +135,15 @@ export class DashboardService {
 
     const salesData = await Promise.all(salesDataPromises);
 
-    // 2. 많이 팔린 상품 조회
-    const products = await this.prisma.product.findMany({
+    return salesData;
+  }
+
+  // 많이 팔린 상품 조회
+  private async getTopSales(userId: string) {
+    const store = await this.getStoreBySellerId(userId);
+    const topSales = await this.prisma.product.findMany({
       where: {
-        storeId: store.id, // 특정 스토어 ID로 필터링
+        storeId: store.id,
       },
       select: {
         id: true,
@@ -145,22 +152,15 @@ export class DashboardService {
         sales: true,
       },
       orderBy: {
-        sales: 'desc', // 판매량(sales) 기준 내림차순
+        sales: 'desc',
       },
     });
+    return topSales;
+  }
 
-    const topSales = products.map((product) => ({
-      totalOrders: product.sales,
-      product: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-      },
-    }));
-
-    // 3. 가격대별 매출 조회
-
-    // 가격대별 매출 가져오기
+  // 가격대별 매출 조회
+  private async getPriceRangeData(userId: string) {
+    const store = await this.getStoreBySellerId(userId);
     const priceRangeData = await this.prisma.$queryRaw<{ price_range: string; total_sales: number }[]>`
     SELECT
       CASE
@@ -179,13 +179,11 @@ export class DashboardService {
     ORDER BY MIN(oi.price);
   `;
 
-    // 총 매출 계산
     const totalSales = priceRangeData.reduce(
       (acc, cur) => acc + Number(cur.total_sales),
       0,
     );
 
-    // 가격대별 매출 + 매출비중 계산
     const result = priceRangeData.map((row) => ({
       priceRange: row.price_range,
       totalSales: Number(row.total_sales),
@@ -194,6 +192,13 @@ export class DashboardService {
           ? Number(((Number(row.total_sales) / totalSales) * 100).toFixed(1))
           : 0,
     }));
+    return result;
+  }
+
+  async getDashboard(userId: string) {
+    const salesData = await this.getSalesDataByPeriods(userId);
+    const topSales = await this.getTopSales(userId);
+    const priceRangeData = await this.getPriceRangeData(userId);
 
     return {
       today: salesData[0],
@@ -201,7 +206,7 @@ export class DashboardService {
       month: salesData[2],
       year: salesData[3],
       topSales,
-      priceRange: result,
+      priceRange: priceRangeData,
     };
   }
 }
