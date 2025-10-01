@@ -125,4 +125,12 @@ export class StoreRepository {
 
     return result._sum?.quantity ?? 0;
   }
+
+  async registerFavoriteStore(storeId: string, userId: string): Promise<void> {
+    await this.prisma.favoriteStore.upsert({
+      where: { userId_storeId: { userId, storeId } },
+      create: { userId, storeId },
+      update: {},
+    });
+  }
 }
