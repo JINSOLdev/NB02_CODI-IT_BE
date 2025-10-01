@@ -126,13 +126,9 @@ export class ProductsRepository {
       discountEndTime?: string;
       categoryId?: string;
       stocks?: TransformedStock[];
-      // ❌ Prisma에 없는 필드 방지용
-      userId?: string;
-      categoryName?: string;
     },
   ): Promise<Product> {
-    // 🔥 Prisma에 없는 필드 제거
-    const { stocks, userId, categoryName, ...safeData } = data;
+    const { stocks, ...safeData } = data; // ✅ 필요 없는 userId / categoryName 제거 완료
 
     return this.prisma.product.update({
       where: { id: productId },
