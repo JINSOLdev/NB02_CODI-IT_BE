@@ -9,7 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { S3Module } from './s3/s3.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
-import { ProductsModule } from './products/products.module';
+import { InquiryModule } from './inquiry/inquiry.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { ProductsModule } from './products/products.module';
     UsersModule,
     AuthModule,
     ReviewModule,
-    ProductsModule,
+    InquiryModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
