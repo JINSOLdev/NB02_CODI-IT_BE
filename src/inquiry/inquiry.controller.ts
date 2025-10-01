@@ -1,8 +1,8 @@
-import { Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "src/auth/jwt.guard";
-import { AuthUser } from "src/auth/auth.types";
-import { InquiryService } from "./inquiry.service";
-import { GetInquiriesDto } from "./inquiry.dto";
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { AuthUser } from 'src/auth/auth.types';
+import { InquiryService } from './inquiry.service';
+import { GetInquiriesDto } from './inquiry.dto';
 
 @Controller('api/inquiries')
 export class InquiryController {
@@ -11,7 +11,10 @@ export class InquiryController {
   // 내가 작성한 문의 목록 조회
   @UseGuards(JwtAuthGuard)
   @Get()
-  getMyInquiries(@Req() req: { user: AuthUser }, @Query() query: GetInquiriesDto) {
+  getMyInquiries(
+    @Req() req: { user: AuthUser },
+    @Query() query: GetInquiriesDto,
+  ) {
     const user = req.user;
 
     return this.inquiryService.getMyInquiries(user.userId, query);

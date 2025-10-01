@@ -8,7 +8,13 @@ export class InquiryService {
 
   // 내가 작성한 문의 목록 조회
   async getMyInquiries(userId: string, query: GetInquiriesDto) {
-    const inquiries = await this.inquiryRepository.getMyInquiries(userId, query);
+    const { page = 1, pageSize = 16, status } = query;
+    const inquiries = await this.inquiryRepository.getMyInquiries(
+      userId,
+      page,
+      pageSize,
+      status,
+    );
     const formatInquiries = ({ user, ...inquiry }) => ({
       ...inquiry,
       user: { name: user.nickname },
