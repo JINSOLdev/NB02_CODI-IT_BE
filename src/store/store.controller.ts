@@ -8,6 +8,7 @@ import {
   Req,
   Get,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { AuthUser } from '../auth/auth.types';
@@ -19,6 +20,7 @@ import { MyStoreDetailDto } from './dto/mystore-detail.dto';
 import { StoreResponseDto } from './dto/store-response.dto';
 import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
+import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 
@@ -59,6 +61,16 @@ export class StoreController {
   ): Promise<{ store: MyInterestStoreDto }> {
     const user = req.user;
     return this.storeService.registerInterestStore(storeId, user.userId);
+  }
+  
+  @UseGuards(JwtAuthGuard)
+  @Delete(':storeId/favorite')
+  deleteInterestStore(
+    @Param('storeId', ParseCuidPipe) storeId: string,
+    @Req() req: { user: AuthUser },
+  ): Promise<{ store: MyInterestStoreDto }> {
+    const user = req.user;
+    return this.storeService.deleteInterestStore(storeId, user.userId);
   }
 
   @Get(':storeId')
