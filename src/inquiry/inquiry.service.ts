@@ -38,7 +38,6 @@ export class InquiryService {
       ...inquiry,
       user: { name: inquiry.user.nickname },
       // TODO : 추후 리팩토링 시 1:1 관계로 스키마 변경 예정
-      // 답변이 없을 경우를 대비한 옵셔널 체이닝
       reply: reply ? { ...reply, user: { name: reply.user.nickname }, } : null,
     };
   }
