@@ -79,10 +79,18 @@ export class InquiryRepository {
     });
   }
 
+  // 문의 수정
   async updateInquiry(inquiryId: string, title?: string, content?: string, isSecret?: boolean) {
     return this.prisma.inquiry.update({
       where: { id: inquiryId },
       data: { title, content, isSecret },
+    });
+  }
+
+  // 문의 삭제
+  async deleteInquiry(inquiryId: string) {
+    return this.prisma.inquiry.delete({
+      where: { id: inquiryId },
     });
   }
 }

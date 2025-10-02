@@ -43,6 +43,7 @@ export class InquiryService {
     };
   }
 
+  // 문의 수정
   async updateInquiry(userId: string, inquiryId: string, body: Partial<UpdateInquiryDto>) {
     const { title, content, isSecret } = body;
     const inquiry = await this.inquiryRepository.getInquiryById(inquiryId);
@@ -57,7 +58,19 @@ export class InquiryService {
     // 답변이 이미 달린 경우 수정 불가(문의 상태가 답변 완료인 경우 || 답변이 이미 존재하는 경우)
     if (reply || inquiry.status === AnswerStatus.CompletedAnswer) throw new ConflictException('답변이 이미 달린 문의는 수정할 수 없습니다.');
 
-
     return this.inquiryRepository.updateInquiry(inquiryId, title, content, isSecret);
+  }
+
+  // 문의 삭제
+  async deleteInquiry(userId: string, inquiryId: string) {
+    const inquiry = await this.inquiryRepository.getInquiryById(inquiryId);
+
+    // 문의가 존재하지 않는 경우
+    if (!inquiry) throw new NotFoundException('문의가 존재하지 않습니다.');
+
+    // 내가 작성한 문의가 아닌 경우 접근 거부
+    if (inquiry.userId !== userId) throw new UnauthorizedException('자신이 작성한 문의만 삭제할 수 있습니다.');
+
+    return this.inquiryRepository.deleteInquiry(inquiryId);
   }
 }
