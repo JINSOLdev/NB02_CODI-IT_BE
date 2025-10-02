@@ -1,105 +1,99 @@
-import { PrismaClient, UserType } from '@prisma/client';
+import { PrismaClient, UserType, CategoryType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main(){
+async function main() {
+  console.log('🧹 DB 초기화 시작...');
 
-  // dev용 판매자 생성 (DevAuthGuard와 맞추기 위해 id 고정)
+  // ✅ 유저 생성
   await prisma.user.upsert({
-    where: { id: 'dev_seller_id' },
+    where: { id: 'test_seller_id' },
     update: {},
     create: {
-      id: 'dev_seller_id',
-      email: 'dev-seller@example.com',
+      id: 'test_seller_id',
+      email: 'seller@test.com',
+      nickname: '판매자',
+      passwordHash: 'hashed-password',
       type: UserType.SELLER,
-      nickname: 'DevSeller',
-      passwordHash: 'dev-hash',
     },
   });
 
   await prisma.user.upsert({
-    where: { id: 'dev_buyer_id' },
+    where: { id: 'test_buyer_id' },
     update: {},
     create: {
-      id: 'dev_buyer_id',
-      email: 'dev-buyer@example.com',
+      id: 'test_buyer_id',
+      email: 'buyer@test.com',
+      nickname: '구매자',
+      passwordHash: 'hashed-password',
       type: UserType.BUYER,
-      nickname: 'DevBuyer',
-      passwordHash: 'dev-hash',
     },
   });
 
-  console.log(`Seeded! SELLER: dev_seller_id, BUYER: dev_buyer_id}`);
-
-  await prisma.category.upsert({
-    where: { id: 'dev_category_id' },
-    update: {},
-    create: {
-      id: 'dev_category_id',
-      name: 'TOP',
-    },
-  });
-
+  // ✅ 스토어 생성
   await prisma.store.upsert({
-    where: { id: 'dev_store_id' },
+    where: { id: 'test_store_id' },
     update: {},
     create: {
-      id: 'dev_store_id',
-      name: 'DevStore',
-      address: 'DevAddress',
-      detailAddress: 'DevDetailAddress',
-      phoneNumber: 'DevPhoneNumber',
-      content: 'DevContent',
-      image: 'DevImage',
-      sellerId: 'dev_seller_id',
+      id: 'test_store_id',
+      name: '테스트 스토어',
+      sellerId: 'test_seller_id',
+      content: '테스트 스토어 설명',
+      address: '서울시 강남구',
+      detailAddress: '101호',
+      phoneNumber: '010-1234-5678',
     },
   });
 
-  await prisma.product.upsert({
-    where: { id: 'dev_product_id' },
-    update: {},
-    create: {
-      id: 'dev_product_id',
-      name: 'DevProduct',
-      content: 'DevProductContent',
-      image: 'DevProductImage',
-      price: 10000,
-      discountPrice: 8000,
-      discountRate: 20,
-      discountStartTime: new Date(),
-      discountEndTime: new Date(),
-      sales: 0,
-      storeId: 'dev_store_id',
-      categoryId: 'dev_category_id',
-    },
-  });
+  // ✅ 카테고리 생성 (name 기준 upsert)
+  const categories: CategoryType[] = [
+    CategoryType.TOP,
+    CategoryType.BOTTOM,
+    CategoryType.DRESS,
+    CategoryType.OUTER,
+    CategoryType.SKIRT,
+    CategoryType.SHOES,
+    CategoryType.ACC,
+  ];
 
-  await prisma.stockSize.upsert({
-    where: { id: 'dev_size_id' },
-    update: {},
-    create: {
-      id: 'dev_size_id',
-      name: 'DevSize',
-    },
-  });
+  for (const name of categories) {
+    await prisma.category.upsert({
+      where: { name }, // 🔥 unique 필드 name으로 검색
+      update: {},
+      create: {
+        id: `test_category_${name.toLowerCase()}`,
+        name,
+      },
+    });
+  }
 
-  await prisma.stock.upsert({
-    where: { id: 'dev_stock_id' },
-    update: {},
-    create: {
-      id: 'dev_stock_id',
-      productId: 'dev_product_id',
-      sizeId: 'dev_size_id',
-      quantity: 10,
-    },
-  });
+  // ✅ StockSize 고정 ID (프론트에서 1~6 숫자 매핑 그대로 사용 가능)
+  const stockSizes = [
+    { id: '1', name: 'XS' },
+    { id: '2', name: 'S' },
+    { id: '3', name: 'M' },
+    { id: '4', name: 'L' },
+    { id: '5', name: 'XL' },
+    { id: '6', name: 'FREE' },
+  ];
+
+  for (const size of stockSizes) {
+    await prisma.stockSize.upsert({
+      where: { id: size.id }, // 🔥 id 고정
+      update: {},
+      create: { id: size.id, name: size.name },
+    });
+  }
+
+  console.log('✅ Seed 완료!');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
+  .then(async () => {
+    await prisma.$disconnect();
   })
-  .finally(() => {
-    void prisma.$disconnect();
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
   });
