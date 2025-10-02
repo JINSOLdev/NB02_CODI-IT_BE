@@ -1,8 +1,9 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
 import { AuthUser } from 'src/auth/auth.types';
 import { InquiryService } from './inquiry.service';
 import { GetInquiriesDto, UpdateInquiryDto } from './inquiry.dto';
+import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('api/inquiries')
 export class InquiryController {
@@ -31,7 +32,7 @@ export class InquiryController {
   @Patch(':inquiryId')
   updateInquiry(
     @Req() req: { user: AuthUser },
-    @Param('inquiryId') inquiryId: string,
+    @Param('inquiryId', ParseCuidPipe) inquiryId: string,
     @Body() body: UpdateInquiryDto,
   ) {
     const userId = req.user.userId;
@@ -49,5 +50,14 @@ export class InquiryController {
     if (isSecret !== undefined) updateData.isSecret = isSecret;
 
     return this.inquiryService.updateInquiry(userId, inquiryId, updateData);
+  }
+
+  // 문의 삭제
+  @UseGuards(JwtAuthGuard)
+  @Delete(':inquiryId')
+  deleteInquiry(@Req() req: { user: AuthUser }, @Param('inquiryId', ParseCuidPipe) inquiryId: string) {
+    const userId = req.user.userId;
+
+    return this.inquiryService.deleteInquiry(userId, inquiryId);
   }
 }
