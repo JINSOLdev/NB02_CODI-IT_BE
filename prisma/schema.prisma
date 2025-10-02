@@ -167,7 +167,7 @@ model Product {
   id                String    @id @default(cuid())
   storeId           String
   name              String
-  content           String?
+  content           String?        
   image             String?
   price             Int
   discountPrice     Int?
@@ -190,7 +190,7 @@ model Product {
 
 model Category {
   id       String       @id @default(cuid())
-  name     CategoryType
+  name     CategoryType @unique
   products Product[]
 }
 
@@ -230,18 +230,43 @@ model StockSize {
  * =========================
  */
 model Order {
-  id         String      @id @default(cuid())
-  userId     String
-  storeId    String
-  totalPrice Int
-  status     OrderStatus @default(PROCESSING)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+   id             String   @id @default(cuid())  
+  userId         String
+  storeId        String
+  recipientName  String   
+  recipientPhone String   
+  address        String   
+  subtotal       Int       
+  totalQuantity  Int       
+  usePoint       Int       @default(0) 
+  totalPrice     Int       
 
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store     Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  items     OrderItem[]
-  pointLogs PointTransaction[]
+  status         OrderStatus  @default(PROCESSING)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store       Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+  pointLogs   PointTransaction[]
+  payments    Payment?
+}
+
+model Payment {
+  id        String         @id @default(cuid())
+  orderId   String         @unique
+  price     Int
+  status    PaymentStatus  @default(PENDING)
+  createdAt DateTime       @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
 
 model OrderItem {
@@ -249,7 +274,7 @@ model OrderItem {
   orderId   String
   productId String
   quantity  Int
-  price     Int
+  price     Int        // 주문 당시 가격 (할인 반영 가능)
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
