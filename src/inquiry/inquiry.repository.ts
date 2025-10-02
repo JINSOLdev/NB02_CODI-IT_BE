@@ -78,4 +78,11 @@ export class InquiryRepository {
       },
     });
   }
+
+  async updateInquiry(inquiryId: string, title?: string, content?: string, isSecret?: boolean) {
+    return this.prisma.inquiry.update({
+      where: { id: inquiryId },
+      data: { title, content, isSecret },
+    });
+  }
 }
