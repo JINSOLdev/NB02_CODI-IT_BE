@@ -1,5 +1,5 @@
 import { AnswerStatus } from "@prisma/client";
-import { IsOptional, IsEnum, IsInt, Min } from "class-validator";
+import { IsOptional, IsEnum, IsInt, Min, IsBoolean, IsString, MinLength } from "class-validator";
 
 export class GetInquiriesDto {
   @IsInt()
@@ -13,4 +13,20 @@ export class GetInquiriesDto {
   @IsOptional()
   @IsEnum(AnswerStatus)
   status?: AnswerStatus;
+}
+
+export class UpdateInquiryDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  title: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  content: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSecret: boolean;
 }
