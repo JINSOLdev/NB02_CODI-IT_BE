@@ -50,4 +50,47 @@ export class InquiryRepository {
 
     return result;
   }
+
+  // 문의 상세 조회
+  async getInquiryById(inquiryId: string) {
+    return this.prisma.inquiry.findUnique({
+      where: { id: inquiryId },
+      select: {
+        id: true,
+        userId: true,
+        productId: true,
+        title: true,
+        content: true,
+        status: true,
+        isSecret: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { nickname: true } },
+        reply: {
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
+            user: { select: { nickname: true } },
+          },
+        },
+      },
+    });
+  }
+
+  // 문의 수정
+  async updateInquiry(inquiryId: string, title?: string, content?: string, isSecret?: boolean) {
+    return this.prisma.inquiry.update({
+      where: { id: inquiryId },
+      data: { title, content, isSecret },
+    });
+  }
+
+  // 문의 삭제
+  async deleteInquiry(inquiryId: string) {
+    return this.prisma.inquiry.delete({
+      where: { id: inquiryId },
+    });
+  }
 }
