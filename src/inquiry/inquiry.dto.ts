@@ -14,19 +14,3 @@ export class GetInquiriesDto {
   @IsEnum(AnswerStatus)
   status?: AnswerStatus;
 }
-
-export class UpdateInquiryDto {
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  title: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  content: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isSecret: boolean;
-}
