@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GradeService } from './grade.service';
-import { GradeRepo } from './grade.repo';
+import { GradeRepo } from './grade.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({

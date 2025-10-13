@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { GradeLevel } from '@prisma/client';
-import { GradeRepo } from './grade.repo';
+import { GradeRepo } from './grade.repository';
 import { TxLike } from 'src/points/points.types';
 import { getEarnRate, getGradeByAmount, getNextGradeInfo } from './grade.util';
 

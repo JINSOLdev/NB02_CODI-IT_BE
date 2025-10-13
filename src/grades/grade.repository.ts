@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { GradeLevel } from '@prisma/client';
+import { GradeLevel, OrderStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { TxLike } from 'src/points/points.types';
-import { COUNTED_ORDER_STATUS } from 'src/points/points.types';
+import { TxLike } from 'src/common/prisma-tx.type';
 
 @Injectable()
 export class GradeRepo {
@@ -21,7 +20,7 @@ export class GradeRepo {
     const agg = await tx.order.aggregate({
       where: {
         userId,
-        status: { in: COUNTED_ORDER_STATUS },
+        status: OrderStatus.COMPLETEDPAYMENT,
         ...(thisOrderIdToExclude ? { NOT: { id: thisOrderIdToExclude } } : {}),
       },
       _sum: { totalPrice: true },
