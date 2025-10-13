@@ -75,6 +75,7 @@ export class InquiryRepository {
             user: { select: { nickname: true } },
           },
         },
+        product: { select: { store: { select: { sellerId: true } } } },
       },
     });
   }
@@ -91,6 +92,94 @@ export class InquiryRepository {
   async deleteInquiry(inquiryId: string) {
     return this.prisma.inquiry.delete({
       where: { id: inquiryId },
+    });
+  }
+
+  // 문의 답변 등록
+  async createReply(userId: string, inquiryId: string, content: string) {
+    return this.prisma.$transaction(async (tx) => {
+      // 답변 생성
+      const answer = await tx.answer.create({
+        data: {
+          content,
+          inquiryId,
+          userId,
+        },
+        select: {
+          id: true,
+          inquiryId: true,
+          userId: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          user: { select: { id: true, nickname: true } },
+        },
+      });
+
+      // 문의 상태를 '답변 완료'로 변경
+      await tx.inquiry.update({
+        where: { id: inquiryId },
+        data: { status: AnswerStatus.CompletedAnswer },
+      });
+
+      return answer;
+    });
+  }
+
+  async getReplyDetail(replyId: string) {
+    return this.prisma.answer.findFirst({
+      where: { id: replyId },
+      select: {
+        id: true,
+        inquiryId: true,
+        userId: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, nickname: true } },
+      },
+    });
+  }
+
+  async updateReply(replyId: string, content: string) {
+    return this.prisma.answer.update({
+      where: { id: replyId },
+      data: { content },
+      select: {
+        id: true,
+        inquiryId: true,
+        userId: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, nickname: true } },
+      },
+    });
+  }
+
+  async deleteReply(replyId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      // 답변 삭제
+      const deletedAnswer = await tx.answer.delete({
+        where: { id: replyId },
+        select: {
+          id: true,
+          inquiryId: true,
+          userId: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          user: { select: { id: true, nickname: true } },
+        },
+      });
+
+      // 문의 상태를 '답변 대기'로 변경
+      await tx.inquiry.update({
+        where: { id: deletedAnswer.inquiryId },
+        data: { status: AnswerStatus.WaitingAnswer },
+      });
+
+      return deletedAnswer;
     });
   }
 }
