@@ -25,13 +25,16 @@ describe('장바구니 통합 테스트', () => {
     await app.init();
 
     // 테스트 전에 데이터베이스 초기화
-    await prisma.user.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.cart.deleteMany();
-    await prisma.store.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.stock.deleteMany();
-    await prisma.stockSize.deleteMany();
+    await prisma.$transaction([
+      prisma.cartItem.deleteMany(),
+      prisma.cart.deleteMany(),
+      prisma.product.deleteMany(),
+      prisma.stock.deleteMany(),
+      prisma.stockSize.deleteMany(),
+      prisma.category.deleteMany(),
+      prisma.store.deleteMany(),
+      prisma.user.deleteMany(),
+    ]);
     // 테스트용 사용자 생성
     await prisma.user.create({
       data: {
