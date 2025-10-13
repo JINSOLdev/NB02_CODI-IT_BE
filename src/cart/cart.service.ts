@@ -1,8 +1,8 @@
 import {
   Injectable,
   BadRequestException,
-  InternalServerErrorException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CartRepository } from './cart.repository';
 import { createOrUpdateCartItemsDto } from './cart.dto';
@@ -15,19 +15,11 @@ export class CartService {
     if (typeof buyerId !== 'string' || buyerId.trim() === '') {
       throw new BadRequestException('유효한 buyerId가 필요합니다');
     }
-    try {
-      const cart = await this.cartRepository.createOrGetCart(buyerId);
-      return cart;
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('database')) {
-        throw new InternalServerErrorException(
-          '데이터베이스 오류로 장바구니 생성에 실패했습니다',
-        );
-      }
-      throw new BadRequestException(
-        `장바구니 생성 실패: ${error instanceof Error ? error.message : String(error)}`,
-      );
+    const cart = await this.cartRepository.createOrGetCart(buyerId);
+    if (!cart) {
+      throw new BadRequestException('장바구니 생성 실패');
     }
+    return cart;
   }
 
   async getCart(buyerId: string) {
@@ -43,28 +35,23 @@ export class CartService {
     createOrUpdateCartItemsDto: createOrUpdateCartItemsDto,
   ) {
     const cart = await this.cartRepository.getCartIdByBuyerId(buyerId);
-    try {
-      // 장바구니 업데이트
-      const updatedCart =
-        await this.cartRepository.createOrUpdateCartItemAndReturnCart(
-          cart.id,
-          createOrUpdateCartItemsDto,
-        );
-      return updatedCart;
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('database')) {
-        throw new InternalServerErrorException(
-          '데이터베이스 오류로 장바구니 업데이트에 실패했습니다',
-        );
-      }
-      throw new BadRequestException(
-        `장바구니 업데이트 실패: ${error instanceof Error ? error.message : String(error)}`,
+    // 장바구니 업데이트
+    const updatedCart =
+      await this.cartRepository.createOrUpdateCartItemAndReturnCart(
+        cart.id,
+        createOrUpdateCartItemsDto,
       );
+    if (!updatedCart) {
+      throw new BadRequestException('장바구니 업데이트 실패');
     }
+    return updatedCart;
   }
 
   async getCartItem(userId: string, cartItemId: string) {
     const cartItem = await this.cartRepository.getCartItem(cartItemId);
+    if (!cartItem) {
+      throw new NotFoundException('장바구니 아이템을 찾을 수 없습니다');
+    }
     if (cartItem.cart.buyerId !== userId) {
       throw new ForbiddenException('장바구니 아이템 조회 권한이 없습니다');
     }
@@ -74,7 +61,7 @@ export class CartService {
   async deleteCartItem(userId: string, cartItemId: string) {
     const cartItem = await this.cartRepository.getCartItem(cartItemId);
     if (!cartItem) {
-      throw new BadRequestException('장바구니 아이템이 존재하지 않습니다');
+      throw new NotFoundException('장바구니 아이템을 찾을 수 없습니다');
     }
     if (cartItem.cart.buyerId !== userId) {
       throw new ForbiddenException('장바구니 아이템 삭제 권한이 없습니다');
