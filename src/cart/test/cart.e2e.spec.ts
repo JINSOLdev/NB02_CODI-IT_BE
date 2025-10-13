@@ -119,112 +119,122 @@ describe('장바구니 통합 테스트', () => {
     await app.close();
   });
 
-  it('장바구니 생성', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .post('/api/cart')
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send();
-    expect(response.statusCode).toBe(201);
+  describe('장바구니 생성', () => {
+    it('장바구니 생성', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .post('/api/cart')
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send();
+      expect(response.statusCode).toBe(201);
+    });
+
+    it('장바구니 생성 실패(인증토큰 없음)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .post('/api/cart')
+        .send();
+      expect(response.statusCode).toBe(401);
+    });
   });
 
-  it('장바구니 생성 실패(인증토큰 없음)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .post('/api/cart')
-      .send();
-    expect(response.statusCode).toBe(401);
+  describe('장바구니 수정', () => {
+    it('장바구니 수정', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .patch(`/api/cart`)
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send({
+          productId,
+          sizes: [
+            {
+              sizeId,
+              quantity: 1,
+            },
+          ],
+        });
+      expect(response.statusCode).toBe(200);
+      const body = response.body as { items: { id: string }[] };
+      cartItemId = body.items[0].id;
+    });
+
+    it('장바구니 수정 실패(인증토큰 없음)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .patch(`/api/cart`)
+        .send({
+          productId,
+          sizes: [
+            {
+              sizeId,
+              quantity: 1,
+            },
+          ],
+        });
+      expect(response.statusCode).toBe(401);
+    });
   });
 
-  it('장바구니 수정', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .patch(`/api/cart`)
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send({
-        productId,
-        sizes: [
-          {
-            sizeId,
-            quantity: 1,
-          },
-        ],
-      });
-    expect(response.statusCode).toBe(200);
-    const body = response.body as { items: { id: string }[] };
-    cartItemId = body.items[0].id;
+  describe('장바구니 조회', () => {
+    it('장바구니 조회', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .get(`/api/cart`)
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send();
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('장바구니 조회 실패(인증토큰 없음)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .get(`/api/cart`)
+        .send();
+      expect(response.statusCode).toBe(401);
+    });
   });
 
-  it('장바구니 수정 실패(인증토큰 없음)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .patch(`/api/cart`)
-      .send({
-        productId,
-        sizes: [
-          {
-            sizeId,
-            quantity: 1,
-          },
-        ],
-      });
-    expect(response.statusCode).toBe(401);
+  describe('장바구니 아이템 조회', () => {
+    it('장바구니 아이템 조회', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .get(`/api/cart/${cartItemId}`)
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send();
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('장바구니 아이템 조회 실패(인증토큰 없음)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .get(`/api/cart/${cartItemId}`)
+        .send();
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('장바구니 아이템 조회 실패(없는 아이템)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .get(`/api/cart/notExist`)
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send();
+      expect(response.statusCode).toBe(404);
+    });
   });
 
-  it('장바구니 조회', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .get(`/api/cart`)
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send();
-    expect(response.statusCode).toBe(200);
-  });
+  describe('장바구니 아이템 삭제', () => {
+    it('장바구니 아이템 삭제', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .delete(`/api/cart/${cartItemId}`)
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send();
+      expect(response.statusCode).toBe(200);
+    });
 
-  it('장바구니 조회 실패(인증토큰 없음)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .get(`/api/cart`)
-      .send();
-    expect(response.statusCode).toBe(401);
-  });
+    it('장바구니 아이템 삭제 실패(인증토큰 없음)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .delete(`/api/cart/${cartItemId}`)
+        .send();
+      expect(response.statusCode).toBe(401);
+    });
 
-  it('장바구니 아이템 조회', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .get(`/api/cart/${cartItemId}`)
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send();
-    expect(response.statusCode).toBe(200);
-  });
-
-  it('장바구니 아이템 조회 실패(인증토큰 없음)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .get(`/api/cart/${cartItemId}`)
-      .send();
-    expect(response.statusCode).toBe(401);
-  });
-
-  it('장바구니 아이템 조회 실패(없는 아이템)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .get(`/api/cart/notExist`)
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send();
-    expect(response.statusCode).toBe(404);
-  });
-
-  it('장바구니 아이템 삭제', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .delete(`/api/cart/${cartItemId}`)
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send();
-    expect(response.statusCode).toBe(200);
-  });
-
-  it('장바구니 아이템 삭제 실패(인증토큰 없음)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .delete(`/api/cart/${cartItemId}`)
-      .send();
-    expect(response.statusCode).toBe(401);
-  });
-
-  it('장바구니 아이템 삭제 실패(없는 아이템)', async () => {
-    const response = await request(app.getHttpServer() as Server)
-      .delete(`/api/cart/notExist`)
-      .set('Authorization', `Bearer ${Authorization}`)
-      .send();
-    expect(response.statusCode).toBe(404);
+    it('장바구니 아이템 삭제 실패(없는 아이템)', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .delete(`/api/cart/notExist`)
+        .set('Authorization', `Bearer ${Authorization}`)
+        .send();
+      expect(response.statusCode).toBe(404);
+    });
   });
 });
