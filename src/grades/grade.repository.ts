@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { TxLike } from 'src/common/prisma-tx.type';
 
 @Injectable()
-export class GradeRepo {
+export class GradeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   get prismaSvc() {

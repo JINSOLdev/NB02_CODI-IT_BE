@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { GradeLevel } from '@prisma/client';
-import { GradeRepo } from './grade.repository';
-import { TxLike } from 'src/points/points.types';
+import { GradeRepository } from './grade.repository';
+import { TxLike } from 'src/common/prisma-tx.type';
 import { getEarnRate, getGradeByAmount, getNextGradeInfo } from './grade.util';
 
 @Injectable()
 export class GradeService {
-  constructor(private readonly repo: GradeRepo) {}
+  constructor(private readonly repo: GradeRepository) {}
 
   // 현재 등급 및 누적 구매액 조회
   async getCurrentGrade(
