@@ -11,6 +11,8 @@ import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
 import { InquiryModule } from './inquiry/inquiry.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { GradeModule } from 'src/grades/grade.module';
+import { PointsModule } from 'src/points/points.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ReviewModule,
     InquiryModule,
     DashboardModule,
+    GradeModule,
+    PointsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
