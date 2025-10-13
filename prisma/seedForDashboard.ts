@@ -44,15 +44,15 @@ async function main() {
     },
   });
 
-  // // 3. 카테고리 생성 (예: TOP)
-  // const category = await prisma.category.upsert({
-  //   where: { id: 'test_category_id' },
-  //   update: {},
-  //   create: {
-  //     id: 'test_category_id',
-  //     name: 'TOP',
-  //   },
-  // });
+  // 3. 카테고리 생성 (예: TOP)
+  const category = await prisma.category.upsert({
+    where: { id: 'test_category_id' },
+    update: {},
+    create: {
+      id: 'test_category_id',
+      name: 'TOP',
+    },
+  });
 
   // 4. 사이즈 생성 (예: M, L 등)
   const sizes = await Promise.all([
