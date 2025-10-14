@@ -9,14 +9,14 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { UserPayload } from './users.mapper';
-import type { RequestWithUser } from '../auth/auth.types';
+import type { AuthUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('api/users')
 export class UsersController {
@@ -30,38 +30,34 @@ export class UsersController {
   }
 
   // 내 정보 조회: GET /api/users/me
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get('me')
-  getMe(@CurrentUser() user: RequestWithUser['user']): Promise<UserPayload> {
+  getMe(@CurrentUser() user: AuthUser): Promise<UserPayload> {
     return this.usersService.getMe(user.userId);
   }
 
   // 내 정보 수정 (현재 비밀번호 필수): PATCH /api/users/me
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Patch('me')
   updateMe(
-    @CurrentUser() user: RequestWithUser['user'],
+    @CurrentUser() user: AuthUser,
     @Body() dto: UpdateUserDto,
   ): Promise<UserPayload> {
     return this.usersService.updateMe(user.userId, dto);
   }
 
   // 내 관심 스토어 조회: GET /api/users/me/likes
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get('me/likes')
-  getMyLikes(
-    @CurrentUser() user: RequestWithUser['user'],
-  ): Promise<Awaited<ReturnType<UsersService['getMyLikes']>>> {
+  getMyLikes(@CurrentUser() user: AuthUser) {
     return this.usersService.getMyLikes(user.userId);
   }
 
   // 회원 탈퇴: DELETE /api/users/delete
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Delete('delete')
   @HttpCode(HttpStatus.OK)
-  async deleteMe(
-    @CurrentUser() user: RequestWithUser['user'],
-  ): Promise<{ message: string }> {
+  async deleteMe(@CurrentUser() user: AuthUser): Promise<{ message: string }> {
     await this.usersService.deleteMe(user.userId);
     return { message: '회원 탈퇴가 완료되었습니다.' };
   }
