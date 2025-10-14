@@ -11,6 +11,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
 import { InquiryModule } from './inquiry/inquiry.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ReviewModule,
     InquiryModule,
     DashboardModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

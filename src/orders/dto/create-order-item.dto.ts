@@ -1,17 +1,19 @@
-import { IsString, IsUUID, IsInt, Min } from 'class-validator';
+import { IsString, IsInt, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateOrderItemDto {
-  @ApiProperty({ example: 'product1', description: '주문할 상품 ID' })
-  @IsString()
-  @IsUUID()
+  @ApiProperty({
+    example: 'cabc1234-5678-90ab-cdef-1234567890ab',
+    description: '주문할 상품 ID',
+  })
+  @IsString() // ✅ UUID 대신 문자열 허용
   productId: string;
 
-  @ApiProperty({ example: 1, description: '사이즈 ID' })
+  @ApiProperty({ example: 3, description: '사이즈 ID' })
   @IsInt()
   sizeId: number;
 
-  @ApiProperty({ example: 2, description: '상품 수량' })
+  @ApiProperty({ example: 1, description: '수량' })
   @IsInt()
   @Min(1)
   quantity: number;
