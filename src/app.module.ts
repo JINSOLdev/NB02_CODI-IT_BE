@@ -10,6 +10,8 @@ import { S3Module } from './s3/s3.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { GradeModule } from 'src/grades/grade.module';
+import { PointsModule } from 'src/points/points.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     AuthModule,
     ReviewModule,
     DashboardModule,
+    GradeModule,
+    PointsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

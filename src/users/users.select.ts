@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client';
 export const USER_AUTH_SELECT: Prisma.UserSelect = {
   id: true,
   email: true,
-  nickname: true,
+  name: true,
   type: true,
   gradeLevel: true,
   passwordHash: true,

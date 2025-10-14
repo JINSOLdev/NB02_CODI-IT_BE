@@ -48,7 +48,7 @@ export class AuthService {
     return {
       id: u.id,
       email: u.email,
-      name: u.nickname,
+      name: u.name,
       type: u.type as 'BUYER' | 'SELLER',
       points: String(u.points),
       image: u.image ?? null,
