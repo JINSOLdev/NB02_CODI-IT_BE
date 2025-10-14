@@ -33,7 +33,7 @@ export class UsersService {
     const userType: UserType = dto.type ?? 'BUYER';
 
     const created = await this.usersRepo.create({
-      nickname: dto.name,
+      name: dto.name,
       email,
       passwordHash,
       type: userType,
@@ -59,7 +59,7 @@ export class UsersService {
     }
 
     const data: Prisma.UserUpdateInput = {};
-    if (dto.name) data.nickname = dto.name;
+    if (dto.name) data.name = dto.name;
     if (dto.image !== undefined) data.image = dto.image;
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 10);
