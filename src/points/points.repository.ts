@@ -5,7 +5,7 @@ import { COUNTED_ORDER_STATUS, REASON } from './points.types';
 import { TxLike } from 'src/common/prisma-tx.type';
 
 @Injectable()
-export class PointsRepossitory {
+export class PointsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   get prismaSvc() {

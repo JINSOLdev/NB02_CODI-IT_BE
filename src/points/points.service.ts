@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
-import { PointsRepossitory } from './points.repository';
+import { PointsRepository } from './points.repository';
 import { REASON } from './points.types';
 import { GradeService } from 'src/grades/grade.service';
 
 @Injectable()
 export class PointsService {
   constructor(
-    private readonly repo: PointsRepossitory,
+    private readonly repo: PointsRepository,
     private readonly grade: GradeService,
   ) {}
 
