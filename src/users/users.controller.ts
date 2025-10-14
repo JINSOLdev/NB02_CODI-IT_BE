@@ -7,15 +7,16 @@ import {
   HttpStatus,
   Patch,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
+
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserPayload } from './users.mapper';
-import { AuthGuard } from '@nestjs/passport';
 import { UpdateUserDto } from './dto/update-user.dto';
-import type { RequestWithUser } from '../auth/auth.types';
+import type { UserPayload } from './users.mapper';
+import type { AuthUser } from '../auth/auth.types';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('api/users')
 export class UsersController {
@@ -24,39 +25,40 @@ export class UsersController {
   // 회원가입: POST /api/users
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() dto: CreateUserDto): Promise<{ user: UserPayload }> {
+  signup(@Body() dto: CreateUserDto): Promise<{ user: UserPayload }> {
     return this.usersService.create(dto);
   }
 
   // 내 정보 조회: GET /api/users/me
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get('me')
-  getMe(@Req() req: RequestWithUser): Promise<UserPayload> {
-    return this.usersService.getMe(req.user.userId);
+  getMe(@CurrentUser() user: AuthUser): Promise<UserPayload> {
+    return this.usersService.getMe(user.userId);
   }
 
   // 내 정보 수정 (현재 비밀번호 필수): PATCH /api/users/me
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Patch('me')
   updateMe(
-    @Req() req: RequestWithUser,
+    @CurrentUser() user: AuthUser,
     @Body() dto: UpdateUserDto,
   ): Promise<UserPayload> {
-    return this.usersService.updateMe(req.user.userId, dto);
+    return this.usersService.updateMe(user.userId, dto);
   }
 
   // 내 관심 스토어 조회: GET /api/users/me/likes
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get('me/likes')
-  getMyLikes(@Req() req: RequestWithUser) {
-    return this.usersService.getMyLikes(req.user.userId);
+  getMyLikes(@CurrentUser() user: AuthUser) {
+    return this.usersService.getMyLikes(user.userId);
   }
+
   // 회원 탈퇴: DELETE /api/users/delete
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Delete('delete')
   @HttpCode(HttpStatus.OK)
-  async deleteMe(@Req() req: RequestWithUser) {
-    await this.usersService.deleteMe(req.user.userId);
+  async deleteMe(@CurrentUser() user: AuthUser): Promise<{ message: string }> {
+    await this.usersService.deleteMe(user.userId);
     return { message: '회원 탈퇴가 완료되었습니다.' };
   }
 }
