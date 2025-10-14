@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  IsArray,
   IsInt,
   IsOptional,
   IsString,
@@ -8,18 +7,28 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateOrderItemDto } from './create-order-item.dto';
+
+export class OrderItemRequestDto {
+  @ApiProperty({ example: 'clz9v5krw0001uvznnfvgtcaa', description: '상품 ID' })
+  @IsString()
+  productId: string;
+
+  @ApiProperty({ example: 3, description: '사이즈 ID' })
+  @IsInt()
+  sizeId: number;
+
+  @ApiProperty({ example: 1, description: '수량 (1 이상)' })
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
 
 export class CreateOrderDto {
-  @ApiProperty({ example: 'test_store_id', description: '스토어 ID' })
-  @IsString()
-  storeId: string;
-
   @ApiProperty({ example: '김테스터', description: '수령인 이름' })
   @IsString()
   recipientName: string;
 
-  @ApiProperty({ example: '010-1234-5678', description: '수령인 연락처' })
+  @ApiProperty({ example: '010-9999-8888', description: '수령인 전화번호' })
   @IsString()
   recipientPhone: string;
 
@@ -27,27 +36,16 @@ export class CreateOrderDto {
   @IsString()
   address: string;
 
-  @ApiProperty({ type: [CreateOrderItemDto], description: '주문할 상품 목록' })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateOrderItemDto)
-  items: CreateOrderItemDto[];
-
-  @ApiProperty({ example: 0, description: '사용할 포인트 (0 이상)' })
+  @ApiProperty({ example: 0, description: '사용 포인트', required: false })
   @IsInt()
-  @Min(0)
   @IsOptional()
-  usePoint = 0;
+  usePoint: number = 0;
 
-  @ApiProperty({ example: 48000, description: '총 결제 금액' })
-  @IsInt()
-  totalPrice: number;
-
-  @ApiProperty({ example: 2, description: '총 상품 수량' })
-  @IsInt()
-  totalQuantity: number;
-
-  @ApiProperty({ example: 50000, description: '상품 총액 (할인 전)' })
-  @IsInt()
-  subtotal: number;
+  @ApiProperty({
+    type: [OrderItemRequestDto],
+    description: '주문 상품 목록',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemRequestDto)
+  items: OrderItemRequestDto[];
 }
