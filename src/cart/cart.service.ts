@@ -35,6 +35,9 @@ export class CartService {
     createOrUpdateCartItemsDto: createOrUpdateCartItemsDto,
   ) {
     const cart = await this.cartRepository.getCartIdByBuyerId(buyerId);
+    if (!cart) {
+      throw new BadRequestException('장바구니를 찾을 수 없습니다');
+    }
     // 장바구니 업데이트
     const updatedCart =
       await this.cartRepository.createOrUpdateCartItemAndReturnCart(

@@ -13,9 +13,6 @@ export class CartRepository {
         buyerId,
       },
     });
-    if (!cart) {
-      throw new BadRequestException('장바구니를 찾을 수 없습니다');
-    }
     return cart;
   }
 
