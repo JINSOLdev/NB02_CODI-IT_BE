@@ -1,0 +1,32 @@
+name: Test pipeline
+on:
+  push:
+    branches:
+      - "dev"
+jobs:
+  TEST:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [15.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Test Application
+        run: |
+          npm run ci
+          npm run test:badge
+      - name: Update README.md test coverage section 
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with: 
+          commit_message: '[TEST] update test coverage'
+          branch: dev
+          commit_options: '--no-verify --signoff'
+          file_pattern: README.md
+          repository: .
