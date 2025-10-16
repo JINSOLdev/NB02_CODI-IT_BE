@@ -43,7 +43,7 @@ export class OrdersService {
       // ✅ 유저 검증
       const user: User | null =
         await this.ordersRepository.findUserById(userId);
-      if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      if (!user) throw new NotFoundException('존재하지 않는 사용자입니다.');
 
       // ✅ 포인트 초과 사용 방지
       if (usePoint > user.points)
@@ -97,7 +97,7 @@ export class OrdersService {
               totalQuantity,
               usePoint,
               totalPrice,
-              status: OrderStatus.PROCESSING,
+              status: OrderStatus.PROCESSING, // ✅ 생성 시 PROCESSING 유지
             },
           });
 
@@ -111,28 +111,23 @@ export class OrdersService {
                 productId: item.productId,
                 quantity: item.quantity,
                 price: product.price,
-                sizeId: String(item.sizeId),
               };
             }),
           });
 
+          // ✅ 결제는 별도 상태로 등록만
           const payment: Payment = await tx.payment.create({
             data: {
               orderId: createdOrder.id,
               price: totalPrice,
-              status: PaymentStatus.COMPLETED,
+              status: PaymentStatus.PENDING,
             },
-          });
-
-          await tx.order.update({
-            where: { id: createdOrder.id },
-            data: { status: OrderStatus.COMPLETEDPAYMENT },
           });
 
           return { createdOrder, payment };
         });
 
-      // ✅ 결제 후 포인트 차감
+      // ✅ 포인트 차감 (결제 완료 시점에 실행되어도 무방)
       if (usePoint > 0) {
         await this.pointsService.spendPointsForOrder(
           userId,
@@ -149,6 +144,7 @@ export class OrdersService {
       if (!fullOrder)
         throw new InternalServerErrorException('주문을 조회할 수 없습니다.');
 
+      // ✅ 응답 변환
       return plainToInstance(OrderResponseDto, {
         id: fullOrder.id,
         name: fullOrder.recipientName,
@@ -183,7 +179,7 @@ export class OrdersService {
         payments: {
           id: fullOrder.payments?.id ?? '',
           price: fullOrder.payments?.price ?? 0,
-          status: 'CompletedPayment',
+          status: fullOrder.payments?.status ?? PaymentStatus.PENDING,
           createdAt: fullOrder.payments?.createdAt ?? new Date(),
           orderId: fullOrder.id,
         },
@@ -206,7 +202,7 @@ export class OrdersService {
   }
 
   /**
-   * ✏️ 주문 수정
+   * ✏️ 주문 수정 (언제든 가능)
    */
   async updateOrder(
     orderId: string,
@@ -218,9 +214,6 @@ export class OrdersService {
       if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
       if (order.userId !== userId)
         throw new ForbiddenException('본인 주문만 수정할 수 있습니다.');
-      if (order.status === OrderStatus.COMPLETEDPAYMENT) {
-        throw new BadRequestException('결제 완료된 주문은 수정할 수 없습니다.');
-      }
 
       const updateData = {
         recipientName: dto.name ?? order.recipientName,
@@ -257,7 +250,7 @@ export class OrdersService {
   }
 
   /**
-   * ❌ 주문 취소 (환불 + 포인트 회수)
+   * ❌ 주문 취소 (PROCESSING 상태에서만 가능)
    */
   async cancelOrder(orderId: string, userId: string): Promise<void> {
     try {
@@ -265,9 +258,11 @@ export class OrdersService {
       if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
       if (order.userId !== userId)
         throw new ForbiddenException('본인 주문만 취소할 수 있습니다.');
+
+      // ✅ 상태 검증
       if (order.status !== OrderStatus.PROCESSING) {
         throw new BadRequestException(
-          '현재 상태에서는 주문을 취소할 수 없습니다.',
+          '주문은 PROCESSING 상태에서만 취소할 수 있습니다.',
         );
       }
 
