@@ -1,5 +1,13 @@
-import { AnswerStatus } from "@prisma/client";
-import { IsOptional, IsEnum, IsInt, Min, IsBoolean, IsString, MinLength } from "class-validator";
+import { AnswerStatus } from '@prisma/client';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  IsBoolean,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class GetInquiriesDto {
   @IsInt()
@@ -14,8 +22,6 @@ export class GetInquiriesDto {
   @IsEnum(AnswerStatus)
   status?: AnswerStatus;
 }
-<<<<<<< HEAD
-=======
 
 export class UpdateInquiryDto {
   @IsOptional()
@@ -38,4 +44,3 @@ export class ReplyContentDto {
   @MinLength(1)
   content: string;
 }
->>>>>>> upstream/dev
