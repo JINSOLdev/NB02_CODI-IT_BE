@@ -13,6 +13,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { GradeModule } from 'src/grades/grade.module';
 import { PointsModule } from 'src/points/points.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { InquiryModule } from './inquiry/inquiry.module';
 
 @Module({
   imports: [
@@ -31,8 +32,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     GradeModule,
     PointsModule,
     NotificationsModule,
+    InquiryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
