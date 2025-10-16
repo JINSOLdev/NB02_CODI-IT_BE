@@ -1,8 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateReviewDto, UpdateReviewDto } from './review.dto';
 import { ReviewService } from './review.service';
 import { AuthUser } from 'src/auth/auth.types';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('/api')
 export class ReviewController {
@@ -11,44 +23,62 @@ export class ReviewController {
   // Review 등록
   @UseGuards(JwtAuthGuard)
   @Post('/product/:productId/reviews')
-  create(@Req() req: { user: AuthUser }, @Param('productId') productId: string, @Body() createReviewDto: CreateReviewDto) {
-    const user = req.user;
+  createReview(
+    @Req() req: { user: AuthUser },
+    @Param('productId', ParseCuidPipe) productId: string,
+    @Body() createReviewDto: CreateReviewDto,
+  ) {
+    const userId = req.user.userId;
 
-    return this.reviewService.create({ ...createReviewDto, userId: user.userId, productId });
+    return this.reviewService.createReview({
+      ...createReviewDto,
+      userId,
+      productId,
+    });
   }
 
   // Product에 해당하는 Review 목록 조회
   @Get('/product/:productId/reviews')
-  findAllByProductId(@Req() req: { user: AuthUser }, @Param('productId') productId: string, @Query('limit') limit: number, @Query('page') page: number) {
-    const user = req.user;
-    const query = { limit: limit || 5, page: page || 1 };
+  findAllByProductId(
+    @Param('productId', ParseCuidPipe) productId: string,
+    @Query('limit') limit: string,
+    @Query('page') page: string,
+  ) {
+    const query = { limit: parseInt(limit, 10) || 5, page: parseInt(page, 10) || 1 };
 
-    return this.reviewService.findAllByProductId(user.userId, productId, query);
+    return this.reviewService.findAllByProductId(productId, query);
   }
 
   // Review 단건 조회
   @Get('/review/:reviewId')
-  findReviewById(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
-    const user = req.user;
+  findReviewById(
+    @Req() req: { user: AuthUser },
+    @Param('reviewId', ParseCuidPipe) reviewId: string,
+  ) {
+    const userId = req.user.userId;
 
-    return this.reviewService.findReviewById(user.userId, reviewId);
+    return this.reviewService.findReviewById(userId, reviewId);
   }
 
   // Review 수정
   @UseGuards(JwtAuthGuard)
   @Patch('/review/:reviewId')
-  updateReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string, @Body() updateReviewDto: UpdateReviewDto) {
-    const user = req.user;
+  updateReview(
+    @Req() req: { user: AuthUser },
+    @Param('reviewId', ParseCuidPipe) reviewId: string,
+    @Body() updateReviewDto: UpdateReviewDto,
+  ) {
+    const userId = req.user.userId;
 
-    return this.reviewService.updateReview(user.userId, reviewId, updateReviewDto);
+    return this.reviewService.updateReview(userId, reviewId, updateReviewDto);
   }
 
   // Review 삭제
   @UseGuards(JwtAuthGuard)
   @Delete('/review/:reviewId')
-  deleteReview(@Req() req: { user: AuthUser }, @Param('reviewId') reviewId: string) {
-    const user = req.user;
+  deleteReview(@Req() req: { user: AuthUser }, @Param('reviewId', ParseCuidPipe) reviewId: string) {
+    const userId = req.user.userId;
 
-    return this.reviewService.deleteReview(user.userId, reviewId);
+    return this.reviewService.deleteReview(userId, reviewId);
   }
 }
