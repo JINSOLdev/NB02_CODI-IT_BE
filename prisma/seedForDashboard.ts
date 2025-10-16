@@ -92,10 +92,10 @@ async function main() {
         image: 'test_image_1',
         price: 5000,
         storeId: store.id,
-        categoryId: category.id,
+        categoryId: 'test_category_id',
       },
     }),
-		prisma.product.upsert({
+    prisma.product.upsert({
       where: { id: 'test_product_2_id' },
       update: {},
       create: {
@@ -306,6 +306,11 @@ async function main() {
         totalPrice,
         status: 'COMPLETEDPAYMENT',
         createdAt: date,
+        recipientName: 'TestBuyer',
+        recipientPhone: '01012345678',
+        address: 'Test Address',
+        subtotal: totalPrice,
+        totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
         items: {
           create: items.map((item) => ({
             id: `test_orderitem_${date.toISOString()}_${item.productId}`,

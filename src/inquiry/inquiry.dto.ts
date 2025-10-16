@@ -1,5 +1,13 @@
-import { AnswerStatus } from "@prisma/client";
-import { IsOptional, IsEnum, IsInt, Min, IsBoolean, IsString, MinLength } from "class-validator";
+import { AnswerStatus } from '@prisma/client';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  IsBoolean,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class GetInquiriesDto {
   @IsInt()
