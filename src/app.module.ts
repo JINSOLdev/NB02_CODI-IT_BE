@@ -12,6 +12,7 @@ import { ReviewModule } from './review/review.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GradeModule } from 'src/grades/grade.module';
 import { PointsModule } from 'src/points/points.module';
+import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { InquiryModule } from './inquiry/inquiry.module';
 
@@ -31,6 +32,7 @@ import { InquiryModule } from './inquiry/inquiry.module';
     DashboardModule,
     GradeModule,
     PointsModule,
+    OrdersModule,
     NotificationsModule,
     InquiryModule,
   ],
