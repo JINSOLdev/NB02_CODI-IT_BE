@@ -48,6 +48,27 @@ export class OrdersRepository {
     });
   }
 
+  // ✅ 주문 수정 (수정 가능 필드만 업데이트)
+  async updateOrder(orderId: string, dto: Prisma.OrderUpdateInput) {
+    return this.prisma.order.update({
+      where: { id: orderId },
+      data: dto,
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                store: true,
+                stocks: { include: { size: true } },
+              },
+            },
+          },
+        },
+        payments: true,
+      },
+    });
+  }
+
   // ✅ 트랜잭션 실행
   async $transaction<T>(
     fn: (tx: Prisma.TransactionClient) => Promise<T>,
