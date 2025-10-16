@@ -6,6 +6,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: 'http://localhost:3000', // 허용할 출처
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // 허용할 HTTP 메서드
+    allowedHeaders: 'Content-Type, Authorization', // 허용할 헤더
+    credentials: true, // 인증 정보(쿠키, Authorization 등) 허용
+  });
+
   // ✅ 전역 미들웨어 설정
   app.useGlobalPipes(
     new ValidationPipe({

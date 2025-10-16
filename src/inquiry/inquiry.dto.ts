@@ -14,6 +14,8 @@ export class GetInquiriesDto {
   @IsEnum(AnswerStatus)
   status?: AnswerStatus;
 }
+<<<<<<< HEAD
+=======
 
 export class UpdateInquiryDto {
   @IsOptional()
@@ -30,3 +32,10 @@ export class UpdateInquiryDto {
   @IsBoolean()
   isSecret: boolean;
 }
+
+export class ReplyContentDto {
+  @IsString()
+  @MinLength(1)
+  content: string;
+}
+>>>>>>> upstream/dev
