@@ -92,7 +92,7 @@ async function main() {
         image: 'test_image_1',
         price: 5000,
         storeId: store.id,
-        categoryId: category.id,
+        categoryId: 'test_category_id',
       },
     }),
 		prisma.product.upsert({
@@ -306,6 +306,11 @@ async function main() {
         totalPrice,
         status: 'COMPLETEDPAYMENT',
         createdAt: date,
+        recipientName: 'TestBuyer',
+        recipientPhone: '01012345678',
+        address: 'Test Address',
+        subtotal: totalPrice,
+        totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
         items: {
           create: items.map((item) => ({
             id: `test_orderitem_${date.toISOString()}_${item.productId}`,
@@ -372,11 +377,13 @@ async function main() {
   console.log('Test seed data created for dashboard API testing!');
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => {
-    void prisma.$disconnect();
-  });
+if (require.main === module) {
+  main()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
