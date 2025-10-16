@@ -14,7 +14,7 @@ export type UserPayload = {
 export const toUserPayload = (u: User): UserPayload => ({
   id: u.id,
   email: u.email,
-  name: u.nickname,
+  name: u.name,
   type: u.type,
   points: String(u.points),
   image: u.image ?? null,
