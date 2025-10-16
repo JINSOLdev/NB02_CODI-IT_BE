@@ -102,5 +102,5 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 <!-- COVERAGE:START -->
 | Statements | Branches | Functions | Lines |
 | -----------|----------|-----------|-------|
-| ![Statements](#statements# "Make me better!") | ![Branches](#branches# "Make me better!") | ![Functions](#functions# "Make me better!") | ![Lines](#lines# "Make me better!") |
+| ![Statements](https://img.shields.io/badge/statements-39.26%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-31.74%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-15.98%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-37.46%25-red.svg?style=flat) |
 <!-- COVERAGE:END -->
