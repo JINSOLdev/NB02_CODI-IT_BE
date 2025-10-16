@@ -4,9 +4,11 @@ import {
   InternalServerErrorException,
   NotFoundException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { OrdersRepository } from './orders.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { plainToInstance } from 'class-transformer';
 import {
@@ -16,25 +18,26 @@ import {
   Payment,
   Order,
   User,
-  Product,
-  Store,
-  OrderItem,
 } from '@prisma/client';
+import { PointsService } from '../points/points.service';
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(private readonly ordersRepository: OrdersRepository) {}
+  constructor(
+    private readonly ordersRepository: OrdersRepository,
+    private readonly pointsService: PointsService,
+  ) {}
 
   /**
-   * 🛒 주문 생성 (프론트 기준)
+   * 🛒 주문 생성
    */
   async createOrder(
     userId: string,
     dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
-    const { recipientName, recipientPhone, address, items, usePoint = 0 } = dto;
+    const { name, phone, address, orderItems, usePoint = 0 } = dto;
 
     try {
       // ✅ 유저 검증
@@ -44,7 +47,7 @@ export class OrdersService {
 
       // ✅ 포인트 초과 사용 방지
       if (usePoint > user.points)
-        throw new BadRequestException('보유 포인트를 초과했습니다.');
+        throw new BadRequestException('보유 포인트를 초과할 수 없습니다.');
 
       // ✅ 상품 유효성 검증
       type ProductWithRelations = Prisma.ProductGetPayload<{
@@ -53,13 +56,11 @@ export class OrdersService {
 
       const products: ProductWithRelations[] =
         await this.ordersRepository.findProductsWithRelations(
-          items.map((i) => i.productId),
+          orderItems.map((i) => i.productId),
         );
 
-      if (products.length !== items.length) {
-        throw new BadRequestException(
-          '유효하지 않은 상품이 포함되어 있습니다.',
-        );
+      if (products.length !== orderItems.length) {
+        throw new BadRequestException('상품 정보가 유효하지 않습니다.');
       }
 
       // ✅ 단일 스토어 검증
@@ -73,8 +74,11 @@ export class OrdersService {
       const storeId = storeIds[0];
 
       // ✅ 금액 및 수량 재계산
-      const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
-      const totalPrice = items.reduce((acc, item) => {
+      const totalQuantity = orderItems.reduce(
+        (acc, item) => acc + item.quantity,
+        0,
+      );
+      const totalPrice = orderItems.reduce((acc, item) => {
         const product = products.find((p) => p.id === item.productId);
         return acc + (product ? product.price * item.quantity : 0);
       }, 0);
@@ -82,25 +86,23 @@ export class OrdersService {
       // ✅ 트랜잭션 처리
       const result: { createdOrder: Order; payment: Payment } =
         await this.ordersRepository.$transaction(async (tx) => {
-          // 주문 생성
           const createdOrder: Order = await tx.order.create({
             data: {
               userId,
               storeId,
-              recipientName,
-              recipientPhone,
+              recipientName: name,
+              recipientPhone: phone,
               address,
-              subtotal: totalPrice, // ✅ 서버 계산 금액 저장
+              subtotal: totalPrice,
               totalQuantity,
               usePoint,
               totalPrice,
-              status: OrderStatus.PROCESSING,
+              status: OrderStatus.PROCESSING, // ✅ 생성 시 PROCESSING 유지
             },
           });
 
-          // 주문 아이템 생성
           await tx.orderItem.createMany({
-            data: items.map((item) => {
+            data: orderItems.map((item) => {
               const product = products.find((p) => p.id === item.productId);
               if (!product)
                 throw new BadRequestException('상품 정보를 찾을 수 없습니다.');
@@ -109,67 +111,38 @@ export class OrdersService {
                 productId: item.productId,
                 quantity: item.quantity,
                 price: product.price,
-                sizeId: item.sizeId,
               };
             }),
           });
 
-          // 포인트 차감
-          if (usePoint > 0) {
-            await tx.user.update({
-              where: { id: userId },
-              data: { points: { decrement: usePoint } },
-            });
-            await tx.pointTransaction.create({
-              data: {
-                userId,
-                delta: -usePoint,
-                reason: '상품 주문 시 포인트 사용',
-                orderId: createdOrder.id,
-              },
-            });
-          }
-
-          // 결제 생성
+          // ✅ 결제는 별도 상태로 등록만
           const payment: Payment = await tx.payment.create({
             data: {
               orderId: createdOrder.id,
               price: totalPrice,
-              status: PaymentStatus.COMPLETED,
+              status: PaymentStatus.PENDING,
             },
-          });
-
-          // ✅ 결제 완료 → 주문 상태 변경
-          await tx.order.update({
-            where: { id: createdOrder.id },
-            data: { status: OrderStatus.COMPLETEDPAYMENT },
           });
 
           return { createdOrder, payment };
         });
 
+      // ✅ 포인트 차감 (결제 완료 시점에 실행되어도 무방)
+      if (usePoint > 0) {
+        await this.pointsService.spendPointsForOrder(
+          userId,
+          result.createdOrder.id,
+          usePoint,
+        );
+      }
+
       // ✅ 트랜잭션 이후 재조회 (relations 포함)
-      const createdOrder = await this.ordersRepository.findOrderById(
+      const fullOrder = await this.ordersRepository.findOrderById(
         result.createdOrder.id,
       );
 
-      if (!createdOrder)
-        throw new InternalServerErrorException(
-          '주문 정보를 조회할 수 없습니다.',
-        );
-
-      // ✅ 타입 강화
-      type FullOrderType = Order & {
-        items: (OrderItem & {
-          product: Product & {
-            store: Store;
-            stocks: { size: { id: number; en: string; ko: string } }[];
-          };
-        })[];
-        payments?: Payment | null;
-      };
-
-      const fullOrder = createdOrder as unknown as FullOrderType;
+      if (!fullOrder)
+        throw new InternalServerErrorException('주문을 조회할 수 없습니다.');
 
       // ✅ 응답 변환
       return plainToInstance(OrderResponseDto, {
@@ -206,28 +179,120 @@ export class OrdersService {
         payments: {
           id: fullOrder.payments?.id ?? '',
           price: fullOrder.payments?.price ?? 0,
-          status: 'CompletedPayment',
+          status: fullOrder.payments?.status ?? PaymentStatus.PENDING,
           createdAt: fullOrder.payments?.createdAt ?? new Date(),
           orderId: fullOrder.id,
         },
       });
     } catch (err: unknown) {
-      // ✅ 에러 로깅
-      if (err instanceof Error) {
-        this.logger.error(`❌ 주문 생성 중 오류: ${err.message}`, err.stack);
-      } else {
-        this.logger.error('❌ 알 수 없는 오류 발생', JSON.stringify(err));
-      }
-
       if (
         err instanceof BadRequestException ||
+        err instanceof ForbiddenException ||
         err instanceof NotFoundException
       ) {
+        this.logger.warn(`⚠️ ${err.message}`);
         throw err;
       }
-
+      if (err instanceof Error)
+        this.logger.error(`❌ 주문 생성 중 오류: ${err.message}`, err.stack);
       throw new InternalServerErrorException(
         '주문 생성 중 오류가 발생했습니다.',
+      );
+    }
+  }
+
+  /**
+   * ✏️ 주문 수정 (언제든 가능)
+   */
+  async updateOrder(
+    orderId: string,
+    userId: string,
+    dto: UpdateOrderDto,
+  ): Promise<OrderResponseDto> {
+    try {
+      const order = await this.ordersRepository.findOrderById(orderId);
+      if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+      if (order.userId !== userId)
+        throw new ForbiddenException('본인 주문만 수정할 수 있습니다.');
+
+      const updateData = {
+        recipientName: dto.name ?? order.recipientName,
+        recipientPhone: dto.phone ?? order.recipientPhone,
+        address: dto.address ?? order.address,
+        usePoint: dto.usePoint ?? order.usePoint,
+      };
+
+      const updatedOrder = await this.ordersRepository.updateOrder(
+        orderId,
+        updateData,
+      );
+      if (!updatedOrder)
+        throw new InternalServerErrorException(
+          '주문 수정 중 오류가 발생했습니다.',
+        );
+
+      return plainToInstance(OrderResponseDto, updatedOrder);
+    } catch (err: unknown) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException
+      ) {
+        this.logger.warn(`⚠️ ${err.message}`);
+        throw err;
+      }
+      if (err instanceof Error)
+        this.logger.error(`❌ 주문 수정 중 오류: ${err.message}`, err.stack);
+      throw new InternalServerErrorException(
+        '주문 수정 중 오류가 발생했습니다.',
+      );
+    }
+  }
+
+  /**
+   * ❌ 주문 취소 (PROCESSING 상태에서만 가능)
+   */
+  async cancelOrder(orderId: string, userId: string): Promise<void> {
+    try {
+      const order = await this.ordersRepository.findOrderById(orderId);
+      if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+      if (order.userId !== userId)
+        throw new ForbiddenException('본인 주문만 취소할 수 있습니다.');
+
+      // ✅ 상태 검증
+      if (order.status !== OrderStatus.PROCESSING) {
+        throw new BadRequestException(
+          '주문은 PROCESSING 상태에서만 취소할 수 있습니다.',
+        );
+      }
+
+      await this.ordersRepository.$transaction(async (tx) => {
+        await tx.order.update({
+          where: { id: orderId },
+          data: { status: OrderStatus.CANCELED },
+        });
+        await tx.payment.update({
+          where: { orderId },
+          data: { status: PaymentStatus.REFUNDED },
+        });
+      });
+
+      await this.pointsService.revertOnCancel(orderId);
+
+      this.logger.log(`✅ 주문 취소 및 포인트 회수 완료: ${orderId}`);
+    } catch (err: unknown) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException
+      ) {
+        this.logger.warn(`⚠️ ${err.message}`);
+        throw err;
+      }
+      if (err instanceof Error)
+        this.logger.error(`❌ 주문 취소 중 오류: ${err.message}`, err.stack);
+      throw new InternalServerErrorException(
+        '주문 취소 중 오류가 발생했습니다.',
       );
     }
   }

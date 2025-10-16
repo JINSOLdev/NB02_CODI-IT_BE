@@ -15,7 +15,7 @@ async function main() {
     create: {
       id: 'test_seller_id',
       email: 'seller@test.com',
-      nickname: '판매자',
+      name: '판매자',
       passwordHash: hashedPassword,
       type: UserType.SELLER,
     },
@@ -27,7 +27,7 @@ async function main() {
     create: {
       id: 'test_buyer_id',
       email: 'buyer@test.com',
-      nickname: '구매자',
+      name: '구매자',
       passwordHash: hashedPassword,
       type: UserType.BUYER,
     },
