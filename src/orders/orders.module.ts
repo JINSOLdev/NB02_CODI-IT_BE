@@ -3,11 +3,12 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { OrdersRepository } from './orders.repository';
 import { PrismaService } from '../prisma/prisma.service';
+import { PointsModule } from '../points/points.module';
 
 @Module({
-  imports: [], // 주문은 현재 외부 모듈을 직접 import할 필요 없음
+  imports: [PointsModule], // ✅ PointsService 사용을 위해 PointsModule 추가
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository, PrismaService],
-  exports: [OrdersService], // 다른 모듈에서 주문 접근 시 사용 가능
+  exports: [OrdersService],
 })
 export class OrdersModule {}
