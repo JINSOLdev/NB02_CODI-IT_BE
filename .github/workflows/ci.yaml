@@ -28,5 +28,4 @@ jobs:
     -
       name: Test Application
       run: |
-        npm run ci
-        npm run test:unit
+       npm run test
