@@ -12,7 +12,7 @@ export interface InquiryWithRelations {
   productId: string;
   user: {
     id: string;
-    nickname: string;
+    name: string;
   };
   reply: {
     id: string;
@@ -21,7 +21,7 @@ export interface InquiryWithRelations {
     updatedAt: Date;
     user: {
       id: string;
-      nickname: string;
+      name: string;
     };
-  }[];
+  } | null;
 }
