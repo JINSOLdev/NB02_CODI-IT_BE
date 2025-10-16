@@ -12,6 +12,7 @@ import { ReviewModule } from './review/review.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GradeModule } from 'src/grades/grade.module';
 import { PointsModule } from 'src/points/points.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { PointsModule } from 'src/points/points.module';
     DashboardModule,
     GradeModule,
     PointsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
