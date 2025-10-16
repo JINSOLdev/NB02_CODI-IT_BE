@@ -21,7 +21,7 @@ import { StoreResponseDto } from './dto/store-response.dto';
 import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
-import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
+import { ParseCuidPipe } from '../common/pipes/parse-cuid.pipe';
 
 @Controller('api/stores')
 export class StoreController {

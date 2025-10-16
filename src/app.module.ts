@@ -13,6 +13,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { GradeModule } from 'src/grades/grade.module';
 import { PointsModule } from 'src/points/points.module';
 import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { OrdersModule } from './orders/orders.module';
     GradeModule,
     PointsModule,
     OrdersModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
