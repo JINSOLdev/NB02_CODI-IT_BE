@@ -1,32 +1,41 @@
-name: Test pipeline
+name: Test & Coverage Badges
 on:
   push:
-    branches:
-      - "dev"
+    branches: ['dev']
+  pull_request:
+    branches: ['dev']
+  workflow_dispatch:
+
+permissions:
+  contents: write 
+
 jobs:
-  TEST:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [15.x]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
 
       - name: Setup Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Test Application
-        run: |
-          npm run ci
-          npm run test:badge
-      - name: Update README.md test coverage section 
+      - name: Install deps
+        run: npm ci
+
+      - name: Run unit tests with coverage (produce coverage-summary.json)
+        run: npm run test:ci
+
+      - name: Update README coverage badges
+        run: npm run test:badge
+
+      - name: Commit README update
         uses: stefanzweifel/git-auto-commit-action@v4
-        with: 
+        with:
           commit_message: '[TEST] update test coverage'
           branch: dev
-          commit_options: '--no-verify --signoff'
           file_pattern: README.md
-          repository: .
