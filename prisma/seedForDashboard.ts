@@ -92,10 +92,10 @@ async function main() {
         image: 'test_image_1',
         price: 5000,
         storeId: store.id,
-        categoryId: category.id,
+        categoryId: 'test_category_id',
       },
     }),
-		prisma.product.upsert({
+    prisma.product.upsert({
       where: { id: 'test_product_2_id' },
       update: {},
       create: {

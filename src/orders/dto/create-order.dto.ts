@@ -1,0 +1,51 @@
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class OrderItemRequestDto {
+  @ApiProperty({ example: 'clz9v5krw0001uvznnfvgtcaa', description: '상품 ID' })
+  @IsString()
+  productId: string;
+
+  @ApiProperty({ example: 3, description: '사이즈 ID' })
+  @IsInt()
+  sizeId: number;
+
+  @ApiProperty({ example: 1, description: '수량 (1 이상)' })
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
+
+export class CreateOrderDto {
+  @ApiProperty({ example: '김테스터', description: '수령인 이름' })
+  @IsString()
+  recipientName: string;
+
+  @ApiProperty({ example: '010-9999-8888', description: '수령인 전화번호' })
+  @IsString()
+  recipientPhone: string;
+
+  @ApiProperty({ example: '서울특별시 강남구', description: '배송지 주소' })
+  @IsString()
+  address: string;
+
+  @ApiProperty({ example: 0, description: '사용 포인트', required: false })
+  @IsInt()
+  @IsOptional()
+  usePoint: number = 0;
+
+  @ApiProperty({
+    type: [OrderItemRequestDto],
+    description: '주문 상품 목록',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemRequestDto)
+  items: OrderItemRequestDto[];
+}
