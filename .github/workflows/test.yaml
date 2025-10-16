@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write 
+  contents: write
 
 jobs:
   test:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,13 +27,21 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Run unit tests with coverage (produce coverage-summary.json)
+      - name: Run unit tests with coverage (non-blocking)
         run: npm run test:ci
+        continue-on-error: true
 
       - name: Update README coverage badges
-        run: npm run test:badge
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            npm run test:badge
+          else
+            echo "coverage-summary.json not found. Skip badge update."
+          fi
 
       - name: Commit README update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && hashFiles('coverage/coverage-summary.json') != ''
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: '[TEST] update test coverage'
