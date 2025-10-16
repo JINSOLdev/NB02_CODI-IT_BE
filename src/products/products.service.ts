@@ -123,7 +123,7 @@ export class ProductsService {
       const product = await this.productsRepository.findOne(productId);
       if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
 
-      // ✅ 권한 체크 (스토어의 sellerId와 로그인한 sellerId 비교)
+      // ✅ 권한 체크
       const store = await this.productsRepository.findStoreBySellerId(sellerId);
       if (!store || store.id !== product.storeId) {
         throw new ForbiddenException('이 상품을 수정할 권한이 없습니다.');
@@ -223,7 +223,7 @@ export class ProductsService {
     }
   }
 
-  /** 상품 문의 조회 */
+  /** ✅ 상품 문의 조회 (nickname 변환 포함) */
   async findInquiries(
     productId: string,
     userId: string,
@@ -237,12 +237,30 @@ export class ProductsService {
     const inquiries = await this.productsRepository.findInquiries(productId);
 
     return inquiries.map((inq) => {
-      if (!inq.isSecret) return inq;
+      // ✅ user 및 reply.user의 nickname 변환
+      const transformedInquiry: InquiryWithRelations = {
+        ...inq,
+        user: {
+          id: inq.user.id,
+          nickname: inq.user.name,
+        },
+        reply: inq.reply.map((rep) => ({
+          ...rep,
+          user: {
+            id: rep.user.id,
+            nickname: rep.user.name,
+          },
+        })),
+      };
+
+      // ✅ 비밀글 접근 권한 확인
+      if (!inq.isSecret) return transformedInquiry;
 
       if (inq.userId !== userId && product.store.sellerId !== userId) {
         throw new ForbiddenException('비밀글을 조회할 권한이 없습니다.');
       }
-      return inq;
+
+      return transformedInquiry;
     });
   }
 }
