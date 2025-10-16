@@ -1,6 +1,5 @@
 import type { Request as ExpressRequest } from 'express';
 import { UserType } from '@prisma/client';
-import { CreateOrderDto } from 'src/orders/dto/create-order.dto';
 
 export type GradeSummary = {
   id: string;
@@ -18,7 +17,6 @@ export type JwtPayloadCompat = {
 };
 
 export type AuthUser = {
-  id(orderId: string, id: any, dto: Partial<CreateOrderDto>): unknown;
   userId: string;
   email: string;
   type: UserType;
