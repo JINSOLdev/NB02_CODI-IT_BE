@@ -16,7 +16,6 @@ describe('GradeService', () => {
     saveUserGrade: jest.fn<Promise<void>, [string, GradeLevel, TxLike]>(),
   };
 
-  // --- Utils: 안전한 제네릭 타입으로 Spy 선언 (any 사용 금지) ---
   const getEarnRateSpy: jest.SpyInstance<
     ReturnType<typeof gradeUtil.getEarnRate>,
     Parameters<typeof gradeUtil.getEarnRate>
@@ -42,7 +41,6 @@ describe('GradeService', () => {
 
     service = module.get(GradeService);
 
-    // repo/spy 초기화 (재할당 없이 reset만)
     jest.clearAllMocks();
     getEarnRateSpy.mockReset();
     getGradeByAmountSpy.mockReset();
@@ -57,7 +55,7 @@ describe('GradeService', () => {
       repoMock.sumLifetime.mockResolvedValueOnce(lifetime);
       getGradeByAmountSpy.mockReturnValueOnce(GradeLevel.ORANGE);
 
-      const result = await service.getCurrentGrade(userId); // tx/제외주문 생략
+      const result = await service.getCurrentGrade(userId);
 
       expect(repoMock.sumLifetime).toHaveBeenCalledWith(
         userId,

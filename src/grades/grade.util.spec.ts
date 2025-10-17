@@ -8,7 +8,6 @@ import {
 import { GRADE_MAP, GradePayload } from './grade.constants';
 
 describe('grade.util', () => {
-  // 등급을 minAmount 기준 오름차순 정렬 (상수 기반)
   const orderedEntries: ReadonlyArray<[GradeLevel, GradePayload]> = (
     Object.entries(GRADE_MAP) as [GradeLevel, GradePayload][]
   )
@@ -19,7 +18,7 @@ describe('grade.util', () => {
     ([lv]) => lv,
   );
 
-  // 기대 등급 계산기: amount 이상인 마지막 등급
+  // 기대 등급 계산
   const expectedGradeByAmount = (amount: number): GradeLevel => {
     let cur: GradeLevel = orderedEntries[0][0];
     for (const [lv, payload] of orderedEntries) {
@@ -29,7 +28,7 @@ describe('grade.util', () => {
     return cur;
   };
 
-  // 기대 다음 등급 계산기
+  // 기대 다음 등급 계산
   const expectedNextInfo = (
     totalAmount: number,
   ): { next?: GradeLevel; need?: number } => {
@@ -85,13 +84,12 @@ describe('grade.util', () => {
 
   describe('resolveGradeByAmount', () => {
     it('level과 payload를 동시에 올바르게 반환한다', () => {
-      // 여러 샘플 금액으로 level/payload 일치성 확인
       const samples = [0, 1, 50, 10_000, 123_456, Number.MAX_SAFE_INTEGER];
       for (const amount of samples) {
         const { level, payload } = resolveGradeByAmount(amount);
         const expectedLevel = expectedGradeByAmount(amount);
         expect(level).toBe(expectedLevel);
-        expect(payload).toBe(GRADE_MAP[level]); // 동일 객체(참조)여야 함
+        expect(payload).toBe(GRADE_MAP[level]);
       }
     });
   });
@@ -125,7 +123,7 @@ describe('grade.util', () => {
       const expected = expectedNextInfo(negative);
       const info = getNextGradeInfo(negative);
       expect(info).toEqual(expected);
-      // sanity: next가 있으면 need는 next.minAmount - negative가 되어 양수
+
       if (info.next) {
         const nextMin = GRADE_MAP[info.next].minAmount;
         expect(info.need).toBe(nextMin - negative);
