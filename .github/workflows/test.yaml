@@ -1,0 +1,49 @@
+name: Test & Coverage Badges
+on:
+  push:
+    branches: ['dev']
+  pull_request:
+    branches: ['dev']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run unit tests with coverage (non-blocking)
+        run: npm run test:ci
+        continue-on-error: true
+
+      - name: Update README coverage badges
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            npm run test:badge
+          else
+            echo "coverage-summary.json not found. Skip badge update."
+          fi
+
+      - name: Commit README update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && hashFiles('coverage/coverage-summary.json') != ''
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: '[TEST] update test coverage'
+          branch: dev
+          file_pattern: README.md

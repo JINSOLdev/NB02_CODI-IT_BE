@@ -1,19 +1,22 @@
 import { PrismaClient, UserType, CategoryType } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🧹 DB 초기화 시작...');
 
-  // ✅ 유저 생성
+  const hashedPassword = await bcrypt.hash('pass1234', 10);
+
+  // ✅ 유저
   await prisma.user.upsert({
     where: { id: 'test_seller_id' },
     update: {},
     create: {
       id: 'test_seller_id',
       email: 'seller@test.com',
-      nickname: '판매자',
-      passwordHash: 'hashed-password',
+      name: '판매자',
+      passwordHash: hashedPassword,
       type: UserType.SELLER,
     },
   });
@@ -24,13 +27,13 @@ async function main() {
     create: {
       id: 'test_buyer_id',
       email: 'buyer@test.com',
-      nickname: '구매자',
-      passwordHash: 'hashed-password',
+      name: '구매자',
+      passwordHash: hashedPassword,
       type: UserType.BUYER,
     },
   });
 
-  // ✅ 스토어 생성
+  // ✅ 스토어
   await prisma.store.upsert({
     where: { id: 'test_store_id' },
     update: {},
@@ -45,7 +48,9 @@ async function main() {
     },
   });
 
-  // ✅ 카테고리 생성 (name 기준 upsert)
+  // ✅ 카테고리 (초기화 후 재생성)
+  await prisma.category.deleteMany();
+
   const categories: CategoryType[] = [
     CategoryType.TOP,
     CategoryType.BOTTOM,
@@ -56,18 +61,16 @@ async function main() {
     CategoryType.ACC,
   ];
 
-  for (const name of categories) {
-    await prisma.category.upsert({
-      where: { name }, // 🔥 unique 필드 name으로 검색
-      update: {},
-      create: {
-        id: `test_category_${name.toLowerCase()}`,
-        name,
-      },
-    });
-  }
+  await prisma.category.createMany({
+    data: categories.map((name) => ({
+      id: `test_category_${name.toLowerCase()}`,
+      name,
+    })),
+  });
 
-  // ✅ StockSize 고정 ID (프론트에서 1~6 숫자 매핑 그대로 사용 가능)
+  // ✅ 사이즈
+  await prisma.stockSize.deleteMany();
+
   const stockSizes = [
     { id: '1', name: 'XS' },
     { id: '2', name: 'S' },
@@ -77,13 +80,35 @@ async function main() {
     { id: '6', name: 'FREE' },
   ];
 
-  for (const size of stockSizes) {
-    await prisma.stockSize.upsert({
-      where: { id: size.id }, // 🔥 id 고정
-      update: {},
-      create: { id: size.id, name: size.name },
-    });
-  }
+  await prisma.stockSize.createMany({ data: stockSizes });
+
+  // ✅ 상품
+  await prisma.product.createMany({
+    data: [
+      {
+        id: 'cabc1234-5678-90ab-cdef-1234567890ab',
+        name: '테스트 상품 1',
+        price: 25000,
+        discountRate: 0,
+        discountPrice: 25000,
+        categoryId: 'test_category_top',
+        storeId: 'test_store_id',
+        image: null,
+        content: '테스트용 상품입니다.',
+      },
+      {
+        id: 'dabc1234-5678-90ab-cdef-1234567890ac',
+        name: '테스트 상품 2',
+        price: 23000,
+        discountRate: 8,
+        discountPrice: 21160,
+        categoryId: 'test_category_bottom',
+        storeId: 'test_store_id',
+        image: null,
+        content: '테스트용 상품입니다.',
+      },
+    ],
+  });
 
   console.log('✅ Seed 완료!');
 }
@@ -93,7 +118,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error(e);
+    console.error('❌ 시드 실행 중 오류:', e);
     await prisma.$disconnect();
     process.exit(1);
   });

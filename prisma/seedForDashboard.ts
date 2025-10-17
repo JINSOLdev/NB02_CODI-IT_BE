@@ -95,7 +95,7 @@ async function main() {
         categoryId: 'test_category_id',
       },
     }),
-		prisma.product.upsert({
+    prisma.product.upsert({
       where: { id: 'test_product_2_id' },
       update: {},
       create: {
@@ -377,13 +377,11 @@ async function main() {
   console.log('Test seed data created for dashboard API testing!');
 }
 
-if (require.main === module) {
-  main()
-    .catch((e) => {
-      console.error(e);
-      process.exit(1);
-    })
-    .finally(async () => {
-      await prisma.$disconnect();
-    });
-}
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(() => {
+    void prisma.$disconnect();
+  });

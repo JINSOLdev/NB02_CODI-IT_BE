@@ -20,7 +20,7 @@ datasource db {
  */
 model User {
   id           String     @id @default(cuid())
-  nickname     String
+  name         String
   email        String     @unique
   passwordHash String
   type         UserType   @default(BUYER)
@@ -108,9 +108,10 @@ model Store {
   sellerId String @unique
   seller   User   @relation("StoreOwner", fields: [sellerId], references: [id], onDelete: Cascade)
 
-  favorites FavoriteStore[]
-  Product   Product[]
-  Order     Order[]
+  favorites    FavoriteStore[]
+  Product      Product[]
+  Order        Order[]
+  Notification Notification[]
 }
 
 model FavoriteStore {
@@ -152,9 +153,10 @@ model CartItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  cart    Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
   size    StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+
   @@unique([cartId, productId, sizeId])
 }
 
@@ -167,7 +169,7 @@ model Product {
   id                String    @id @default(cuid())
   storeId           String
   name              String
-  content           String?        
+  content           String?
   image             String?
   price             Int
   discountPrice     Int?
@@ -178,14 +180,15 @@ model Product {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  categoryId String
-  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  stocks     Stock[]
-  reviews    Review[]
-  inquiries  Inquiry[]
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  store        Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  stocks       Stock[]
+  reviews      Review[]
+  inquiries    Inquiry[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  Notification Notification[]
 }
 
 model Category {
@@ -205,24 +208,22 @@ enum CategoryType {
 }
 
 model Stock {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   productId String
   sizeId    String
   size      StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
   quantity  Int
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
 }
 
 model StockSize {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   name String
 
   stocks    Stock[]
   cartItems CartItem[]
 }
-
 
 /**
  * =========================
@@ -230,34 +231,35 @@ model StockSize {
  * =========================
  */
 model Order {
-   id             String   @id @default(cuid())  
+  id             String @id @default(cuid())
   userId         String
   storeId        String
-  recipientName  String   
-  recipientPhone String   
-  address        String   
-  subtotal       Int       
-  totalQuantity  Int       
-  usePoint       Int       @default(0) 
-  totalPrice     Int       
+  recipientName  String
+  recipientPhone String
+  address        String
+  subtotal       Int
+  totalQuantity  Int
+  usePoint       Int    @default(0)
+  totalPrice     Int
 
-  status         OrderStatus  @default(PROCESSING)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  status    OrderStatus @default(PROCESSING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store       Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  items       OrderItem[]
-  pointLogs   PointTransaction[]
-  payments    Payment?
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store        Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items        OrderItem[]
+  pointLogs    PointTransaction[]
+  payments     Payment?
+  Notification Notification[]
 }
 
 model Payment {
-  id        String         @id @default(cuid())
-  orderId   String         @unique
+  id        String        @id @default(cuid())
+  orderId   String        @unique
   price     Int
-  status    PaymentStatus  @default(PENDING)
-  createdAt DateTime       @default(now())
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
@@ -274,7 +276,7 @@ model OrderItem {
   orderId   String
   productId String
   quantity  Int
-  price     Int        // 주문 당시 가격 (할인 반영 가능)
+  price     Int // 주문 당시 가격 (할인 반영 가능)
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -293,20 +295,44 @@ enum OrderStatus {
  * =========================
  */
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  message   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id      String           @id @default(cuid())
+  userId  String
+  type    NotificationType
+  title   String?
+  message String
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String?
+  inquiryId String?
+  orderId   String?
+  storeId   String?
+
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  inquiry Inquiry? @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  store   Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, type, productId, inquiryId, orderId, storeId])
+  @@index([userId, isRead, createdAt])
+  @@index([type])
+  @@index([productId])
+  @@index([inquiryId])
+  @@index([orderId])
+  @@index([storeId])
 }
 
 enum NotificationType {
-  ORDER_UPDATE
-  PROMOTION
-  SYSTEM_ALERT
+  OUT_OF_STOCK_CART
+  OUT_OF_STOCK_ORDER
+  OUT_OF_STOCK_SELLER
+  NEW_INQUIRY
+  INQUIRY_ANSWERED
+  SYSTEM
 }
 
 /**
@@ -347,11 +373,12 @@ model Inquiry {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  userId    String
-  user      User     @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  reply     Answer[]
+  userId       String
+  user         User           @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reply        Answer?
+  Notification Notification[]
 }
 
 model Answer {
@@ -362,6 +389,6 @@ model Answer {
 
   userId    String
   user      User    @relation("AnswerAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  inquiryId String
+  inquiryId String  @unique
   inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
 }
