@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
 import { AuthUser } from 'src/auth/auth.types';
 import { InquiryService } from './inquiry.service';
@@ -12,16 +24,14 @@ export class InquiryController {
   // 내가 작성한 문의 목록 조회
   @UseGuards(JwtAuthGuard)
   @Get()
-  getMyInquiries(
-    @Req() req: { user: AuthUser },
-    @Query() query: GetInquiriesDto,
-  ) {
+  getMyInquiries(@Req() req: { user: AuthUser }, @Query() query: GetInquiriesDto) {
     const userId = req.user.userId;
 
     return this.inquiryService.getMyInquiries(userId, query);
   }
 
   // 문의 상세 조회
+  @UseGuards(JwtAuthGuard)
   @Get(':inquiryId')
   getInquiryDetail(@Param('inquiryId') inquiryId: string) {
     return this.inquiryService.getInquiryDetail(inquiryId);
@@ -39,7 +49,8 @@ export class InquiryController {
     const { title, content, isSecret } = body;
 
     // 수정 요청 시 최소 1개의 필드가 입력되어야 함
-    if (title === undefined && content === undefined && isSecret === undefined) throw new BadRequestException('수정할 필드를 최소 1개 이상 입력해주세요.');
+    if (title === undefined && content === undefined && isSecret === undefined)
+      throw new BadRequestException('수정할 필드를 최소 1개 이상 입력해주세요.');
 
     // undefined 값만 필터링
     const updateData: Partial<UpdateInquiryDto> = {};
@@ -53,7 +64,10 @@ export class InquiryController {
   // 문의 삭제
   @UseGuards(JwtAuthGuard)
   @Delete(':inquiryId')
-  deleteInquiry(@Req() req: { user: AuthUser }, @Param('inquiryId', ParseCuidPipe) inquiryId: string) {
+  deleteInquiry(
+    @Req() req: { user: AuthUser },
+    @Param('inquiryId', ParseCuidPipe) inquiryId: string,
+  ) {
     const userId = req.user.userId;
 
     return this.inquiryService.deleteInquiry(userId, inquiryId);
@@ -62,7 +76,11 @@ export class InquiryController {
   // 문의 답변 등록
   @UseGuards(JwtAuthGuard)
   @Post(':inquiryId/replies')
-  createReply(@Req() req: { user: AuthUser }, @Param('inquiryId', ParseCuidPipe) inquiryId: string, @Body() body: ReplyContentDto) {
+  createReply(
+    @Req() req: { user: AuthUser },
+    @Param('inquiryId', ParseCuidPipe) inquiryId: string,
+    @Body() body: ReplyContentDto,
+  ) {
     const userId = req.user.userId;
 
     if (body.content === undefined) throw new BadRequestException('내용을 입력해주세요.');
@@ -79,7 +97,11 @@ export class InquiryController {
   // 문의 답변 수정
   @UseGuards(JwtAuthGuard)
   @Patch(':replyId/replies')
-  updateReply(@Req() req: { user: AuthUser }, @Param('replyId', ParseCuidPipe) replyId: string, @Body() body: ReplyContentDto) {
+  updateReply(
+    @Req() req: { user: AuthUser },
+    @Param('replyId', ParseCuidPipe) replyId: string,
+    @Body() body: ReplyContentDto,
+  ) {
     const userId = req.user.userId;
     if (body.content === undefined) throw new BadRequestException('내용을 입력해주세요.');
 
@@ -94,4 +116,4 @@ export class InquiryController {
 
     return this.inquiryService.deleteReply(userId, replyId);
   }
-} 
+}

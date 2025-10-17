@@ -9,8 +9,12 @@ import { AuthModule } from './auth/auth.module';
 import { S3Module } from './s3/s3.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
-import { InquiryModule } from './inquiry/inquiry.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { GradeModule } from 'src/grades/grade.module';
+import { PointsModule } from 'src/points/points.module';
+import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { InquiryModule } from './inquiry/inquiry.module';
 
 @Module({
   imports: [
@@ -25,10 +29,14 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UsersModule,
     AuthModule,
     ReviewModule,
-    InquiryModule,
     DashboardModule,
+    GradeModule,
+    PointsModule,
+    OrdersModule,
+    NotificationsModule,
+    InquiryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

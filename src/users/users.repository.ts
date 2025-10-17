@@ -5,7 +5,7 @@ import { USER_AUTH_SELECT, FAVORITE_WITH_STORE_SELECT } from './users.select';
 
 export type UserForAuth = Pick<
   User,
-  'id' | 'email' | 'nickname' | 'type' | 'gradeLevel' | 'passwordHash'
+  'id' | 'email' | 'name' | 'type' | 'gradeLevel' | 'passwordHash'
 >;
 
 // favorite + store select 결과 타입 (정적 타입 안전)
