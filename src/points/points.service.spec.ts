@@ -25,7 +25,7 @@ describe('PointsService', () => {
     syncUserGrade: jest.Mock;
   };
 
-  // 간단한 트랜잭션 목: 콜백을 즉시 실행하고 tx 객체를 전달
+  // 트랜잭션 시뮬레이션
   const tx = { _tx: true };
   const runTx = async <T>(fn: (t: any) => Promise<T>) => fn(tx);
 
@@ -151,7 +151,7 @@ describe('PointsService', () => {
       repo.getOrder.mockResolvedValue({
         id: 'o1',
         userId: 'u1',
-        status: OrderStatus.PROCESSING, // 존재하는 비-완료 상태로 변경
+        status: OrderStatus.PROCESSING,
         totalPrice: 10000,
       });
 
@@ -184,9 +184,9 @@ describe('PointsService', () => {
       });
       repo.hasPointLog.mockResolvedValue(false);
       grade.getCurrentGrade
-        // 첫 번째: "지금 처리 중인 주문 제외" 시나리오
+        // 지금 처리 중인 주문 제외
         .mockResolvedValueOnce({ grade: 'GREEN' })
-        // 두 번째: 적립 후 표시용 등급 캐시 동기화용
+        // 적립 후 표시용 등급 캐시 동기화용
         .mockResolvedValueOnce({ grade: 'ORANGE' });
 
       grade.getEarnRate.mockReturnValue(0.02);
@@ -211,7 +211,7 @@ describe('PointsService', () => {
         id: 'o1',
         userId: 'u1',
         status: OrderStatus.COMPLETEDPAYMENT,
-        totalPrice: -100, // max(0, total) → 0
+        totalPrice: -100,
       });
       repo.hasPointLog.mockResolvedValue(false);
       grade.getCurrentGrade

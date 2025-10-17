@@ -6,7 +6,6 @@ import { GradeLevel } from '@prisma/client';
 describe('PointsController', () => {
   let controller: PointsController;
 
-  // 모의 서비스 함수 (unbound-method 회피를 위해 변수로 보관)
   const getMyPointSummaryMock = jest.fn();
 
   beforeEach(async () => {
