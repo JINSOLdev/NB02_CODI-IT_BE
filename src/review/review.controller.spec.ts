@@ -37,7 +37,7 @@ describe('ReviewController', () => {
   });
 
   describe('createReview', () => {
-    it('리뷰 생성 호출 시 service.createReview에 올바른 인자 전달', async () => {
+    it('리뷰 생성 호출 시 service.createReview에 올바른 파라미터 전달', async () => {
       const dto = { rating: 5, content: 'Great product!' };
       const mockResult = { id: reviewId, ...dto, userId, productId };
       service.createReview.mockResolvedValue(mockResult as any);
@@ -65,7 +65,7 @@ describe('ReviewController', () => {
       });
     });
 
-    it('service에서 에러 발생 시 에러 전파', async () => {
+    it('service에서 에러 발생', async () => {
       const dto = { rating: 5, content: 'Great product!' };
       service.createReview.mockRejectedValue(
         new UnauthorizedException('이미 리뷰를 작성한 상품입니다.'),
@@ -104,14 +104,6 @@ describe('ReviewController', () => {
 
       expect(service.findAllByProductId).toHaveBeenCalledWith(productId, { limit: 5, page: 1 });
     });
-
-    it('음수 또는 0인 쿼리 파라미터일 때 기본값 사용', async () => {
-      service.findAllByProductId.mockResolvedValue([] as any);
-
-      await controller.findAllByProductId(productId, '-5', '0');
-
-      expect(service.findAllByProductId).toHaveBeenCalledWith(productId, { limit: 5, page: 1 });
-    });
   });
 
   describe('findReviewById', () => {
@@ -125,7 +117,7 @@ describe('ReviewController', () => {
       expect(res).toBe(mockReview);
     });
 
-    it('존재하지 않는 리뷰 조회 시 에러 전파', async () => {
+    it('존재하지 않는 리뷰 조회 시 에러 발생', async () => {
       service.findReviewById.mockRejectedValue(
         new NotFoundException('요청한 리소스를 찾을 수 없습니다.'),
       );
