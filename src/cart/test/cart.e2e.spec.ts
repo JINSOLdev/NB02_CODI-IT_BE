@@ -28,6 +28,8 @@ describe('장바구니 통합 테스트', () => {
     await prisma.$transaction([
       prisma.cartItem.deleteMany(),
       prisma.cart.deleteMany(),
+      prisma.orderItem.deleteMany(),
+      prisma.order.deleteMany(),
       prisma.product.deleteMany(),
       prisma.stock.deleteMany(),
       prisma.stockSize.deleteMany(),
@@ -39,7 +41,7 @@ describe('장바구니 통합 테스트', () => {
     await prisma.user.create({
       data: {
         email: 'test@example.com',
-        nickname: 'test',
+        name: 'test',
         passwordHash: await bcrypt.hash('Test1234!', 10),
       },
     });
@@ -60,7 +62,7 @@ describe('장바구니 통합 테스트', () => {
     const seller = await prisma.user.create({
       data: {
         email: 'test-seller@example.com',
-        nickname: 'test-seller',
+        name: 'test-seller',
         passwordHash: await bcrypt.hash('Test1234!', 10),
         type: 'SELLER',
       },
