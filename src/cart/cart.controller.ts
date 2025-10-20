@@ -15,12 +15,31 @@ import { Cart, UserType, CartItem } from '@prisma/client';
 import { createOrUpdateCartItemsDto } from './cart.dto';
 import { AuthUser } from 'src/auth/auth.types';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { ApiOperation, ApiBody, ApiHeader, ApiResponse } from '@nestjs/swagger';
 @Controller('api/cart')
 export class CartController {
   constructor(private cartService: CartService) {}
 
   //사용자의 장바구니를 생성합니다. 이미 존재하는 경우 해당 장바구니를 반환합니다.
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '장바구니 생성' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'JWT 토큰',
+    required: true,
+  })
+  @ApiResponse({
+    status: 201,
+    description: '장바구니 생성 성공',
+  })
+  @ApiResponse({
+    status: 400,
+    description: '장바구니 생성 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
   @Post()
   async create(@Req() req: { user: AuthUser }): Promise<Cart> {
     const user = req.user;
@@ -32,6 +51,24 @@ export class CartController {
 
   //장바구니에서 특정 아이템의 상세 정보를 조회합니다.
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '장바구니 아이템 조회' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'JWT 토큰',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '장바구니 아이템 조회 성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '장바구니 아이템 조회 실패',
+  })
   @Get(':cartItemId')
   async getCartItem(
     @Req() req: { user: AuthUser },
@@ -43,6 +80,20 @@ export class CartController {
 
   //사용자의 장바구니를 조회합니다. 장바구니가 없으면 빈 배열을 반환합니다.
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '장바구니 조회' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'JWT 토큰',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '장바구니 조회 성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
   @Get()
   async getCart(@Req() req: { user: AuthUser }) {
     const user = req.user;
@@ -55,6 +106,25 @@ export class CartController {
 
   //사용자의 장바구니를 업데이트합니다.
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '장바구니 업데이트' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'JWT 토큰',
+    required: true,
+  })
+  @ApiBody({
+    description: '장바구니 업데이트',
+    required: true,
+    type: createOrUpdateCartItemsDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '장바구니 업데이트 성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
   @Patch()
   async updateCartItem(
     @Req() req: { user: AuthUser },
@@ -73,6 +143,24 @@ export class CartController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '장바구니 아이템 삭제' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'JWT 토큰',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '장바구니 아이템 삭제 성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '장바구니 아이템 삭제 실패',
+  })
   @Delete(':cartItemId')
   async deleteCartItem(
     @Req() req: { user: AuthUser },

@@ -42,7 +42,7 @@ export class NotificationsService {
   }
 
   async check(userId: string, alarmId: string) {
-    const alarm = await this.repository.findByIdAndAndUser(alarmId, userId);
+    const alarm = await this.repository.findByIdAndUser(alarmId, userId);
     if (!alarm) throw new NotFoundException('해당 알람이 없습니다.');
 
     const userType = await this.repository.findUserType(userId);
