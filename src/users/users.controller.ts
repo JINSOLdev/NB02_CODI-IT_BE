@@ -144,7 +144,7 @@ export class UsersController {
         },
         {
           id: 'store_2',
-          name: '브리아아 패션샵',
+          name: '브리아 패션샵',
           ownerId: 'u3',
           likedAt: '2025-10-17T10:05:00Z',
         },
