@@ -23,7 +23,7 @@ async function main() {
       id: 'test_seller_id',
       email: 'test-seller@example.com',
       type: UserType.SELLER,
-      nickname: 'TestSeller',
+      name: 'TestSeller',
       passwordHash: hash,
     },
   });
@@ -264,7 +264,7 @@ async function main() {
       id: 'test_buyer_id',
       email: 'test-buyer@example.com',
       type: UserType.BUYER,
-      nickname: 'TestBuyer',
+      name: 'TestBuyer',
       passwordHash: hash,
     },
   });
