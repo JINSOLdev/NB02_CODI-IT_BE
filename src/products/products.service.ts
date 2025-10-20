@@ -13,7 +13,7 @@ import {
 import { UpdateProductDto, UpdateStockDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
-import { Product, Inquiry, AnswerStatus } from '@prisma/client';
+import { Product, Inquiry } from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 
 export interface ProductWithStore extends Product {
@@ -223,7 +223,7 @@ export class ProductsService {
     }
   }
 
-  /** ✅ 상품 문의 조회 (타입 안전 매핑 + 비밀글 권한 확인) */
+  /** 상품 문의 조회 (타입 안전 매핑 + 비밀글 권한 확인) */
   async findInquiries(
     productId: string,
     userId: string,
@@ -246,12 +246,10 @@ export class ProductsService {
     };
     type InquiryRaw = {
       id: string;
-      title?: string;
       content: string;
       createdAt: Date;
       updatedAt: Date;
       userId: string;
-      productId: string;
       isSecret?: boolean;
       user: { id: string; name: string };
       reply?: ReplyRaw[] | ReplyRaw | null;
@@ -259,7 +257,7 @@ export class ProductsService {
 
     const result: InquiryWithRelations[] = (inquiriesRaw as InquiryRaw[]).map(
       (inq) => {
-        // ✅ 비밀글 접근 권한 확인
+        // 비밀글 접근 권한 확인 (반환 구성 전에 확인)
         if (inq.isSecret) {
           const isOwner = inq.userId === userId;
           const isSeller = product.store.sellerId === userId;
@@ -268,7 +266,7 @@ export class ProductsService {
           }
         }
 
-        // ✅ reply: null-safe + 배열 정규화
+        // reply: 널-세이프 + 배열 정규화
         const replyRaw = inq.reply;
         const replyArr: ReplyRaw[] = Array.isArray(replyRaw)
           ? replyRaw
@@ -276,31 +274,35 @@ export class ProductsService {
             ? [replyRaw]
             : [];
 
-        // ✅ InquiryWithRelations 매핑
+        // 스펙에 맞춰 DTO 매핑 (첫 번째 답변 또는 null로 변환)
+        const replyDto: InquiryWithRelations['reply'] = replyArr.length
+          ? {
+              id: replyArr[0].id,
+              content: replyArr[0].content,
+              createdAt: replyArr[0].createdAt,
+              updatedAt: replyArr[0].updatedAt,
+              user: {
+                id: replyArr[0].user.id,
+                name: replyArr[0].user.name,
+              },
+            }
+          : null;
+
         const transformed: InquiryWithRelations = {
           id: inq.id,
-          title: inq.title ?? '',
           content: inq.content,
-          status: AnswerStatus.WaitingAnswer,
-          isSecret: inq.isSecret ?? false,
           createdAt: inq.createdAt,
           updatedAt: inq.updatedAt,
-          userId: inq.userId,
-          productId: inq.productId ?? productId,
           user: {
             id: inq.user.id,
-            nickname: inq.user.name,
+            name: inq.user.name,
           },
-          reply: replyArr.map((rep) => ({
-            id: rep.id,
-            content: rep.content,
-            createdAt: rep.createdAt,
-            updatedAt: rep.updatedAt,
-            user: {
-              id: rep.user.id,
-              nickname: rep.user.name,
-            },
-          })),
+          reply: replyDto,
+          title: '',
+          status: 'WaitingAnswer',
+          isSecret: false,
+          userId: '',
+          productId: '',
         };
 
         return transformed;
