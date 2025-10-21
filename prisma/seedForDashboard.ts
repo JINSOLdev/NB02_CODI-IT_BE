@@ -1,5 +1,5 @@
 import { PrismaClient, UserType } from '@prisma/client';
-import { 
+import {
   addDays,
   addMonths,
   subDays,

@@ -13,7 +13,7 @@ import {
 import { UpdateProductDto, UpdateStockDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
-import { Product, Inquiry, AnswerStatus } from '@prisma/client';
+import { Product, Inquiry } from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 
 export interface ProductWithStore extends Product {
@@ -232,7 +232,7 @@ export class ProductsService {
     }
   }
 
-  /** ✅ 상품 문의 조회 (타입 안전 매핑 + 비밀글 권한 확인) */
+  /** 상품 문의 조회 (타입 안전 매핑 + 비밀글 권한 확인) */
   async findInquiries(
     productId: string,
     userId: string,
@@ -250,12 +250,26 @@ export class ProductsService {
       id: string;
       title?: string | null;
       content: string;
+<<<<<<< HEAD
       status: AnswerStatus | null;
       isSecret: boolean | null;
       createdAt: Date;
       updatedAt: Date;
       userId: string;
       productId: string;
+=======
+      createdAt: Date;
+      updatedAt: Date;
+      user: { id: string; name: string };
+    };
+    type InquiryRaw = {
+      id: string;
+      content: string;
+      createdAt: Date;
+      updatedAt: Date;
+      userId: string;
+      isSecret?: boolean;
+>>>>>>> dev
       user: { id: string; name: string };
       reply: {
         id: string;
@@ -266,6 +280,7 @@ export class ProductsService {
       } | null;
     }>;
 
+<<<<<<< HEAD
     return inquiries.map((inq) => {
       // ✅ 비밀글 접근 권한 확인
       if (inq.isSecret) {
@@ -273,9 +288,21 @@ export class ProductsService {
         const isSeller = product.store.sellerId === userId;
         if (!isOwner && !isSeller) {
           throw new ForbiddenException('비밀글을 조회할 권한이 없습니다.');
+=======
+    const result: InquiryWithRelations[] = (inquiriesRaw as InquiryRaw[]).map(
+      (inq) => {
+        // 비밀글 접근 권한 확인 (반환 구성 전에 확인)
+        if (inq.isSecret) {
+          const isOwner = inq.userId === userId;
+          const isSeller = product.store.sellerId === userId;
+          if (!isOwner && !isSeller) {
+            throw new ForbiddenException('비밀글을 조회할 권한이 없습니다.');
+          }
+>>>>>>> dev
         }
       }
 
+<<<<<<< HEAD
       // ✅ reply: 단일 객체 또는 null
       const transformed: InquiryWithRelations = {
         id: inq.id,
@@ -307,5 +334,51 @@ export class ProductsService {
 
       return transformed;
     });
+=======
+        // reply: 널-세이프 + 배열 정규화
+        const replyRaw = inq.reply;
+        const replyArr: ReplyRaw[] = Array.isArray(replyRaw)
+          ? replyRaw
+          : replyRaw
+            ? [replyRaw]
+            : [];
+
+        // 스펙에 맞춰 DTO 매핑 (첫 번째 답변 또는 null로 변환)
+        const replyDto: InquiryWithRelations['reply'] = replyArr.length
+          ? {
+              id: replyArr[0].id,
+              content: replyArr[0].content,
+              createdAt: replyArr[0].createdAt,
+              updatedAt: replyArr[0].updatedAt,
+              user: {
+                id: replyArr[0].user.id,
+                name: replyArr[0].user.name,
+              },
+            }
+          : null;
+
+        const transformed: InquiryWithRelations = {
+          id: inq.id,
+          content: inq.content,
+          createdAt: inq.createdAt,
+          updatedAt: inq.updatedAt,
+          user: {
+            id: inq.user.id,
+            name: inq.user.name,
+          },
+          reply: replyDto,
+          title: '',
+          status: 'WaitingAnswer',
+          isSecret: false,
+          userId: '',
+          productId: '',
+        };
+
+        return transformed;
+      },
+    );
+
+    return result;
+>>>>>>> dev
   }
 }
