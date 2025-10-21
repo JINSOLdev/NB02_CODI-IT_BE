@@ -9,6 +9,8 @@ import {
   Get,
   Param,
   Delete,
+  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { Cart, UserType, CartItem } from '@prisma/client';
@@ -18,7 +20,15 @@ import { JwtAuthGuard } from 'src/auth/jwt.guard';
 import { ApiOperation, ApiBody, ApiHeader, ApiResponse } from '@nestjs/swagger';
 @Controller('api/cart')
 export class CartController {
+  private readonly logger = new Logger(CartController.name);
+
   constructor(private cartService: CartService) {}
+
+  @Get('error')
+  getError() {
+    this.logger.error('This is a test error!');
+    throw new BadRequestException('This is a test error!');
+  }
 
   //사용자의 장바구니를 생성합니다. 이미 존재하는 경우 해당 장바구니를 반환합니다.
   @UseGuards(JwtAuthGuard)
@@ -44,6 +54,7 @@ export class CartController {
   async create(@Req() req: { user: AuthUser }): Promise<Cart> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
+      this.logger.error('구매자만 접근 가능합니다');
       throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     return this.cartService.createCart(user.userId);
@@ -98,6 +109,7 @@ export class CartController {
   async getCart(@Req() req: { user: AuthUser }) {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
+      this.logger.error('구매자만 접근 가능합니다');
       throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     const cart = await this.cartService.getCart(user.userId);
@@ -132,6 +144,7 @@ export class CartController {
   ): Promise<Cart> {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
+      this.logger.error('구매자만 접근 가능합니다');
       throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     const updatedCart =
@@ -168,6 +181,7 @@ export class CartController {
   ) {
     const user = req.user;
     if (user.type !== UserType.BUYER) {
+      this.logger.error('구매자만 접근 가능합니다');
       throw new ForbiddenException('구매자만 접근 가능합니다');
     }
     const deletedCartItem = await this.cartService.deleteCartItem(
