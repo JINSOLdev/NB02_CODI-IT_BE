@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class OrdersRepository {
@@ -75,5 +75,45 @@ export class OrdersRepository {
         },
       },
     });
+  }
+
+  /**
+   * 📦 주문 목록 조회 (구매자 전용, 페이지네이션 + 주문상태 필터)
+   */
+  async findOrdersByUser(
+    userId: string,
+    page: number,
+    limit: number,
+    status?: OrderStatus,
+  ) {
+    const where: Prisma.OrderWhereInput = {
+      userId,
+      ...(status ? { status } : {}), // ✅ order.status 기준 필터
+    };
+
+    const [orders, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  store: true,
+                  stocks: { include: { size: true } },
+                },
+              },
+            },
+          },
+          payments: true,
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return { orders, total };
   }
 }

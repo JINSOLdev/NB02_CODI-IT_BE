@@ -62,7 +62,6 @@ export class ProductsService {
     try {
       const { price, discountRate, categoryName } = dto;
 
-      // ✅ sellerId로 store 찾기
       const store = await this.productsRepository.findStoreBySellerId(sellerId);
       if (!store) throw new NotFoundException('스토어를 찾을 수 없습니다.');
 
@@ -91,11 +90,14 @@ export class ProductsService {
       ) {
         throw err;
       }
-      throw new InternalServerErrorException(
-        err instanceof Error
-          ? err.message
-          : '상품 등록 중 오류가 발생했습니다.',
-      );
+
+      const safeErr = err as Record<string, unknown>;
+      const errorMessage =
+        typeof safeErr.message === 'string'
+          ? safeErr.message
+          : '상품 등록 중 오류가 발생했습니다.';
+
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 
@@ -123,13 +125,11 @@ export class ProductsService {
       const product = await this.productsRepository.findOne(productId);
       if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
 
-      // ✅ 권한 체크
       const store = await this.productsRepository.findStoreBySellerId(sellerId);
       if (!store || store.id !== product.storeId) {
         throw new ForbiddenException('이 상품을 수정할 권한이 없습니다.');
       }
 
-      // ✅ categoryName → categoryId 변환
       let categoryId: string | undefined;
       if (dto.categoryName) {
         const category = await this.productsRepository.findCategoryByName(
@@ -141,7 +141,6 @@ export class ProductsService {
 
       const { price, discountRate, stocks, ...restDto } = dto;
 
-      // ✅ discountPrice 계산
       let discountPrice: number | undefined;
       if (discountRate !== undefined && discountRate >= 0) {
         discountPrice = Math.floor(
@@ -159,17 +158,21 @@ export class ProductsService {
       });
     } catch (err: unknown) {
       console.error('❌ Product update error:', err);
+
       if (
         err instanceof NotFoundException ||
         err instanceof ForbiddenException
       ) {
         throw err;
       }
-      throw new InternalServerErrorException(
-        err instanceof Error
-          ? err.message
-          : '상품 수정 중 오류가 발생했습니다.',
-      );
+
+      const safeErr = err as Record<string, unknown>;
+      const errorMessage =
+        typeof safeErr.message === 'string'
+          ? safeErr.message
+          : '상품 수정 중 오류가 발생했습니다.';
+
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 
@@ -192,11 +195,14 @@ export class ProductsService {
       ) {
         throw err;
       }
-      throw new InternalServerErrorException(
-        err instanceof Error
-          ? err.message
-          : '상품 삭제 중 오류가 발생했습니다.',
-      );
+
+      const safeErr = err as Record<string, unknown>;
+      const errorMessage =
+        typeof safeErr.message === 'string'
+          ? safeErr.message
+          : '상품 삭제 중 오류가 발생했습니다.';
+
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 
@@ -215,11 +221,14 @@ export class ProductsService {
       });
     } catch (err: unknown) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(
-        err instanceof Error
-          ? err.message
-          : '상품 문의 등록 중 오류가 발생했습니다.',
-      );
+
+      const safeErr = err as Record<string, unknown>;
+      const errorMessage =
+        typeof safeErr.message === 'string'
+          ? safeErr.message
+          : '상품 문의 등록 중 오류가 발생했습니다.';
+
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 
@@ -234,12 +243,21 @@ export class ProductsService {
 
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
 
-    const inquiriesRaw = await this.productsRepository.findInquiries(productId);
-
-    // 원시 레코드를 안전하게 다루기 위한 베이스 타입
-    type ReplyRaw = {
+    // ✅ 명시적 타입 지정 (ESLint no-unsafe-assignment 방지)
+    const inquiries = (await this.productsRepository.findInquiries(
+      productId,
+    )) as Array<{
       id: string;
+      title?: string | null;
       content: string;
+<<<<<<< HEAD
+      status: AnswerStatus | null;
+      isSecret: boolean | null;
+      createdAt: Date;
+      updatedAt: Date;
+      userId: string;
+      productId: string;
+=======
       createdAt: Date;
       updatedAt: Date;
       user: { id: string; name: string };
@@ -251,10 +269,26 @@ export class ProductsService {
       updatedAt: Date;
       userId: string;
       isSecret?: boolean;
+>>>>>>> dev
       user: { id: string; name: string };
-      reply?: ReplyRaw[] | ReplyRaw | null;
-    };
+      reply: {
+        id: string;
+        content: string;
+        createdAt: Date;
+        updatedAt: Date;
+        user: { id: string; name: string };
+      } | null;
+    }>;
 
+<<<<<<< HEAD
+    return inquiries.map((inq) => {
+      // ✅ 비밀글 접근 권한 확인
+      if (inq.isSecret) {
+        const isOwner = inq.userId === userId;
+        const isSeller = product.store.sellerId === userId;
+        if (!isOwner && !isSeller) {
+          throw new ForbiddenException('비밀글을 조회할 권한이 없습니다.');
+=======
     const result: InquiryWithRelations[] = (inquiriesRaw as InquiryRaw[]).map(
       (inq) => {
         // 비밀글 접근 권한 확인 (반환 구성 전에 확인)
@@ -264,8 +298,43 @@ export class ProductsService {
           if (!isOwner && !isSeller) {
             throw new ForbiddenException('비밀글을 조회할 권한이 없습니다.');
           }
+>>>>>>> dev
         }
+      }
 
+<<<<<<< HEAD
+      // ✅ reply: 단일 객체 또는 null
+      const transformed: InquiryWithRelations = {
+        id: inq.id,
+        title: inq.title ?? '',
+        content: inq.content,
+        status: inq.status ?? AnswerStatus.WaitingAnswer,
+        isSecret: inq.isSecret ?? false,
+        createdAt: inq.createdAt,
+        updatedAt: inq.updatedAt,
+        userId: inq.userId,
+        productId: inq.productId,
+        user: {
+          id: inq.user.id,
+          name: inq.user.name,
+        },
+        reply: inq.reply
+          ? {
+              id: inq.reply.id,
+              content: inq.reply.content,
+              createdAt: inq.reply.createdAt,
+              updatedAt: inq.reply.updatedAt,
+              user: {
+                id: inq.reply.user.id,
+                name: inq.reply.user.name,
+              },
+            }
+          : null,
+      };
+
+      return transformed;
+    });
+=======
         // reply: 널-세이프 + 배열 정규화
         const replyRaw = inq.reply;
         const replyArr: ReplyRaw[] = Array.isArray(replyRaw)
@@ -310,5 +379,6 @@ export class ProductsService {
     );
 
     return result;
+>>>>>>> dev
   }
 }
