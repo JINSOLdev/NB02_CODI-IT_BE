@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { Request, Response, NextFunction } from 'express';
+import cookieParser from 'cookie-parser';
 
 function buildCorsOrigin() {
   const list = (process.env.CORS_ORIGINS ?? '')
@@ -33,6 +34,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     optionsSuccessStatus: 204,
   });
+
+  app.use(cookieParser());
 
   // '/users', '/auth'로 들어오는 요청을 '/api/users', '/api/auth'로 리다이렉트
   app.use((req: Request, _res: Response, next: NextFunction) => {
