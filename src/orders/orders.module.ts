@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PointsModule } from '../points/points.module';
 
 @Module({
-  imports: [PointsModule], // ✅ PointsService 사용을 위해 PointsModule 추가
+  imports: [PointsModule],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository, PrismaService],
   exports: [OrdersService],

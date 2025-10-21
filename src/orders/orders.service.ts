@@ -275,7 +275,7 @@ export class OrdersService {
         });
         await tx.payment.update({
           where: { orderId },
-          data: { status: PaymentStatus.REFUNDED }, // ✅ 올바른 enum
+          data: { status: PaymentStatus.REFUNDED },
         });
       });
 
