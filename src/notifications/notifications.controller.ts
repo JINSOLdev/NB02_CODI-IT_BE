@@ -7,24 +7,29 @@ import {
   Sse,
   UnauthorizedException,
   UseGuards,
+  Inject,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CurrentUser } from 'src/auth/current-user.decorator';
 import type { AuthUser } from 'src/auth/auth.types';
-import { interval, startWith, switchMap } from 'rxjs';
+import { switchMap, startWith, type Observable } from 'rxjs';
 import type { MessageEvent as SseMessageEvent } from '@nestjs/common';
+import { TICKER$ } from './ticker.token';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api/notifications')
 export class NotificationsController {
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(
+    private readonly notifications: NotificationsService,
+    @Inject(TICKER$) private readonly ticker$: Observable<number>,
+  ) {}
 
   // 30초마다 미확인 알림 전송
   @Sse('sse')
   sse(@CurrentUser() user: AuthUser) {
     if (!user?.userId) throw new UnauthorizedException('인증 실패했습니다.');
 
-    return interval(30000).pipe(
+    return this.ticker$.pipe(
       startWith(0),
       switchMap(async (): Promise<SseMessageEvent> => {
         const data = await this.notifications.unread(user.userId);
