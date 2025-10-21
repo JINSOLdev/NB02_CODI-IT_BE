@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, OrderStatus } from '@prisma/client'; // ✅ OrderStatus로 변경
+import { Prisma, OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class OrdersRepository {
@@ -84,7 +84,7 @@ export class OrdersRepository {
     userId: string,
     page: number,
     limit: number,
-    status?: OrderStatus, // ✅ PaymentStatus → OrderStatus 변경
+    status?: OrderStatus,
   ) {
     const where: Prisma.OrderWhereInput = {
       userId,

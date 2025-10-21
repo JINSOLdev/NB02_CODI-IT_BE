@@ -44,7 +44,7 @@ export class OrdersController {
     @Body() dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
     const user = req.user;
-    const userId = user.userId ?? user.id ?? user.sub; // ✅ userId 보정
+    const userId = user.userId ?? user.id ?? user.sub;
 
     if (user.type !== UserType.BUYER) {
       throw new ForbiddenException('권한이 필요한 요청입니다.');
@@ -107,7 +107,7 @@ export class OrdersController {
     @Query() query: GetOrdersQueryDto,
   ) {
     const user = req.user;
-    const userId = user.userId ?? user.id ?? user.sub; // ✅ userId 보정
+    const userId = user.userId ?? user.id ?? user.sub;
 
     if (user.type !== UserType.BUYER) {
       throw new ForbiddenException('권한이 필요한 요청입니다.');
@@ -127,7 +127,7 @@ export class OrdersController {
     @Param('orderId') orderId: string,
   ) {
     const user = req.user;
-    const userId = user.userId ?? user.id ?? user.sub; // ✅ userId 보정
+    const userId = user.userId ?? user.id ?? user.sub;
 
     if (user.type !== UserType.BUYER) {
       throw new ForbiddenException('권한이 필요한 요청입니다.');
