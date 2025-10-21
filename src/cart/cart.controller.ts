@@ -10,7 +10,6 @@ import {
   Param,
   Delete,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { Cart, UserType, CartItem } from '@prisma/client';
@@ -23,12 +22,6 @@ export class CartController {
   private readonly logger = new Logger(CartController.name);
 
   constructor(private cartService: CartService) {}
-
-  @Get('error')
-  getError() {
-    this.logger.error('This is a test error!');
-    throw new BadRequestException('This is a test error!');
-  }
 
   //사용자의 장바구니를 생성합니다. 이미 존재하는 경우 해당 장바구니를 반환합니다.
   @UseGuards(JwtAuthGuard)
