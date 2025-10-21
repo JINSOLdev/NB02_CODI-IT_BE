@@ -2,9 +2,19 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './common/logger/winston.config';
+import { setupSentry } from './common/logger/sentry.config';
+import { SentryGlobalFilter } from './common/logger/sentry.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  setupSentry();
+
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(winstonConfig),
+  });
+
+  app.useGlobalFilters(new SentryGlobalFilter());
 
   app.enableCors({
     origin: 'http://localhost:3000', // 허용할 출처
