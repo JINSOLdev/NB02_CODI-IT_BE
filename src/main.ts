@@ -2,12 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-<<<<<<< HEAD
-import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './common/logger/winston.config';
 import { setupSentry } from './common/logger/sentry.config';
 import { SentryGlobalFilter } from './common/logger/sentry.filter';
-=======
 import type { Request, Response, NextFunction } from 'express';
 
 function buildCorsOrigin() {
@@ -27,13 +23,12 @@ function buildCorsOrigin() {
     cb(null, list.includes(origin));
   };
 }
->>>>>>> dev
 
 async function bootstrap() {
   setupSentry();
 
   const app = await NestFactory.create(AppModule, {
-    logger: WinstonModule.createLogger(winstonConfig),
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 
   app.useGlobalFilters(new SentryGlobalFilter());
