@@ -2,10 +2,32 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+<<<<<<< HEAD
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/winston.config';
 import { setupSentry } from './common/logger/sentry.config';
 import { SentryGlobalFilter } from './common/logger/sentry.filter';
+=======
+import type { Request, Response, NextFunction } from 'express';
+
+function buildCorsOrigin() {
+  const list = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (list.length === 0) list.push('http://localhost:3001');
+
+  // 동적 origin 검사 콜백 함수 반환
+  return (
+    origin: string | undefined,
+    cb: (err: Error | null, allow?: boolean) => void,
+  ) => {
+    if (!origin) return cb(null, true);
+    cb(null, list.includes(origin));
+  };
+}
+>>>>>>> dev
 
 async function bootstrap() {
   setupSentry();
@@ -16,14 +38,25 @@ async function bootstrap() {
 
   app.useGlobalFilters(new SentryGlobalFilter());
 
+  // CORS 전역 설정 (개발/배포 공통)
   app.enableCors({
-    origin: 'http://localhost:3000', // 허용할 출처
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // 허용할 HTTP 메서드
-    allowedHeaders: 'Content-Type, Authorization', // 허용할 헤더
-    credentials: true, // 인증 정보(쿠키, Authorization 등) 허용
+    origin: buildCorsOrigin(),
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 204,
   });
 
-  // ✅ 전역 미들웨어 설정
+  // '/users', '/auth'로 들어오는 요청을 '/api/users', '/api/auth'로 리다이렉트
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    const url = String(req.url ?? '');
+    if (/^\/(users|auth)(\/|$)/.test(url)) {
+      req.url = `/api${url}`;
+    }
+    next();
+  });
+
+  // 전역 파이프
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -31,24 +64,26 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ Swagger 설정
+  // Swagger 설정
   const config = new DocumentBuilder()
     .setTitle('Codi-it API Docs')
     .setDescription('상품/주문/스토어 API 명세')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  // 기존 '/api'에서 '/api/docs'로 분리 (API 라우트와 충돌 방지)
+  SwaggerModule.setup('api/docs', app, document);
 
-  // ✅ 서버 실행
-  const port = process.env.PORT ?? 3000;
+  // 서버 실행
+  const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);
-  console.log(` Server running on http://localhost:${port}`);
-  console.log(` Swagger docs available at http://localhost:${port}/api`);
+  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.log(`📘 Swagger docs available at http://localhost:${port}/api/docs`);
 }
 
 bootstrap().catch((err) => {
-  console.error(`bootstrap failed: ${err}`);
+  console.error(`bootstrap failed: ${String(err)}`);
   process.exit(1);
 });
