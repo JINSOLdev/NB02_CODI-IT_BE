@@ -27,22 +27,27 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 export class ProductsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** ✅ 스토어 ID로 조회 (PK) */
   async findStoreById(storeId: string) {
     return this.prisma.store.findUnique({ where: { id: storeId } });
   }
 
+  /** ✅ 판매자 ID로 스토어 조회 (unique) */
   async findStoreBySellerId(sellerId: string) {
     return this.prisma.store.findUnique({ where: { sellerId } });
   }
 
+  /** ⚙️ 카테고리명으로 카테고리 조회 (name은 unique 아님 → findFirst) */
   async findCategoryByName(name: CategoryType) {
-    return this.prisma.category.findUnique({ where: { name } });
+    return this.prisma.category.findFirst({ where: { name } });
   }
 
+  /** ⚙️ 사이즈명으로 사이즈 조회 (unique 아님 → findFirst 유지) */
   async findStockSizeByName(name: string) {
     return this.prisma.stockSize.findFirst({ where: { name } });
   }
 
+  /** ✅ 상품 등록 */
   async create(data: {
     name: string;
     content?: string;
@@ -99,6 +104,7 @@ export class ProductsRepository {
     });
   }
 
+  /** ✅ 상품 상세 조회 (PK) */
   async findOne(productId: string): Promise<ProductDetailWithRelations | null> {
     return this.prisma.product.findUnique({
       where: { id: productId },
@@ -128,7 +134,7 @@ export class ProductsRepository {
       stocks?: TransformedStock[];
     },
   ): Promise<Product> {
-    const { stocks, ...safeData } = data; // ✅ 필요 없는 userId / categoryName 제거 완료
+    const { stocks, ...safeData } = data;
 
     return this.prisma.product.update({
       where: { id: productId },
@@ -156,10 +162,12 @@ export class ProductsRepository {
     ]);
   }
 
+  /** ✅ 단일 삭제 */
   async remove(productId: string): Promise<void> {
     await this.prisma.product.delete({ where: { id: productId } });
   }
 
+  /** ✅ 상품 문의 등록 */
   async createInquiry(
     productId: string,
     dto: CreateInquiryDto & { userId: string },
