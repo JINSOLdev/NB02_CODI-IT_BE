@@ -154,7 +154,6 @@ describe('장바구니 통합 테스트', () => {
         });
       expect(response.statusCode).toBe(200);
       const body = response.body as { items: { id: string }[] };
-      console.log(body, productId, sizeId);
       cartItemId = body.items[0].id;
     });
 
