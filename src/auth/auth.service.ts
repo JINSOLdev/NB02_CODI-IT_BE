@@ -68,10 +68,7 @@ export class AuthService {
       type: user.type as 'BUYER' | 'SELLER',
     };
 
-    const accessToken = await this.jwt.signAsync(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
-    });
+    const accessToken = await this.jwt.signAsync(payload);
 
     const refreshToken = crypto.randomUUID();
     const refreshDays = getNumberEnv('REFRESH_EXPIRES_DAYS', 7);
@@ -139,19 +136,13 @@ export class AuthService {
       data: { refreshToken: newRefreshToken, expiresAt: newExpiresAt },
     });
 
-    const accessToken = await this.jwt.signAsync(
-      {
-        sub: user.id,
-        id: user.id,
-        userId: user.id,
-        email: user.email,
-        type: user.type as 'BUYER' | 'SELLER',
-      },
-      {
-        secret: process.env.JWT_SECRET,
-        expiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
-      },
-    );
+    const accessToken = await this.jwt.signAsync({
+      sub: user.id,
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      type: user.type as 'BUYER' | 'SELLER',
+    });
 
     return { accessToken, refreshToken: newRefreshToken };
   }
