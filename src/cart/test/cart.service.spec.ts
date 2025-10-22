@@ -6,30 +6,45 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 describe('CartService', () => {
   let cartService: CartService;
   let cartRepository: CartRepository;
+  let prisma: PrismaService;
 
   beforeEach(async () => {
     const mockCartRepository = {
       createOrGetCart: jest.fn(),
       getCartByBuyerId: jest.fn(),
-      getCartIdByBuyerId: jest.fn(),
-      createOrUpdateCartItemAndReturnCart: jest.fn(),
+      upsertCartItem: jest.fn(),
+      findCartWithItems: jest.fn(),
+      updateCartTotalQuantity: jest.fn(),
+      executeTransaction: jest.fn(),
       getCartItem: jest.fn(),
       deleteCartItem: jest.fn(),
+    };
+
+    const mockPrisma = {
+      product: {
+        findUnique: jest.fn(),
+      },
+      stockSize: {
+        findUnique: jest.fn(),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CartService,
         { provide: CartRepository, useValue: mockCartRepository },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
     cartService = module.get<CartService>(CartService);
     cartRepository = module.get<CartRepository>(CartRepository);
+    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -148,16 +163,64 @@ describe('CartService', () => {
           updatedAt: new Date('2025-10-16T14:08:32.000Z'),
           deletedAt: null,
         },
-        items: [],
+        items: [{ id: 'cartItem1', quantity: 1 }],
+      };
+
+      const mockUpdatedCart = {
+        id: 'cart1',
+        buyerId,
+        quantity: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        buyer: {
+          id: buyerId,
+          name: 'user123',
+          email: 'user123',
+          passwordHash: 'user123',
+          type: 'BUYER',
+          image: 'user123',
+          points: 0,
+          gradeLevel: 'GREEN',
+          createdAt: new Date('2025-10-16T14:08:32.000Z'),
+          updatedAt: new Date('2025-10-16T14:08:32.000Z'),
+          deletedAt: null,
+        },
+        items: [{ id: 'cartItem1', quantity: 2 }],
       };
 
       //레포 목킹
-      (cartRepository.getCartIdByBuyerId as jest.Mock).mockResolvedValue(
+      (prisma.product.findUnique as jest.Mock).mockResolvedValue({
+        id: 'product1',
+        name: '테스트 상품',
+        price: 10000,
+      });
+      (prisma.stockSize.findUnique as jest.Mock).mockResolvedValue({
+        id: 'size1',
+        name: 'M',
+      });
+      (cartRepository.getCartByBuyerId as jest.Mock).mockImplementation(() => {
+        return Promise.resolve(mockCart);
+      });
+      (cartRepository.upsertCartItem as jest.Mock).mockImplementation(() => {
+        mockCart.items = [{ id: 'cartItem1', quantity: 2 }];
+        return Promise.resolve(mockCart);
+      });
+      (cartRepository.findCartWithItems as jest.Mock).mockResolvedValue(
         mockCart,
       );
-      (
-        cartRepository.createOrUpdateCartItemAndReturnCart as jest.Mock
-      ).mockResolvedValue(mockCart);
+
+      (cartRepository.updateCartTotalQuantity as jest.Mock).mockImplementation(
+        () => {
+          mockCart.quantity = 2;
+          return Promise.resolve(mockCart);
+        },
+      );
+
+      (cartRepository.executeTransaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return await callback({} as unknown as any);
+        },
+      );
 
       //서비스 테스트
       const response = await cartService.createOrUpdateCartItemAndReturnCart(
@@ -167,15 +230,15 @@ describe('CartService', () => {
           sizes: [
             {
               sizeId: 'size1',
-              quantity: 1,
+              quantity: 2,
             },
           ],
         },
       );
-      expect(response).toEqual(mockCart);
+      expect(response).toEqual(mockUpdatedCart);
     });
 
-    it('장바구니 수정 실패', async () => {
+    it('장바구니 수정 실패(buyerId 없음)', async () => {
       await expect(
         cartService.createOrUpdateCartItemAndReturnCart('', {
           productId: 'product1',
@@ -188,6 +251,34 @@ describe('CartService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
     });
+  });
+
+  it('장바구니 수정 실패(productId 없음)', async () => {
+    await expect(
+      cartService.createOrUpdateCartItemAndReturnCart('user123', {
+        productId: '',
+        sizes: [
+          {
+            sizeId: 'size1',
+            quantity: 1,
+          },
+        ],
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('장바구니 수정 실패(sizeId 없음)', async () => {
+    await expect(
+      cartService.createOrUpdateCartItemAndReturnCart('user123', {
+        productId: 'product1',
+        sizes: [
+          {
+            sizeId: '',
+            quantity: 1,
+          },
+        ],
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   describe('장바구니 아이템 조회', () => {
