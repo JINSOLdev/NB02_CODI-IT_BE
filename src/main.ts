@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { setupSentry } from './common/logger/sentry.config';
+import { SentryGlobalFilter } from './common/logger/sentry.filter';
 import type { Request, Response, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 
@@ -24,7 +26,13 @@ function buildCorsOrigin() {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  setupSentry();
+
+  const app = await NestFactory.create(AppModule, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+  });
+
+  app.useGlobalFilters(new SentryGlobalFilter());
 
   // CORS 전역 설정 (개발/배포 공통)
   app.enableCors({
