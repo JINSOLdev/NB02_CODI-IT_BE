@@ -1,20 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { createOrUpdateCartItemsDto } from './cart.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CartRepository {
   constructor(private prisma: PrismaService) {}
-
-  // buyerId로 장바구니 ID 조회
-  async getCartIdByBuyerId(buyerId: string) {
-    const cart = await this.prisma.cart.findUnique({
-      where: {
-        buyerId,
-      },
-    });
-    return cart;
-  }
 
   // buyerId로 장바구니 생성
   async createOrGetCart(buyerId: string) {
@@ -34,8 +24,9 @@ export class CartRepository {
   }
 
   // buyerId로 장바구니 조회
-  async getCartByBuyerId(buyerId: string) {
-    const cart = await this.prisma.cart.findUnique({
+  async getCartByBuyerId(buyerId: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prisma;
+    const cart = await prisma.cart.findUnique({
       where: {
         buyerId,
       },
@@ -55,68 +46,67 @@ export class CartRepository {
     return cart;
   }
 
-  // cartId와 productId, {sizeId, quantity}로 장바구니 아이템 업데이트
-  async createOrUpdateCartItemAndReturnCart(
+  //장바구니 아이템 업데이트
+  upsertCartItem(
     cartId: string,
-    createOrUpdateCartItemsDto: createOrUpdateCartItemsDto,
+    productId: string,
+    sizeId: string,
+    quantity: number,
+    tx: Prisma.TransactionClient,
   ) {
-    const sizes = createOrUpdateCartItemsDto.sizes;
-    await this.prisma.$transaction(async (prisma) => {
-      for (const size of sizes) {
-        //장바구니 아이템 업데이트
-        await prisma.cartItem.upsert({
-          where: {
-            cartId_productId_sizeId: {
-              cartId,
-              productId: createOrUpdateCartItemsDto.productId,
-              sizeId: size.sizeId,
-            },
-          },
-          create: {
-            cartId,
-            productId: createOrUpdateCartItemsDto.productId,
-            sizeId: size.sizeId,
-            quantity: size.quantity,
-          },
-          update: {
-            quantity: size.quantity,
-          },
-        });
-      }
-      //장바구니 아이템 조회
-      const cartItems = await prisma.cart.findUniqueOrThrow({
-        where: {
-          id: cartId,
+    return tx.cartItem.upsert({
+      where: {
+        cartId_productId_sizeId: {
+          cartId,
+          productId,
+          sizeId,
         },
-        select: {
-          items: true,
-        },
-      });
-      //장바구니의 총 수량 계산
-      const totalQuantityForCart = cartItems.items.reduce(
-        (total, item) => total + item.quantity,
-        0,
-      );
-      //장바구니의 총 수량 업데이트
-      await prisma.cart.update({
-        where: {
-          id: cartId,
-        },
-        data: {
-          quantity: totalQuantityForCart,
-        },
-      });
+      },
+      create: {
+        cartId,
+        productId,
+        sizeId,
+        quantity,
+      },
+      update: {
+        quantity,
+      },
     });
-    //장바구니 조회
-    const cart = await this.prisma.cart.findUniqueOrThrow({
+  }
+
+  //장바구니에서 아이템 조회
+  findCartWithItems(cartId: string, tx: Prisma.TransactionClient) {
+    return tx.cart.findUniqueOrThrow({
       where: {
         id: cartId,
       },
-      include: {
+      select: {
         items: true,
       },
     });
-    return cart;
+  }
+
+  //장바구니 총 수량 업데이트
+  updateCartTotalQuantity(
+    cartId: string,
+    quantity: number,
+    tx: Prisma.TransactionClient,
+  ) {
+    return tx.cart.update({
+      where: {
+        id: cartId,
+      },
+      data: {
+        quantity,
+      },
+    });
+  }
+
+  //트랜잭션 실행
+  async executeTransaction<T>(
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return this.prisma.$transaction(callback);
   }
 
   //장바구니 아이템 조회
