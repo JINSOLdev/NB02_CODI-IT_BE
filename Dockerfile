@@ -1,4 +1,4 @@
-# -------- builder --------
+# builder
 FROM node:22-alpine AS builder
 
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY . .
 RUN npm run build
 
 
-# -------- runner --------
+# runner
 FROM node:22-alpine AS runner
 WORKDIR /app
 
