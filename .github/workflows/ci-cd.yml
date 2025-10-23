@@ -132,7 +132,7 @@ jobs:
               --name "$CONTAINER_NAME" \
               --restart unless-stopped \
               --env-file ~/apps/codiit/.env \
-              -p ${HOST_PORT}:3000 \
+              -p ${HOST}:3000 \
               "$IMAGE:latest"
 
             docker image prune -f
