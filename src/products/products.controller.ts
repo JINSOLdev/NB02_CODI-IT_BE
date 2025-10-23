@@ -22,7 +22,7 @@ import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { RequestWithUser } from '../auth/auth.types';
 
-@Controller('products')
+@Controller('api/products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
