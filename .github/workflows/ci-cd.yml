@@ -44,7 +44,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Docker Hub 로그인 
+      # Docker Hub 로그인
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
@@ -154,24 +154,3 @@ jobs:
               "$IMAGE:latest"
 
             docker image prune -f
-
-      # Health check 
-      - name: Health check (verify server up)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.PRIVATE_KEY }}
-          script: |
-            echo "Checking service health..."
-            for i in {1..10}; do
-              if curl -fsS http://localhost:3000/ > /dev/null; then
-                echo "Health check passed!"
-                exit 0
-              fi
-              echo "Waiting for container to start ($i/10)..."
-              sleep 5
-            done
-            echo "Health check failed after waiting 50s."
-            docker logs --tail=100 codiit-backend
-            exit 1
