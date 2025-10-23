@@ -34,7 +34,7 @@ jobs:
       - name: Build project
         run: npm run build
 
-  # Docker 빌드, EC2 배포
+  # Docker 이미지 빌드/푸시, EC2 배포
   docker-and-deploy:
     name: Docker build/push -> Deploy to EC2
     runs-on: ubuntu-latest
@@ -44,11 +44,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
+      # Docker Hub 로그인
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
@@ -56,16 +52,21 @@ jobs:
         env:
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
         run: |
-          docker build -t $IMAGE:latest -t $IMAGE:${{ github.sha }} .
+          if [ -z "${IMAGE}" ]; then
+            echo "ERROR: IMAGE is empty. Check DOCKER_USERNAME / IMAGE_NAME secrets."
+            exit 1
+          fi
+          docker build -t "$IMAGE:latest" -t "$IMAGE:${{ github.sha }}" .
 
       - name: Push Docker image
         env:
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
         run: |
-          docker push $IMAGE:latest
-          docker push $IMAGE:${{ github.sha }}
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ github.sha }}"
 
-      # EC2 배포
+      # EC2 
+      # .env 업로드
       - name: Upload .env to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -78,6 +79,7 @@ jobs:
             ${{ secrets.ENV_PROD }}
             EOF
 
+      # EC2에서 Docker Hub 로그인
       - name: Login Docker Hub on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -87,38 +89,50 @@ jobs:
           script: |
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      # Prisma migrate 
       - name: Run Prisma Migrate on EC2
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
-            docker pull $IMAGE:latest
-            docker run --rm --env-file ~/apps/codiit/.env $IMAGE:latest npx prisma migrate deploy
+            set -e
+            IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}"
+            if [ -z "$IMAGE" ]; then
+              echo "ERROR: IMAGE is empty on EC2. Check secrets."
+              exit 1
+            fi
 
+            docker pull "$IMAGE:latest"
+            docker run --rm --env-file ~/apps/codiit/.env "$IMAGE:latest" npx prisma migrate deploy
+
+      # 앱 컨테이너 배포 
       - name: Deploy new container on EC2
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
-          CONTAINER_NAME: ${{ secrets.CONTAINER_NAME || 'codiit-backend' }}
-          HOST_PORT: ${{ secrets.HOST || '8000' }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
-            docker pull $IMAGE:latest
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
+            set -e
+            IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}"
+            CONTAINER_NAME="${{ secrets.CONTAINER_NAME }}"
+            HOST_PORT="${{ secrets.HOST }}"
+
+            # 기본값 처리
+            [ -z "$CONTAINER_NAME" ] && CONTAINER_NAME="codiit-backend"
+            [ -z "$HOST_PORT" ] && HOST_PORT="8000"
+
+            docker pull "$IMAGE:latest"
+            docker stop "$CONTAINER_NAME" || true
+            docker rm "$CONTAINER_NAME" || true
 
             docker run -d \
-              --name $CONTAINER_NAME \
+              --name "$CONTAINER_NAME" \
               --restart unless-stopped \
               --env-file ~/apps/codiit/.env \
               -p ${HOST_PORT}:3000 \
-              $IMAGE:latest
+              "$IMAGE:latest"
 
             docker image prune -f
