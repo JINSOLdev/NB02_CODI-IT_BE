@@ -6,17 +6,10 @@ function resolveCookieOptions(): CookieOptions {
   const days = Number(process.env.REFRESH_EXPIRES_DAYS ?? 7);
   const isProd = process.env.NODE_ENV === 'production';
 
-  const envSameSite = process.env.COOKIE_SAMESITE as
-    | CookieOptions['sameSite']
-    | undefined;
-
-  const sameSite: CookieOptions['sameSite'] =
-    envSameSite ?? (isProd ? 'none' : 'none');
-
   return {
     httpOnly: true,
-    sameSite,
-    secure: isProd ? true : false,
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
     path: '/',
     maxAge: days * 24 * 60 * 60 * 1000,
   };
