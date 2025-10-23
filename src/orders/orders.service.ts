@@ -144,7 +144,7 @@ export class OrdersService {
       if (!fullOrder)
         throw new InternalServerErrorException('주문을 조회할 수 없습니다.');
 
-      // ✅ 응답 변환
+      // ✅ 응답 변환 (null-safe 접근 적용)
       return plainToInstance(OrderResponseDto, {
         id: fullOrder.id,
         name: fullOrder.recipientName,
@@ -161,19 +161,22 @@ export class OrdersService {
           productId: item.productId,
           isReviewed: false,
           product: {
-            id: item.product.id,
-            name: item.product.name,
-            image: item.product.image ?? undefined,
+            id: item.product?.id ?? 'unknown',
+            name: item.product?.name ?? '알 수 없는 상품',
+            image: item.product?.image ?? null,
             store: {
-              id: item.product.store.id,
-              name: item.product.store.name,
-              address: item.product.store.address,
-              image: item.product.store.image ?? null,
+              id: item.product?.store?.id ?? item.product?.storeId ?? 'unknown',
+              name: item.product?.store?.name ?? '알 수 없는 상점',
+              address: item.product?.store?.address ?? '주소 없음',
+              image: item.product?.store?.image ?? null,
             },
           },
           size: {
-            id: item.product.stocks?.[0]?.size?.id ?? 0,
-            size: item.product.stocks?.[0]?.size ?? { en: 'M', ko: 'M' },
+            id: item.product?.stocks?.[0]?.size?.id ?? 0,
+            size: item.product?.stocks?.[0]?.size ?? {
+              en: 'M',
+              ko: 'M',
+            },
           },
         })),
         payments: {
@@ -282,7 +285,6 @@ export class OrdersService {
       await this.pointsService.revertOnCancel(orderId);
       this.logger.log(`✅ 주문 취소 및 포인트 회수 완료: ${orderId}`);
 
-      // ✅ 컨트롤러와 리턴 타입 일치
       return { message: '주문이 취소되었습니다.' };
     } catch (err: unknown) {
       if (
@@ -326,6 +328,7 @@ export class OrdersService {
           name: order.recipientName,
           phoneNumber: order.recipientPhone,
           address: order.address,
+          status: order.status,
           subtotal: order.subtotal,
           totalQuantity: order.totalQuantity,
           usePoint: order.usePoint,
@@ -393,10 +396,11 @@ export class OrdersService {
       if (order.userId !== userId)
         throw new ForbiddenException('본인 주문만 조회할 수 있습니다.');
 
+      // ✅ DTO 매핑 규칙(recipientName → name, recipientPhone → phone)에 맞게 key 이름 변경
       return plainToInstance(OrderResponseDto, {
         id: order.id,
-        name: order.recipientName,
-        phoneNumber: order.recipientPhone,
+        recipientName: order.recipientName, // ✅ DTO의 @Expose({ name: 'recipientName' }) 대응
+        recipientPhone: order.recipientPhone, // ✅ DTO의 @Expose({ name: 'recipientPhone' }) 대응
         address: order.address,
         subtotal: order.subtotal,
         totalQuantity: order.totalQuantity,

@@ -1,6 +1,7 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateOrderDto } from './create-order.dto';
-import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, IsEnum } from 'class-validator';
+import { OrderStatus } from '@prisma/client';
 
 export class UpdateOrderDto extends PartialType(CreateOrderDto) {
   @ApiProperty({
@@ -30,11 +31,27 @@ export class UpdateOrderDto extends PartialType(CreateOrderDto) {
   @IsString()
   address?: string;
 
-  @ApiProperty({ example: 1000, required: false, description: '사용 포인트' })
+  @ApiProperty({
+    example: 1000,
+    required: false,
+    description: '사용 포인트',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   usePoint?: number;
+
+  /**
+   * ✅ 주문 상태 변경 (예: PROCESSING → SHIPPED → COMPLETEDPAYMENT 등)
+   */
+  @ApiProperty({
+    enum: OrderStatus,
+    required: false,
+    description: '주문 상태 (PROCESSING, SHIPPED, COMPLETEDPAYMENT, CANCELED)',
+  })
+  @IsEnum(OrderStatus)
+  @IsOptional()
+  status?: OrderStatus;
 
   // 주문 상품 목록은 수정 시 제외
   orderItems?: never;
