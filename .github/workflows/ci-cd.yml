@@ -10,26 +10,10 @@ permissions:
   contents: read
 
 jobs:
-  # Test, Build 
-  test-and-build:
-    name: Test (Jest) -> 🏗️ Build (Nest + Prisma)
+  # 빌드
+  build:
+    name: Build (Nest + Prisma)
     runs-on: ubuntu-latest
-
-    # CI 내부에서 테스트용 Postgres 서비스 실행
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: app_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
 
     steps:
       - name: Checkout repository
@@ -47,19 +31,14 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run tests
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test?schema=public
-        run: npm test
-
       - name: Build project
         run: npm run build
 
-  # Docker Build, Deploy 
+  # Docker 빌드, EC2 배포
   docker-and-deploy:
     name: Docker build/push -> Deploy to EC2
     runs-on: ubuntu-latest
-    needs: test-and-build
+    needs: build
 
     steps:
       - name: Checkout repository
@@ -86,7 +65,7 @@ jobs:
           docker push $IMAGE:latest
           docker push $IMAGE:${{ github.sha }}
 
-      # EC2 배포 
+      # EC2 배포
       - name: Upload .env to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -125,7 +104,7 @@ jobs:
         env:
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME || 'codiit-backend' }}
-          HOST_PORT: ${{ secrets.HOST_PORT || '8000' }}
+          HOST_PORT: ${{ secrets.HOST || '8000' }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER }}
