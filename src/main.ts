@@ -8,45 +8,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { resolve } from 'path';
 
-// type Matcher = string | RegExp;
-
-// function buildCorsOrigin(): (
-//   origin: string | undefined,
-//   cb: (err: Error | null, allow?: boolean) => void,
-// ) => void {
-//   const raw = (process.env.CORS_ORIGINS ?? '')
-//     .split(',')
-//     .map((origin) => origin.trim())
-//     .filter(Boolean);
-
-//   // 로컬
-//   if (raw.length === 0) raw.push('http://localhost:3001');
-
-//   // 와일드카드
-//   const allowList: Matcher[] = raw.map((originPattern) => {
-//     if (originPattern.startsWith('*.')) {
-//       const host = originPattern.slice(2).replace(/\./g, '\\.');
-//       return new RegExp(
-//         `^https?:\\/\\/([a-z0-9-]+\\.)*${host}(?::\\d+)?$`,
-//         'i',
-//       );
-//     }
-//     return originPattern;
-//   });
-
-//   const isAllowed = (origin: string): boolean => {
-//     return allowList.some((rule) => {
-//       if (rule instanceof RegExp) return rule.test(origin);
-//       return rule === origin;
-//     });
-//   };
-
-//   return (origin, cb) => {
-//     if (!origin) return cb(null, true);
-//     const ok = isAllowed(origin);
-//     return cb(ok ? null : new Error(`Not allowed by CORS: ${origin}`), ok);
-//   };
-// }
+const ALLOW_ORIGINS = [
+  'https://nb-02-codi-it-fe.vercel.app',
+  'https://codi-it.shop',
+  'http://localhost:3001',
+];
 
 async function bootstrap() {
   setupSentry();
@@ -56,7 +22,10 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: '*',
+    origin(origin, cb) {
+      if (!origin) return cb(null, true); // curl/서버간 호출 허용
+      cb(null, ALLOW_ORIGINS.includes(origin));
+    },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
