@@ -15,7 +15,7 @@ lerna-debug.log*
 # OS
 .DS_Store
 
-# Tests
+# Tests / Coverage
 /coverage
 /.nyc_output
 
@@ -41,6 +41,7 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+.env.test
 
 # temp directory
 .temp
@@ -54,3 +55,18 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Prisma
+# 로컬 SQLite 등 개발용 DB 파일만 제외
+prisma/dev.db
+prisma/*.db-journal
+
+# Caches (optional)
+.cache
+.eslintcache
+
+# Debug
+*.tgz

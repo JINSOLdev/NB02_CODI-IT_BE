@@ -13,37 +13,382 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/**
+ * =========================
+ * User
+ * =========================
+ */
 model User {
-  id              Int              @id @default(autoincrement())
-  
-  stores          Store[]
-  FavoriteStore  FavoriteStore[]
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  type         UserType   @default(BUYER)
+  image        String?
+  points       Int        @default(0) // 현재 보유 포인트
+  gradeLevel   GradeLevel @default(GREEN)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  sessions       Session[]
+  store          Store?          @relation("StoreOwner")
+  favoriteStores FavoriteStore[]
+  notifications  Notification[]
+
+  cart        Cart?
+  orders      Order[]
+  reviews     Review[]
+  inquiries   Inquiry[]          @relation("InquiryAuthor")
+  answers     Answer[]           @relation("AnswerAuthor")
+  pointLedger PointTransaction[] // 포인트 사용/적립 내역             
+
+  @@index([type])
 }
 
-model Store {
-  id             Int              @id @default(autoincrement())
-  name           String
-  address        String
-  detailAddress  String
-  phoneNumber    String
-  content        String
-  image          String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+// 회원 유형 (권한 분기: SELLER만 스토어/상품 관리 가능)
+enum UserType {
+  BUYER
+  SELLER
+}
 
-  sellerId       Int
-  seller         User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  favorites      FavoriteStore[]
+// 등급 레벨 (Green(신규) < Orange(10만) < Red(30만) < Black(50만) < VIP(100만))
+enum GradeLevel {
+  GREEN
+  ORANGE
+  RED
+  BLACK
+  VIP
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+// 포인트 트랜잭션 (사용/적립 기록)
+model PointTransaction {
+  id      String  @id @default(cuid())
+  userId  String
+  delta   Int
+  reason  String
+  orderId String?
+
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+/**
+ * =========================
+ * Store
+ * =========================
+ */
+model Store {
+  id            String   @id @default(cuid())
+  name          String
+  address       String
+  detailAddress String
+  phoneNumber   String
+  content       String
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sellerId String @unique
+  seller   User   @relation("StoreOwner", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  favorites    FavoriteStore[]
+  Product      Product[]
+  Order        Order[]
+  Notification Notification[]
 }
 
 model FavoriteStore {
-  id        Int      @id @default(autoincrement())
-  storeId   Int
-  userId    Int
+  id        String   @id @default(cuid())
+  storeId   String
+  userId    String
   createdAt DateTime @default(now())
 
-  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store  Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
+  @@index([storeId])
+  @@index([userId])
+}
+
+/**
+ * =========================
+ * Cart
+ * =========================
+ */
+model Cart {
+  id        String   @id @default(cuid())
+  buyerId   String   @unique
+  quantity  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buyer User       @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  sizeId    String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  size    StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, sizeId])
+}
+
+/**
+ * =========================
+ * Product
+ * =========================
+ */
+model Product {
+  id                String    @id @default(cuid())
+  storeId           String
+  name              String
+  content           String?
+  image             String?
+  price             Int
+  discountPrice     Int?
+  discountRate      Int?
+  discountStartTime DateTime?
+  discountEndTime   DateTime?
+  sales             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  store        Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  stocks       Stock[]
+  reviews      Review[]
+  inquiries    Inquiry[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  Notification Notification[]
+}
+
+model Category {
+  id       String       @id @default(cuid())
+  name     CategoryType @unique
+  products Product[]
+}
+
+enum CategoryType {
+  TOP
+  BOTTOM
+  DRESS
+  OUTER
+  SKIRT
+  SHOES
+  ACC
+}
+
+model Stock {
+  id        String    @id @default(cuid())
+  productId String
+  sizeId    String
+  size      StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+  quantity  Int
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model StockSize {
+  id   String @id @default(cuid())
+  name String
+
+  stocks    Stock[]
+  cartItems CartItem[]
+}
+
+/**
+ * =========================
+ * Order
+ * =========================
+ */
+model Order {
+  id             String @id @default(cuid())
+  userId         String
+  storeId        String
+  recipientName  String
+  recipientPhone String
+  address        String
+  subtotal       Int
+  totalQuantity  Int
+  usePoint       Int    @default(0)
+  totalPrice     Int
+
+  status    OrderStatus @default(PROCESSING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store        Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items        OrderItem[]
+  pointLogs    PointTransaction[]
+  payments     Payment?
+  Notification Notification[]
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String        @unique
+  price     Int
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Int // 주문 당시 가격 (할인 반영 가능)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+enum OrderStatus {
+  COMPLETEDPAYMENT
+  CANCELED
+  PROCESSING
+  SHIPPED
+}
+
+/**
+ * =========================
+ * Notification
+ * =========================
+ */
+model Notification {
+  id      String           @id @default(cuid())
+  userId  String
+  type    NotificationType
+  title   String?
+  message String
+
+  productId String?
+  inquiryId String?
+  orderId   String?
+  storeId   String?
+
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  inquiry Inquiry? @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  store   Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, type, productId, inquiryId, orderId, storeId])
+  @@index([userId, isRead, createdAt])
+  @@index([type])
+  @@index([productId])
+  @@index([inquiryId])
+  @@index([orderId])
+  @@index([storeId])
+}
+
+enum NotificationType {
+  OUT_OF_STOCK_CART
+  OUT_OF_STOCK_ORDER
+  OUT_OF_STOCK_SELLER
+  NEW_INQUIRY
+  INQUIRY_ANSWERED
+  SYSTEM
+}
+
+/**
+ * =========================
+ * Review
+ * =========================
+ */
+model Review {
+  id        String   @id @default(cuid())
+  content   String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * =========================
+ * Inquiry & Answer
+ * =========================
+ */
+
+enum AnswerStatus {
+  WaitingAnswer
+  CompletedAnswer
+}
+
+model Inquiry {
+  id        String       @id @default(cuid())
+  title     String
+  content   String
+  status    AnswerStatus @default(WaitingAnswer)
+  isSecret  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  userId       String
+  user         User           @relation("InquiryAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reply        Answer?
+  Notification Notification[]
+}
+
+model Answer {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User    @relation("AnswerAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  inquiryId String  @unique
+  inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
 }

@@ -1,0 +1,78 @@
+name: Notify Reviewers on PR
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get PR reviewers
+        id: reviewers
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          echo "Fetching reviewers for PR #$PR_NUMBER from $REPO"
+
+          API_RESPONSE=$(gh api repos/$REPO/pulls/$PR_NUMBER 2>err.log || echo "")
+          if [ -s err.log ]; then
+            echo "Error from GitHub API:"
+            cat err.log
+          fi
+
+          if [ -z "$API_RESPONSE" ]; then
+            REVIEWERS="[]"
+          else
+            # 안정적으로 리뷰어 목록 파싱 (null 및 빈 배열 모두 처리)
+            REVIEWERS=$(echo "$API_RESPONSE" | jq -c '[.requested_reviewers?[]?.login] // []')
+          fi
+
+          echo "Reviewers JSON: $REVIEWERS"
+
+          # base64 인코딩하여 GitHub Actions output으로 전달
+          REVIEWERS_B64=$(echo "$REVIEWERS" | base64)
+          echo "reviewers_b64=$REVIEWERS_B64" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          USER_MAP: ${{ secrets.USER_MAP }} # 예: {"alice": "1234", "bob": "5678"}
+        run: |
+          set -euo pipefail
+
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+
+          # base64 디코딩 후 JSON 배열로 파싱
+          REVIEWERS_JSON=$(echo "${{ steps.reviewers.outputs.reviewers_b64 }}" | base64 --decode)
+          echo "Parsed reviewers: $REVIEWERS_JSON"
+
+          MENTION_LIST=""
+          for user in $(echo "$REVIEWERS_JSON" | jq -r '.[]'); do
+            DISCORD_ID=$(echo "$USER_MAP" | jq -r --arg u "$user" '.[$u] // empty')
+            if [ -n "$DISCORD_ID" ]; then
+              MENTION_LIST="$MENTION_LIST <@$DISCORD_ID>"
+            else
+              MENTION_LIST="$MENTION_LIST @$user"
+            fi
+          done
+
+          if [ -z "$MENTION_LIST" ]; then
+            MENTION_LIST="(리뷰어가 지정되지 않았습니다)"
+          fi
+
+          curl -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "content": "${MENTION_LIST}\n새로운 Pull Request: **${PR_TITLE}**\n${PR_URL}"
+          }
+          EOF
