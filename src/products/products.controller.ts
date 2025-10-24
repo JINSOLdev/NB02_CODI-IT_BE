@@ -61,7 +61,6 @@ export class ProductsController {
   async findAll(
     @Query() query: FindProductsQueryDto,
   ): Promise<ProductListResponse> {
-    console.log('findAll controller');
     return this.productsService.findAll(query);
   }
 

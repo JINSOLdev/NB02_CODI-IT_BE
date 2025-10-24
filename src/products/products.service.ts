@@ -124,8 +124,8 @@ export class ProductsService {
 
   /** 상품 목록 조회 */
   async findAll(query: FindProductsQueryDto): Promise<ProductListResponse> {
-    console.log('findAll service');
     const products = await this.productsRepository.findAll(query);
+    // 평균 평점 계산
     const averageRating =
       products.reduce(
         (sum, product) =>
@@ -136,6 +136,7 @@ export class ProductsService {
             : 0),
         0,
       ) / products.length;
+    // 상품 목록 가공
     const List = products.map((product) => ({
       id: product.id,
       storeId: product.storeId,
