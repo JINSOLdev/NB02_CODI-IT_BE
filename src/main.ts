@@ -5,6 +5,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { setupSentry } from './common/logger/sentry.config';
 import { SentryGlobalFilter } from './common/logger/sentry.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { resolve } from 'path';
 
 // type Matcher = string | RegExp;
 
@@ -62,6 +64,11 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  const UPLOAD_DIR =
+    process.env.UPLOAD_DIR || resolve(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(UPLOAD_DIR));
+  console.log('[uploads] serving from:', UPLOAD_DIR);
 
   app.useGlobalFilters(new SentryGlobalFilter());
 

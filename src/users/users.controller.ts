@@ -8,7 +8,11 @@ import {
   Patch,
   Post,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import multer from 'multer';
 
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,12 +21,14 @@ import type { UserPayload } from './users.mapper';
 import type { AuthUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 
 @ApiTags('Users')
@@ -91,12 +97,24 @@ export class UsersController {
     return this.usersService.getMe(user.userId);
   }
 
-  // 내 정보 수정 (현재 비밀번호 필수): PATCH /api/users/me
+  // 내 정보 수정: PATCH /api/users/me (multipart/form-data 지원: 이미지 업로드 포함)
   @UseGuards(JwtAuthGuard)
   @Patch('me')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: multer.memoryStorage(), // 업로드 파일을 메모리 버퍼로 수신
+      fileFilter: (_req, file, cb) => {
+        if (/^image\//.test(file.mimetype)) return cb(null, true);
+        return cb(new Error('Only image files are allowed'), false);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: '내 정보 수정',
-    description: '로그인한 사용자의 정보를 수정합니다.',
+    description:
+      '로그인한 사용자의 정보를 수정합니다. (이미지 업로드는 image 필드 사용)',
   })
   @ApiBearerAuth()
   @ApiBody({ type: UpdateUserDto })
@@ -110,7 +128,7 @@ export class UsersController {
         name: '수정된이름',
         type: 'BUYER',
         points: 1000,
-        image: null,
+        image: '/uploads/u1_1730000000000_avatar.png',
       },
     },
   })
@@ -119,8 +137,9 @@ export class UsersController {
   updateMe(
     @CurrentUser() user: AuthUser,
     @Body() dto: UpdateUserDto,
+    @UploadedFile() image?: Express.Multer.File,
   ): Promise<UserPayload> {
-    return this.usersService.updateMe(user.userId, dto);
+    return this.usersService.updateMe(user.userId, dto, image);
   }
 
   // 내 관심 스토어 조회: GET /api/users/me/likes
