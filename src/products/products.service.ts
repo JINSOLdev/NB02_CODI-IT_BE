@@ -13,9 +13,16 @@ import {
 import { UpdateProductDto, UpdateStockDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
-import { Product, Inquiry, AnswerStatus } from '@prisma/client';
+import {
+  Product,
+  Inquiry,
+  AnswerStatus,
+  Review,
+  Stock,
+  Category,
+} from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
-type ProductListResponse = {
+export type ProductListResponse = {
   list: Array<{
     id: string;
     storeId: string;
@@ -35,6 +42,36 @@ type ProductListResponse = {
     isSoldOut: boolean;
   }>;
   totalCount: number;
+};
+
+export type productResponse = {
+  id: string;
+  storeId: string;
+  storeName: string;
+  name: string;
+  image: string | null;
+  price: number;
+  discountPrice: number | null;
+  discountRate: number | null;
+  discountStartTime: Date | null;
+  discountEndTime: Date | null;
+  reviewsCount: number;
+  reviewsRating: number;
+  createdAt: Date;
+  updatedAt: Date;
+  sales: number;
+  isSoldOut: boolean;
+  reviews: {
+    rate1Length: number;
+    rate2Length: number;
+    rate3Length: number;
+    rate4Length: number;
+    rate5Length: number;
+    sumScore: number;
+  };
+  inquiries: Inquiry[];
+  category: Category;
+  stocks: Stock[];
 };
 
 export interface ProductWithStore extends Product {
@@ -156,12 +193,47 @@ export class ProductsService {
   }
 
   /** 상품 상세 조회 */
-  async findOne(productId: string): Promise<ProductWithStore> {
-    const product = (await this.productsRepository.findOne(
-      productId,
-    )) as ProductWithStore | null;
+  async findOne(productId: string): Promise<productResponse> {
+    const product = await this.productsRepository.findOne(productId);
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
-    return product;
+    const reviewsRating =
+      product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+      product.reviews.length;
+    const reviews = {
+      rate1Length: product.reviews.filter((review) => review.rating === 1).length,
+      rate2Length: product.reviews.filter((review) => review.rating === 2).length,
+      rate3Length: product.reviews.filter((review) => review.rating === 3).length,
+      rate4Length: product.reviews.filter((review) => review.rating === 4).length,
+      rate5Length: product.reviews.filter((review) => review.rating === 5).length,
+      // 평균 별점
+      sumScore: product.reviews.reduce(
+        (sum, review) => sum + review.rating / product.reviews.length,
+        0,
+      ),
+    };
+    const response = {
+      id: product.id,
+      storeId: product.storeId,
+      storeName: product.store?.name,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      discountPrice: product.discountPrice,
+      discountRate: product.discountRate,
+      discountStartTime: product.discountStartTime,
+      discountEndTime: product.discountEndTime,
+      reviewsCount: product.reviews.length,
+      reviewsRating: reviewsRating,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+      sales: product.sales,
+      isSoldOut: !product.stocks?.some((stock) => stock.quantity > 0),
+      reviews,
+      inquiries: product.inquiries,
+      category: product.category,
+      stocks: product.stocks,
+    };
+    return response;
   }
 
   /** 상품 수정 */
