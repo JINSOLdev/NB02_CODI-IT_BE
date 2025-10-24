@@ -125,36 +125,30 @@ export class ProductsService {
   /** 상품 목록 조회 */
   async findAll(query: FindProductsQueryDto): Promise<ProductListResponse> {
     const products = await this.productsRepository.findAll(query);
-    // 평균 평점 계산
-    const averageRating =
-      products.reduce(
-        (sum, product) =>
-          sum +
-          (product.reviews.length > 0
-            ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
-              product.reviews.length
-            : 0),
-        0,
-      ) / products.length;
     // 상품 목록 가공
-    const List = products.map((product) => ({
-      id: product.id,
-      storeId: product.storeId,
-      storeName: product.store?.name, // store가 null일 수 있으므로 옵셔널 체이닝 사용
-      name: product.name,
-      image: product.image,
-      price: product.price,
-      discountPrice: product.discountPrice,
-      discountRate: product.discountRate,
-      discountStartTime: product.discountStartTime,
-      discountEndTime: product.discountEndTime,
-      reviewsCount: product.reviews.length,
-      reviewsRating: averageRating,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-      sales: product.sales,
-      isSoldOut: !product.stocks?.some((stock) => stock.quantity > 0),
-    }));
+    const List = products.map((product) => {
+      const reviewsRating =
+        product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+        product.reviews.length;
+      return {
+        id: product.id,
+        storeId: product.storeId,
+        storeName: product.store?.name,
+        name: product.name,
+        image: product.image,
+        price: product.price,
+        discountPrice: product.discountPrice,
+        discountRate: product.discountRate,
+        discountStartTime: product.discountStartTime,
+        discountEndTime: product.discountEndTime,
+        reviewsCount: product.reviews.length,
+        reviewsRating: reviewsRating,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+        sales: product.sales,
+        isSoldOut: !product.stocks?.some((stock) => stock.quantity > 0),
+      };
+    });
     return {
       list: List,
       totalCount: List.length,
