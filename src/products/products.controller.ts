@@ -21,6 +21,28 @@ import { Product, Inquiry } from '@prisma/client';
 import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { RequestWithUser } from '../auth/auth.types';
+type ProductListResponse = {
+  list: Array<{
+    id: string;
+    storeId: string;
+    storeName: string;
+    name: string;
+    image: string | null;
+    price: number;
+    discountPrice: number | null;
+    discountRate: number | null;
+    discountStartTime: Date | null;
+    discountEndTime: Date | null;
+    reviewsCount: number;
+    reviewsRating: number;
+    createdAt: Date;
+    updatedAt: Date;
+    sales: number;
+    isSoldOut: boolean;
+  }>;
+  totalCount: number;
+};
+
 
 @Controller('api/products')
 export class ProductsController {
@@ -38,7 +60,9 @@ export class ProductsController {
 
   /** 상품 목록 조회 (비로그인 가능) */
   @Get()
-  async findAll(@Query() query: FindProductsQueryDto): Promise<Product[]> {
+  async findAll(
+    @Query() query: FindProductsQueryDto,
+  ): Promise<ProductListResponse> {
     return this.productsService.findAll(query);
   }
 

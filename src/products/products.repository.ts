@@ -10,6 +10,7 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
     store: { select: { name: true } };
     reviews: { select: { rating: true } };
+    stocks: { include: { size: true } };
   };
 }>;
 
@@ -100,6 +101,7 @@ export class ProductsRepository {
       include: {
         store: { select: { name: true } },
         reviews: { select: { rating: true } },
+        stocks: { include: { size: true } },
       },
     });
   }
