@@ -42,6 +42,8 @@ type ProductListResponse = {
   }>;
   totalCount: number;
 };
+
+
 @Controller('api/products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
