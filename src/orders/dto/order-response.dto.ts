@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
+import { OrderStatus } from '@prisma/client';
 
 /**
  * ✅ 사이즈 정보 (en/ko 구조)
@@ -141,12 +142,17 @@ export class OrderResponseDto {
   @Expose()
   id: string;
 
+  // ✅ 추가된 주문 상태 필드
+  @ApiProperty({ enum: OrderStatus, description: '주문 상태' })
+  @Expose()
+  status: OrderStatus;
+
   @ApiProperty({ description: '수령인 이름' })
-  @Expose({ name: 'recipientName' }) // 👈 DB 필드명 → API 필드명
+  @Expose({ name: 'recipientName' })
   name: string;
 
   @ApiProperty({ description: '수령인 연락처' })
-  @Expose({ name: 'recipientPhone' }) // 👈 DB 필드명 → API 필드명
+  @Expose({ name: 'recipientPhone' })
   phone: string;
 
   @ApiProperty()
