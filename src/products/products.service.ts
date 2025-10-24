@@ -15,6 +15,27 @@ import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry, AnswerStatus } from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
+type ProductListResponse = {
+  list: Array<{
+    id: string;
+    storeId: string;
+    storeName: string;
+    name: string;
+    image: string | null;
+    price: number;
+    discountPrice: number | null;
+    discountRate: number | null;
+    discountStartTime: Date | null;
+    discountEndTime: Date | null;
+    reviewsCount: number;
+    reviewsRating: number;
+    createdAt: Date;
+    updatedAt: Date;
+    sales: number;
+    isSoldOut: boolean;
+  }>;
+  totalCount: number;
+};
 
 export interface ProductWithStore extends Product {
   store: {
@@ -102,8 +123,41 @@ export class ProductsService {
   }
 
   /** 상품 목록 조회 */
-  async findAll(query: FindProductsQueryDto): Promise<Product[]> {
-    return this.productsRepository.findAll(query);
+  async findAll(query: FindProductsQueryDto): Promise<ProductListResponse> {
+    console.log('findAll service');
+    const products = await this.productsRepository.findAll(query);
+    const averageRating =
+      products.reduce(
+        (sum, product) =>
+          sum +
+          (product.reviews.length > 0
+            ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+              product.reviews.length
+            : 0),
+        0,
+      ) / products.length;
+    const List = products.map((product) => ({
+      id: product.id,
+      storeId: product.storeId,
+      storeName: product.store?.name, // store가 null일 수 있으므로 옵셔널 체이닝 사용
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      discountPrice: product.discountPrice,
+      discountRate: product.discountRate,
+      discountStartTime: product.discountStartTime,
+      discountEndTime: product.discountEndTime,
+      reviewsCount: product.reviews.length,
+      reviewsRating: averageRating,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+      sales: product.sales,
+      isSoldOut: !product.stocks?.some((stock) => stock.quantity > 0),
+    }));
+    return {
+      list: List,
+      totalCount: List.length,
+    };
   }
 
   /** 상품 상세 조회 */
