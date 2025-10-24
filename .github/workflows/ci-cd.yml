@@ -131,16 +131,11 @@ jobs:
             set -e
             IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}"
             CONTAINER_NAME="${{ secrets.CONTAINER_NAME }}"
-            PORT="${{ secrets.PORT }}"
             ENV_FILE=~/apps/NB02_CODI-IT_BE/.env
 
-            # 기본값/유효성 검증
             [ -z "$CONTAINER_NAME" ] && CONTAINER_NAME="codiit-backend"
-            if [ -z "$PORT" ] || ! echo "$PORT" | grep -Eq '^[0-9]+$'; then
-              PORT="80"
-            fi
 
-            echo "Deploying $IMAGE as $CONTAINER_NAME on host port $PORT"
+            echo "Deploying $IMAGE as $CONTAINER_NAME (bind 127.0.0.1:3000)"
 
             docker pull "$IMAGE:latest"
             docker stop "$CONTAINER_NAME" || true
@@ -150,7 +145,7 @@ jobs:
               --name "$CONTAINER_NAME" \
               --restart unless-stopped \
               --env-file "$ENV_FILE" \
-              -p ${PORT}:3000 \
+              -p 127.0.0.1:3000:3000 \
               "$IMAGE:latest"
 
             docker image prune -f
