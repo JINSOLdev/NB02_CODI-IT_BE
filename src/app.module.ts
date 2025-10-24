@@ -16,6 +16,7 @@ import { PointsModule } from 'src/points/points.module';
 import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { InquiryModule } from './inquiry/inquiry.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InquiryModule } from './inquiry/inquiry.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ProductsModule,
     PrismaModule,
     CartsModule,
     S3Module,
