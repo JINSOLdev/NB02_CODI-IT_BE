@@ -24,6 +24,7 @@
     "test:ci": "jest --coverage --runInBand --coverageReporters=json-summary --coverageReporters=lcov --coverageReporters=text-summary --testFailureExitCode=0",
     "test:badge": "istanbul-badges-readme --coverageDir=./coverage --readmeDir=./",
     "seed": "ts-node --transpile-only prisma/seed.ts && ts-node --transpile-only prisma/seedForDashboard.ts"
+
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
