@@ -6,7 +6,12 @@ export class ReviewRepository {
   constructor(private prisma: PrismaService) { }
 
   // Review 등록
-  createReview(userId: string, productId: string, rating: number, content: string) {
+  createReview(
+    userId: string,
+    productId: string,
+    rating: number,
+    content: string,
+  ) {
     return this.prisma.review.create({
       data: { userId, productId, rating, content },
       select: {
@@ -50,26 +55,57 @@ export class ReviewRepository {
   }
 
   // Product에 해당하는 Review 목록 조회
-  findAllByProductId(productId: string, query: { limit: number; page: number }) {
-    return this.prisma.review.findMany({
-      where: { productId },
-      select: { id: true, rating: true, content: true, userId: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: query.limit || 5,
-      skip: (query.page - 1) * (query.limit || 5),
+  findAllByProductId(
+    productId: string,
+    query: { limit: number; page: number },
+  ) {
+    const { limit, page } = query;
+
+    const result = this.prisma.$transaction(async (tx) => {
+      const items = await tx.review.findMany({
+        where: { productId },
+        select: {
+          id: true,
+          rating: true,
+          content: true,
+          userId: true,
+          createdAt: true,
+          user: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit || 5,
+        skip: (page - 1) * (limit || 5),
+      });
+
+      const total = await tx.review.count({
+        where: { productId },
+      });
+
+      return { items, total };
     });
+
+    return result;
   }
 
   // Review 단건 조회
   findReviewById(reviewId: string) {
     return this.prisma.review.findUnique({
       where: { id: reviewId },
-      select: { id: true, rating: true, content: true, userId: true, createdAt: true },
+      select: {
+        id: true,
+        rating: true,
+        content: true,
+        userId: true,
+        createdAt: true,
+      },
     });
   }
 
   // Review 수정
-  updateReview(reviewId: string, updateReviewDto: { rating?: number; content?: string }) {
+  updateReview(
+    reviewId: string,
+    updateReviewDto: { rating?: number; content?: string },
+  ) {
     return this.prisma.review.update({
       where: { id: reviewId },
       data: { ...updateReviewDto },
