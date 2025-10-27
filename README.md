@@ -80,7 +80,169 @@
 ## 📁 프로젝트 파일 구조
 📦 프로젝트 루트
 ```
-
+📦 project-root
+├── 🐳 Dockerfile
+├── ⚙️ eslint.config.mjs
+├── 📘 nest-cli.json
+├── 📦 package.json
+├── 🔒 package-lock.json
+├── 🧱 tsconfig.json
+├── 🧱 tsconfig.build.json
+├── 📄 README.md
+│
+├── 🪵 logs/
+│   └── ❗ error.log
+│
+├── 🧩 prisma/
+│   ├── 📜 schema.prisma
+│   ├── 🌱 seed.ts
+│   ├── 🌱 seedForDashboard.ts
+│   └── 🧭 migrations/
+│
+├── 💻 src/
+│   ├── 🚀 main.ts
+│   ├── 🧩 app.module.ts
+│   ├── 🎛️ app.controller.ts
+│   ├── ⚙️ app.service.ts
+│   │
+│   ├── 🔐 auth/
+│   │   ├── 📁 dto/
+│   │   │   └── 📝 login.dto.ts
+│   │   ├── 🎛️ auth.controller.ts
+│   │   ├── ⚙️ auth.service.ts
+│   │   ├── 🧩 auth.module.ts
+│   │   ├── 🛡️ jwt.guard.ts
+│   │   ├── 🧠 jwt.strategy.ts
+│   │   └── 🧰 utils/
+│   │       ├── 🍪 cookie.util.ts
+│   │       └── 🙋 current-user.decorator.ts
+│   │
+│   ├── 🛒 cart/
+│   │   ├── 🎛️ cart.controller.ts
+│   │   ├── ⚙️ cart.service.ts
+│   │   ├── 💾 cart.repository.ts
+│   │   ├── 🧩 cart.module.ts
+│   │   └── 🧪 test/
+│   │       ├── 🧫 cart.e2e.spec.ts
+│   │       └── 🔍 cart.service.spec.ts
+│   │
+│   ├── 🧱 common/
+│   │   ├── 🛡️ guard/
+│   │   │   ├── 👤 buyer.guard.ts
+│   │   │   └── 🧍 seller.guard.ts
+│   │   ├── 🪶 logger/
+│   │   │   ├── 🪶 sentry.config.ts
+│   │   │   ├── ⚠️ sentry.filter.ts
+│   │   │   └── 🧱 winston.config.ts
+│   │   ├── 🧩 middleware/
+│   │   │   └── 🪵 logger.middleware.ts
+│   │   ├── 🧮 pipes/
+│   │   │   └── 🧩 parse-cuid.pipe.ts
+│   │   └── 🧾 prisma-tx.type.ts
+│   │
+│   ├── 📊 dashboard/
+│   │   ├── 🎛️ dashboard.controller.ts
+│   │   ├── ⚙️ dashboard.service.ts
+│   │   └── 🧩 dashboard.module.ts
+│   │
+│   ├── 🎓 grades/
+│   │   ├── 🧩 grade.module.ts
+│   │   ├── 💾 grade.repository.ts
+│   │   ├── ⚙️ grade.service.ts
+│   │   └── 🧮 grade.util.ts
+│   │
+│   ├── 💬 inquiry/
+│   │   ├── 🎛️ inquiry.controller.ts
+│   │   ├── ⚙️ inquiry.service.ts
+│   │   ├── 💾 inquiry.repository.ts
+│   │   ├── 🧩 inquiry.module.ts
+│   │   └── 📝 inquiry.dto.ts
+│   │
+│   ├── 🔔 notifications/
+│   │   ├── 🎛️ notifications.controller.ts
+│   │   ├── ⚙️ notifications.service.ts
+│   │   ├── 💾 notifications.repository.ts
+│   │   ├── 🧩 notifications.module.ts
+│   │   ├── 🔄 notifications.mapper.ts
+│   │   ├── 🎯 ticker.token.ts
+│   │   └── 🧩 types/
+│   │       └── 🧾 allowed-types.type.ts
+│   │
+│   ├── 🧾 orders/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-order.dto.ts
+│   │   │   ├── 📝 update-order.dto.ts
+│   │   │   ├── 🔍 get-orders-query.dto.ts
+│   │   │   └── 📦 order-response.dto.ts
+│   │   ├── 🎛️ orders.controller.ts
+│   │   ├── ⚙️ orders.service.ts
+│   │   ├── 💾 orders.repository.ts
+│   │   └── 🧩 orders.module.ts
+│   │
+│   ├── 💰 points/
+│   │   ├── 🎛️ points.controller.ts
+│   │   ├── ⚙️ points.service.ts
+│   │   ├── 💾 points.repository.ts
+│   │   ├── 🧩 points.module.ts
+│   │   └── 🧾 points.types.ts
+│   │
+│   ├── 🧩 prisma/
+│   │   ├── ⚙️ prisma.service.ts
+│   │   └── 🧩 prisma.module.ts
+│   │
+│   ├── 🛍️ products/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-product.dto.ts
+│   │   │   ├── 📝 update-product.dto.ts
+│   │   │   ├── 📦 product-response.dto.ts
+│   │   │   └── 🔍 product-detail-response.dto.ts
+│   │   ├── 🎛️ products.controller.ts
+│   │   ├── ⚙️ products.service.ts
+│   │   ├── 💾 products.repository.ts
+│   │   └── 🧩 products.module.ts
+│   │
+│   ├── 📝 review/
+│   │   ├── 🎛️ review.controller.ts
+│   │   ├── ⚙️ review.service.ts
+│   │   ├── 💾 review.repository.ts
+│   │   ├── 🧩 review.module.ts
+│   │   └── 🧾 review.dto.ts
+│   │
+│   ├── ☁️ s3/
+│   │   ├── 🎛️ s3.controller.ts
+│   │   ├── ⚙️ s3.service.ts
+│   │   └── 🧩 s3.module.ts
+│   │
+│   ├── 🏪 store/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-store.dto.ts
+│   │   │   ├── 📝 update-store.dto.ts
+│   │   │   ├── 🏬 store-detail.dto.ts
+│   │   │   └── 📦 store-response.dto.ts
+│   │   ├── 🎛️ store.controller.ts
+│   │   ├── ⚙️ store.service.ts
+│   │   ├── 💾 store.repository.ts
+│   │   └── 🧩 store.module.ts
+│   │
+│   ├── 👥 users/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-user.dto.ts
+│   │   │   └── 📝 update-user.dto.ts
+│   │   ├── 🎛️ users.controller.ts
+│   │   ├── ⚙️ users.service.ts
+│   │   ├── 💾 users.repository.ts
+│   │   └── 🧩 users.module.ts
+│   │
+│   └── 🧰 utils/
+│       └── (공용 유틸)
+│
+└── 🧪 test/
+    ├── 🧫 app.e2e-spec.ts
+    ├── 🧩 jest-e2e.json
+    ├── 🧪 mocks/
+    │   └── 🧱 prisma.mock.ts
+    └── 🧰 utils/
+        └── 🧩 mocks.ts
 ```
 
 ---
