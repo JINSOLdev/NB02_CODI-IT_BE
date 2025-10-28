@@ -93,7 +93,9 @@ export class ProductsRepository {
     const where: Prisma.ProductWhereInput = {};
     if (query.categoryName) where.category = { name: query.categoryName };
     if (query.search) where.name = { contains: query.search };
-
+    if (query.priceMin) where.price = { gte: query.priceMin };
+    if (query.priceMax) where.price = { lte: query.priceMax };
+    if (query.size) where.stocks = { some: { size: { name: query.size } } };
     return this.prisma.product.findMany({
       where,
       skip: query.skip,
