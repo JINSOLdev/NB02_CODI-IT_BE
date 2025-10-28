@@ -196,35 +196,37 @@ jobs:
 
             # 헬스체크 경로: secret 없으면 /health 기본값
             HEALTH_PATH="${{ secrets.HEALTHCHECK_PATH }}"
-            [ -z "${HEALTH_PATH:-}" ] && HEALTH_PATH="/health"
+            CANDIDATES=()
+            if [ -n "${HC_SECRET:-}" ]; then
+              CANDIDATES+=("$HC_SECRET")
+            fi
+            CANDIDATES+=("/health" "/api/health" "/api/docs" "/api/docs/" "/")
 
-            echo "Health check idle: http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}"
+            echo "Health candidates: ${CANDIDATES[*]}"
 
-            # 상태코드/본문 일부를 같이 찍어서 디버깅
             ok=0
-            for i in $(seq 1 40); do
-              code=$(curl -s -o /tmp/hbody -w "%{http_code}" "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || echo "000")
-              if [ "$code" = "200" ]; then
-                ok=1
-                break
-              fi
-              echo "[$i] waiting health... code=$code"
-              if [ "$i" -eq 1 ] || [ "$i" -eq 10 ] || [ "$i" -eq 20 ] || [ "$i" -eq 30 ]; then
-                echo "--- partial logs ---"
-                docker logs --tail=200 "$IDLE_NAME" || true
-              fi
-              sleep 1
+            for path in "${CANDIDATES[@]}"; do
+              echo "Try health path: $path"
+              for i in $(seq 1 60); do
+                code=$(curl -s -o /tmp/hbody -w "%{http_code}" "http://127.0.0.1:${IDLE_PORT}${path}" || echo "000")
+                case "$code" in
+                  2*|3*) echo "Health OK ($code) with path=$path"; ok=1; HEALTH_PATH="$path"; break ;;
+                  *)     echo "[$i] waiting ($code) path=$path"; sleep 1 ;;
+                esac
+              done
+              [ "$ok" -eq 1 ] && break
             done
 
             if [ "$ok" -ne 1 ]; then
-              echo "ERROR: Health check failed"
-              echo "Last HTTP code: $code"
+              echo "ERROR: Health check failed (tried: ${CANDIDATES[*]})"
               echo "--- last 200 logs ---"
               docker logs --tail=200 "$IDLE_NAME" || true
               echo "--- docker ps ---"
               docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
               exit 1
             fi
+
+            echo "Using HEALTH_PATH=$HEALTH_PATH"
 
             echo "Switch Nginx to $IDLE_COLOR"
             if [ "$IDLE_COLOR" = "blue" ]; then
