@@ -1,106 +1,274 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+#  2팀 - CODI_IT 프로젝트
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+📄 [2팀 프로젝트 계획서 보기](https://www.notion.so/2-26f02c9656f581a2b5ebcc7f12204fcb)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 👨‍👩‍👧‍👦 팀원 구성
+*아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이동합니다.*
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/chya-chya">
+        <img src="https://avatars.githubusercontent.com/u/112245738?v=4" width="150px;" alt="차수연"/>
+      </a><br />
+      <sub><b>차수연</b></sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/kwonnahyun0125">
+        <img src="https://avatars.githubusercontent.com/u/207654272?v=4" width="150px;" alt="권나현"/>
+      </a><br />
+      <sub><b>권나현</b></sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/JINSOLdev">
+        <img src="https://avatars.githubusercontent.com/u/130561876?v=4" width="150px;" alt="김진솔"/>
+      </a><br />
+      <sub><b>김진솔</b></sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/jrkgus413">
+        <img src="https://avatars.githubusercontent.com/u/122591484?v=4" width="150px;" alt="조가현"/>
+      </a><br />
+      <sub><b>조가현</b></sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/jinseongnam">
+        <img src="https://avatars.githubusercontent.com/u/208552129?v=4" width="150px;" alt="진성남"/>
+      </a><br />
+      <sub><b>진성남</b></sub>
+  </tr>
+</table>
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 📌 프로젝트 소개
 
-```bash
-$ npm install
+- **프로젝트 이름:** CODI_IT 
+- **프로젝트 주제:** 패션 이커머스 플랫폼 백엔드 시스템 구축  
+- **진행 기간:** 2025.09.15 ~ 2025.11.03  
+
+---
+
+## 🛠️ 기술 스택
+
+- **Backend:** Nest.js, TYpeScript  
+- **Database:** PostgreSQL, Prisma, AWS RDS/S3
+- **API 문서화:** Swagger
+- **테스트:** Jest,SuperTest, ESLint
+- **협업 도구:** Git & GitHub, Discord, Notion
+- **배포/운영:** AWS EC2, Nginx, PM2
+- **CI/CD:** Gitgub Actions
+
+---
+
+## 🧩 팀원별 구현 기능
+
+### 💻 차수연
+
+### 💻 권나현
+
+### 💻 김진솔
+
+### 💻 조가현
+
+### 💻 진성남
+
+
+---
+
+## 📁 프로젝트 파일 구조
+📦 프로젝트 루트
+```
+📦 project-root
+├── 🐳 Dockerfile
+├── ⚙️ eslint.config.mjs
+├── 📘 nest-cli.json
+├── 📦 package.json
+├── 🔒 package-lock.json
+├── 🧱 tsconfig.json
+├── 🧱 tsconfig.build.json
+├── 📄 README.md
+│
+├── 🪵 logs/
+│   └── ❗ error.log
+│
+├── 🧩 prisma/
+│   ├── 📜 schema.prisma
+│   ├── 🌱 seed.ts
+│   ├── 🌱 seedForDashboard.ts
+│   └── 🧭 migrations/
+│
+├── 💻 src/
+│   ├── 🚀 main.ts
+│   ├── 🧩 app.module.ts
+│   ├── 🎛️ app.controller.ts
+│   ├── ⚙️ app.service.ts
+│   │
+│   ├── 🔐 auth/
+│   │   ├── 📁 dto/
+│   │   │   └── 📝 login.dto.ts
+│   │   ├── 🎛️ auth.controller.ts
+│   │   ├── ⚙️ auth.service.ts
+│   │   ├── 🧩 auth.module.ts
+│   │   ├── 🛡️ jwt.guard.ts
+│   │   ├── 🧠 jwt.strategy.ts
+│   │   └── 🧰 utils/
+│   │       ├── 🍪 cookie.util.ts
+│   │       └── 🙋 current-user.decorator.ts
+│   │
+│   ├── 🛒 cart/
+│   │   ├── 🎛️ cart.controller.ts
+│   │   ├── ⚙️ cart.service.ts
+│   │   ├── 💾 cart.repository.ts
+│   │   ├── 🧩 cart.module.ts
+│   │   └── 🧪 test/
+│   │       ├── 🧫 cart.e2e.spec.ts
+│   │       └── 🔍 cart.service.spec.ts
+│   │
+│   ├── 🧱 common/
+│   │   ├── 🛡️ guard/
+│   │   │   ├── 👤 buyer.guard.ts
+│   │   │   └── 🧍 seller.guard.ts
+│   │   ├── 🪶 logger/
+│   │   │   ├── 🪶 sentry.config.ts
+│   │   │   ├── ⚠️ sentry.filter.ts
+│   │   │   └── 🧱 winston.config.ts
+│   │   ├── 🧩 middleware/
+│   │   │   └── 🪵 logger.middleware.ts
+│   │   ├── 🧮 pipes/
+│   │   │   └── 🧩 parse-cuid.pipe.ts
+│   │   └── 🧾 prisma-tx.type.ts
+│   │
+│   ├── 📊 dashboard/
+│   │   ├── 🎛️ dashboard.controller.ts
+│   │   ├── ⚙️ dashboard.service.ts
+│   │   └── 🧩 dashboard.module.ts
+│   │
+│   ├── 🎓 grades/
+│   │   ├── 🧩 grade.module.ts
+│   │   ├── 💾 grade.repository.ts
+│   │   ├── ⚙️ grade.service.ts
+│   │   └── 🧮 grade.util.ts
+│   │
+│   ├── 💬 inquiry/
+│   │   ├── 🎛️ inquiry.controller.ts
+│   │   ├── ⚙️ inquiry.service.ts
+│   │   ├── 💾 inquiry.repository.ts
+│   │   ├── 🧩 inquiry.module.ts
+│   │   └── 📝 inquiry.dto.ts
+│   │
+│   ├── 🔔 notifications/
+│   │   ├── 🎛️ notifications.controller.ts
+│   │   ├── ⚙️ notifications.service.ts
+│   │   ├── 💾 notifications.repository.ts
+│   │   ├── 🧩 notifications.module.ts
+│   │   ├── 🔄 notifications.mapper.ts
+│   │   ├── 🎯 ticker.token.ts
+│   │   └── 🧩 types/
+│   │       └── 🧾 allowed-types.type.ts
+│   │
+│   ├── 🧾 orders/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-order.dto.ts
+│   │   │   ├── 📝 update-order.dto.ts
+│   │   │   ├── 🔍 get-orders-query.dto.ts
+│   │   │   └── 📦 order-response.dto.ts
+│   │   ├── 🎛️ orders.controller.ts
+│   │   ├── ⚙️ orders.service.ts
+│   │   ├── 💾 orders.repository.ts
+│   │   └── 🧩 orders.module.ts
+│   │
+│   ├── 💰 points/
+│   │   ├── 🎛️ points.controller.ts
+│   │   ├── ⚙️ points.service.ts
+│   │   ├── 💾 points.repository.ts
+│   │   ├── 🧩 points.module.ts
+│   │   └── 🧾 points.types.ts
+│   │
+│   ├── 🧩 prisma/
+│   │   ├── ⚙️ prisma.service.ts
+│   │   └── 🧩 prisma.module.ts
+│   │
+│   ├── 🛍️ products/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-product.dto.ts
+│   │   │   ├── 📝 update-product.dto.ts
+│   │   │   ├── 📦 product-response.dto.ts
+│   │   │   └── 🔍 product-detail-response.dto.ts
+│   │   ├── 🎛️ products.controller.ts
+│   │   ├── ⚙️ products.service.ts
+│   │   ├── 💾 products.repository.ts
+│   │   └── 🧩 products.module.ts
+│   │
+│   ├── 📝 review/
+│   │   ├── 🎛️ review.controller.ts
+│   │   ├── ⚙️ review.service.ts
+│   │   ├── 💾 review.repository.ts
+│   │   ├── 🧩 review.module.ts
+│   │   └── 🧾 review.dto.ts
+│   │
+│   ├── ☁️ s3/
+│   │   ├── 🎛️ s3.controller.ts
+│   │   ├── ⚙️ s3.service.ts
+│   │   └── 🧩 s3.module.ts
+│   │
+│   ├── 🏪 store/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-store.dto.ts
+│   │   │   ├── 📝 update-store.dto.ts
+│   │   │   ├── 🏬 store-detail.dto.ts
+│   │   │   └── 📦 store-response.dto.ts
+│   │   ├── 🎛️ store.controller.ts
+│   │   ├── ⚙️ store.service.ts
+│   │   ├── 💾 store.repository.ts
+│   │   └── 🧩 store.module.ts
+│   │
+│   ├── 👥 users/
+│   │   ├── 📁 dto/
+│   │   │   ├── 📝 create-user.dto.ts
+│   │   │   └── 📝 update-user.dto.ts
+│   │   ├── 🎛️ users.controller.ts
+│   │   ├── ⚙️ users.service.ts
+│   │   ├── 💾 users.repository.ts
+│   │   └── 🧩 users.module.ts
+│   │
+│   └── 🧰 utils/
+│       └── (공용 유틸)
+│
+└── 🧪 test/
+    ├── 🧫 app.e2e-spec.ts
+    ├── 🧩 jest-e2e.json
+    ├── 🧪 mocks/
+    │   └── 🧱 prisma.mock.ts
+    └── 🧰 utils/
+        └── 🧩 mocks.ts
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 🌐 구현 홈페이지
 
-# watch mode
-$ npm run start:dev
+- **프론트엔드**: [https://nb-02-moon-shot-fe.vercel.app/login](https://nb-02-codi-it-fe.vercel.app/))
 
-# production mode
-$ npm run start:prod
-```
+- **백엔드**: [https://codi-it.shop/api)](https://codi-it.shop/api)
 
-## Run tests
+- **Swagger**: [https://codi-it.shop/api/docs)](https://codi-it.shop/api/docs)
 
-```bash
-# unit tests
-$ npm run test
+---
 
-# e2e tests
-$ npm run test:e2e
+## 📊 ERD (Entity Relationship Diagram)
 
-# test coverage
-$ npm run test:cov
-```
 
-## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 🧠 프로젝트 회고 및 발표자료
 
 
 ## Test Coverage
 <!-- COVERAGE:START -->
 | Statements | Branches | Functions | Lines |
 | -----------|----------|-----------|-------|
-| ![Statements](https://img.shields.io/badge/statements-62.47%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-48.02%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-39.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-60.83%25-red.svg?style=flat) |
+| ![Statements](https://img.shields.io/badge/statements-70.98%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-57.94%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-49.57%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-69.85%25-red.svg?style=flat) |
 <!-- COVERAGE:END -->

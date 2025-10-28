@@ -9,6 +9,9 @@ import {
   Get,
   Query,
   Delete,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipeBuilder,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { AuthUser } from '../auth/auth.types';
@@ -22,17 +25,74 @@ import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 import { ParseCuidPipe } from '../common/pipes/parse-cuid.pipe';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateStoreResponseDto } from './dto/create-store-response.dto';
+import { S3Service } from '../s3/s3.service';
+import { memoryStorage } from 'multer';
+import { imageFileFilter } from 'src/s3/s3.controller';
 
+@ApiTags('stores')
 @Controller('api/stores')
 export class StoreController {
-  constructor(private readonly storeService: StoreService) {}
+  constructor(
+    private readonly storeService: StoreService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Req() req: { user: AuthUser }, @Body() dto: CreateStoreDto) {
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async create(
+    @Req() req: { user: AuthUser },
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /(jpg|jpeg|png|gif)$/i,
+        })
+        .addMaxSizeValidator({ maxSize: 10 * 1024 * 1024 })
+        .build({ fileIsRequired: false }),
+    )
+    file: Express.Multer.File | undefined,
+    @Body() dto: CreateStoreDto,
+  ): Promise<CreateStoreResponseDto> {
     const user = req.user;
 
-    return this.storeService.createStore(user.userId, user.type, dto);
+    if (file) {
+      const { url } = await this.s3Service.uploadFile(file);
+      dto.image = url;
+    }
+
+    const createdStore = await this.storeService.createStore(
+      user.userId,
+      user.type,
+      dto,
+    );
+
+    console.log('store/create body:', dto);
+    console.log('store/create file:', !!file, file?.mimetype, file?.size);
+
+    return {
+      id: createdStore.id,
+      storeName: createdStore.name,
+      phoneNumber: createdStore.phoneNumber,
+      description: createdStore.content,
+      address: {
+        basic: createdStore.address,
+        ...(createdStore.detailAddress
+          ? { detail: createdStore.detailAddress }
+          : {}),
+      },
+      image: createdStore.image ?? undefined,
+      createdAt: createdStore.createdAt,
+      updatedAt: createdStore.updatedAt,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
