@@ -26,7 +26,7 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 
 @Injectable()
 export class ProductsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /** ✅ 스토어 ID로 조회 (PK) */
   async findStoreById(storeId: string) {
@@ -144,12 +144,12 @@ export class ProductsRepository {
         ...safeData,
         stocks: stocks
           ? {
-              deleteMany: { productId },
-              create: stocks.map((s) => ({
-                sizeId: s.sizeId,
-                quantity: s.quantity ?? 0,
-              })),
-            }
+            deleteMany: { productId },
+            create: stocks.map((s) => ({
+              sizeId: s.sizeId,
+              quantity: s.quantity ?? 0,
+            })),
+          }
           : undefined,
       },
     });
@@ -187,16 +187,24 @@ export class ProductsRepository {
 
   /** ✅ 상품 문의 조회 (reply 포함) */
   async findInquiries(productId: string) {
-    return this.prisma.inquiry.findMany({
-      where: { productId },
-      include: {
-        user: true,
-        reply: {
-          include: {
-            user: true,
+    const inquiries = await this.prisma.$transaction(async (tx) => {
+      const list = await tx.inquiry.findMany({
+        where: { productId },
+        include: {
+          user: true,
+          reply: {
+            include: {
+              user: true,
+            },
           },
         },
-      },
+      });
+
+      const totalCount = await tx.inquiry.count({ where: { productId } });
+
+      return { list, totalCount };
     });
+
+    return inquiries;
   }
 }
