@@ -18,14 +18,17 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry } from '@prisma/client';
-import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { RequestWithUser } from '../auth/auth.types';
-import type { productResponse, ProductListResponse } from './products.service';
+import type {
+  ProductResponse,
+  ProductListResponse,
+  InquiryResponse,
+} from './products.service';
 
 @Controller('api/products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
 
   /** 상품 등록 */
   @Post()
@@ -47,7 +50,7 @@ export class ProductsController {
 
   /** 상품 상세 조회 (비로그인 가능) */
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<productResponse> {
+  async findOne(@Param('id') id: string): Promise<ProductResponse> {
     return this.productsService.findOne(id);
   }
 
@@ -90,7 +93,7 @@ export class ProductsController {
   async findInquiries(
     @Param('id') productId: string,
     @Req() req: RequestWithUser,
-  ): Promise<InquiryWithRelations[]> {
+  ): Promise<InquiryResponse> {
     return this.productsService.findInquiries(productId, req.user.userId);
   }
 }
