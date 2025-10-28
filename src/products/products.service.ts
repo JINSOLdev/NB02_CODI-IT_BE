@@ -19,6 +19,7 @@ import {
   AnswerStatus,
   Stock,
   Category,
+  CategoryType,
 } from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 
@@ -30,8 +31,8 @@ export type ProductListResponse = {
     name: string;
     image: string | null;
     price: number;
-    discountPrice: number | null;
-    discountRate: number | null;
+    discountPrice: number;
+    discountRate: number;
     discountStartTime: Date | null;
     discountEndTime: Date | null;
     reviewsCount: number;
@@ -51,8 +52,8 @@ export type productResponse = {
   name: string;
   image: string | null;
   price: number;
-  discountPrice: number | null;
-  discountRate: number | null;
+  discountPrice: number;
+  discountRate: number;
   discountStartTime: Date | null;
   discountEndTime: Date | null;
   reviewsCount: number;
@@ -93,7 +94,7 @@ export interface ProductWithStore extends Product {
 export class ProductsService {
   constructor(private readonly productsRepository: ProductsRepository) {}
 
-  /** 🔧 stocks 변환: sizeId(string) → Prisma용 string ID */
+  /** 🔧 stocks 변환 */
   private async transformStocks(
     stocks: (CreateStockDto | UpdateStockDto)[],
   ): Promise<TransformedStock[]> {
@@ -103,9 +104,7 @@ export class ProductsService {
           throw new NotFoundException('사이즈 ID가 필요합니다.');
         }
 
-        const size = await this.productsRepository.findStockSizeById(
-          stock.sizeId,
-        );
+        const size = await this.productsRepository.findStoreById(stock.sizeId);
 
         if (!size) {
           throw new NotFoundException(
@@ -132,33 +131,43 @@ export class ProductsService {
       if (categoryId) {
         resolvedCategoryId = categoryId;
       } else if (categoryName) {
+        // string 또는 Category 객체 모두 처리
+        const resolvedCategoryName: CategoryType =
+          typeof categoryName === 'object'
+            ? (categoryName as Category).name
+            : (categoryName as unknown as CategoryType);
+
         const category =
-          await this.productsRepository.findCategoryByName(categoryName);
+          await this.productsRepository.findCategoryByName(
+            resolvedCategoryName,
+          );
+
         if (!category)
           throw new NotFoundException(
-            `카테고리(${categoryName})를 찾을 수 없습니다.`,
+            `카테고리(${resolvedCategoryName})를 찾을 수 없습니다.`,
           );
+
         resolvedCategoryId = category.id;
       } else {
         throw new NotFoundException('카테고리 정보가 없습니다.');
       }
 
-      // ✅ 할인 가격 계산
-      let discountPrice: number | undefined;
-      if (discountRate !== undefined && discountRate >= 0) {
-        discountPrice = Math.floor(price * (1 - discountRate / 100));
-      }
+      // ✅ 할인 가격 계산 (기본값 포함)
+      const discountPrice =
+        discountRate !== undefined && discountRate > 0
+          ? Math.floor(price * (1 - discountRate / 100))
+          : price;
 
       // ✅ 사이즈 변환
       const stocks = dto.stocks ? await this.transformStocks(dto.stocks) : [];
 
-      // ✅ Prisma가 인식 가능한 데이터만 전송
+      // ✅ DB 저장
       return await this.productsRepository.create({
         name: dto.name,
         content: dto.content,
         image: dto.image,
         price: dto.price,
-        discountRate: dto.discountRate,
+        discountRate: dto.discountRate ?? 0,
         discountPrice,
         discountStartTime: dto.discountStartTime,
         discountEndTime: dto.discountEndTime,
@@ -173,14 +182,12 @@ export class ProductsService {
       ) {
         throw err;
       }
-
       const safeErr = err as Record<string, unknown>;
-      const errorMessage =
+      throw new InternalServerErrorException(
         typeof safeErr.message === 'string'
           ? safeErr.message
-          : '상품 등록 중 오류가 발생했습니다.';
-
-      throw new InternalServerErrorException(errorMessage);
+          : '상품 등록 중 오류가 발생했습니다.',
+      );
     }
   }
 
@@ -202,8 +209,8 @@ export class ProductsService {
         name: product.name,
         image: product.image,
         price: product.price,
-        discountPrice: product.discountPrice,
-        discountRate: product.discountRate,
+        discountPrice: product.discountPrice ?? product.price,
+        discountRate: product.discountRate ?? 0,
         discountStartTime: product.discountStartTime,
         discountEndTime: product.discountEndTime,
         reviewsCount: product.reviews.length,
@@ -245,8 +252,8 @@ export class ProductsService {
       name: product.name,
       image: product.image,
       price: product.price,
-      discountPrice: product.discountPrice,
-      discountRate: product.discountRate,
+      discountPrice: product.discountPrice ?? product.price,
+      discountRate: product.discountRate ?? 0,
       discountStartTime: product.discountStartTime,
       discountEndTime: product.discountEndTime,
       reviewsCount: product.reviews.length,
@@ -279,22 +286,27 @@ export class ProductsService {
 
       let categoryId: string | undefined;
       if (dto.categoryName) {
-        const category = await this.productsRepository.findCategoryByName(
-          dto.categoryName,
-        );
+        const resolvedCategoryName: CategoryType =
+          typeof dto.categoryName === 'object'
+            ? (dto.categoryName as Category).name
+            : (dto.categoryName as unknown as CategoryType);
+
+        const category =
+          await this.productsRepository.findCategoryByName(
+            resolvedCategoryName,
+          );
+
         if (!category)
           throw new NotFoundException('카테고리를 찾을 수 없습니다.');
+
         categoryId = category.id;
       }
 
       const { price, discountRate, stocks, ...restDto } = dto;
-      let discountPrice: number | undefined;
-
-      if (discountRate !== undefined && discountRate >= 0) {
-        discountPrice = Math.floor(
-          (price ?? product.price) * (1 - discountRate / 100),
-        );
-      }
+      const discountPrice =
+        discountRate !== undefined && discountRate > 0
+          ? Math.floor((price ?? product.price) * (1 - discountRate / 100))
+          : (price ?? product.price);
 
       return await this.productsRepository.update(productId, {
         ...restDto,
@@ -305,52 +317,32 @@ export class ProductsService {
         ...(stocks && { stocks: await this.transformStocks(stocks) }),
       });
     } catch (err: unknown) {
-      console.error('❌ Product update error:', err);
       if (
         err instanceof NotFoundException ||
         err instanceof ForbiddenException
       ) {
         throw err;
       }
-
       const safeErr = err as Record<string, unknown>;
-      const errorMessage =
+      throw new InternalServerErrorException(
         typeof safeErr.message === 'string'
           ? safeErr.message
-          : '상품 수정 중 오류가 발생했습니다.';
-
-      throw new InternalServerErrorException(errorMessage);
+          : '상품 수정 중 오류가 발생했습니다.',
+      );
     }
   }
 
   /** ✅ 상품 삭제 */
   async remove(productId: string, sellerId: string): Promise<void> {
-    try {
-      const product = await this.productsRepository.findOne(productId);
-      if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
+    const product = await this.productsRepository.findOne(productId);
+    if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
 
-      const store = await this.productsRepository.findStoreBySellerId(sellerId);
-      if (!store || store.id !== product.storeId) {
-        throw new ForbiddenException('이 상품을 삭제할 권한이 없습니다.');
-      }
-
-      await this.productsRepository.removeWithRelations(productId);
-    } catch (err: unknown) {
-      if (
-        err instanceof NotFoundException ||
-        err instanceof ForbiddenException
-      ) {
-        throw err;
-      }
-
-      const safeErr = err as Record<string, unknown>;
-      const errorMessage =
-        typeof safeErr.message === 'string'
-          ? safeErr.message
-          : '상품 삭제 중 오류가 발생했습니다.';
-
-      throw new InternalServerErrorException(errorMessage);
+    const store = await this.productsRepository.findStoreBySellerId(sellerId);
+    if (!store || store.id !== product.storeId) {
+      throw new ForbiddenException('이 상품을 삭제할 권한이 없습니다.');
     }
+
+    await this.productsRepository.removeWithRelations(productId);
   }
 
   /** ✅ 상품 문의 등록 */
@@ -359,25 +351,16 @@ export class ProductsService {
     dto: CreateInquiryDto,
     userId: string,
   ): Promise<Inquiry> {
-    try {
-      const product = await this.productsRepository.findOne(productId);
-      if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
-      return this.productsRepository.createInquiry(productId, {
-        ...dto,
-        userId,
-      });
-    } catch (err: unknown) {
-      if (err instanceof NotFoundException) throw err;
-      const safeErr = err as Record<string, unknown>;
-      const errorMessage =
-        typeof safeErr.message === 'string'
-          ? safeErr.message
-          : '상품 문의 등록 중 오류가 발생했습니다.';
-      throw new InternalServerErrorException(errorMessage);
-    }
+    const product = await this.productsRepository.findOne(productId);
+    if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
+
+    return this.productsRepository.createInquiry(productId, {
+      ...dto,
+      userId,
+    });
   }
 
-  /** ✅ 상품 문의 조회 (비밀글 권한 확인) */
+  /** ✅ 상품 문의 조회 */
   async findInquiries(
     productId: string,
     userId: string,
