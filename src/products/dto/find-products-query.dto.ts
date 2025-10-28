@@ -1,16 +1,18 @@
 import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CategoryType } from '@prisma/client';
-
+import { Type, Transform } from 'class-transformer';
 export class FindProductsQueryDto {
   @ApiPropertyOptional({ description: '페이지 번호 (기본값: 1)' })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   page?: number;
 
   @ApiPropertyOptional({ description: '페이지 크기 (기본값: 10)' })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   pageSize?: number;
 
   @ApiPropertyOptional({
@@ -29,11 +31,13 @@ export class FindProductsQueryDto {
   @ApiPropertyOptional({ description: '최소 가격' })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   priceMin?: number;
 
   @ApiPropertyOptional({ description: '최대 가격' })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   priceMax?: number;
 
   @ApiPropertyOptional({ description: '사이즈 (예: S, M, L, Free)' })
@@ -52,6 +56,9 @@ export class FindProductsQueryDto {
   })
   @IsOptional()
   @IsEnum(CategoryType)
+  @Transform(({ value }): CategoryType | undefined =>
+    value === '' ? undefined : (value as CategoryType),
+  )
   categoryName?: CategoryType;
 
   /** 🔧 내부 계산용 (Prisma skip/take 매핑) */
