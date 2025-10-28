@@ -12,6 +12,7 @@ const ALLOW_ORIGINS = [
   'https://nb-02-codi-it-fe.vercel.app',
   'https://codi-it.shop',
   'http://localhost:3001',
+  'http://localhost:3000',
 ];
 
 async function bootstrap() {

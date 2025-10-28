@@ -38,6 +38,7 @@ import { ProductsModule } from './products/products.module';
     OrdersModule,
     NotificationsModule,
     InquiryModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

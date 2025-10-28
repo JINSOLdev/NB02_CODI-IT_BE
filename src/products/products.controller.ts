@@ -12,7 +12,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ProductsService, ProductWithStore } from './products.service';
+import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
@@ -21,6 +21,7 @@ import { Product, Inquiry } from '@prisma/client';
 import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { RequestWithUser } from '../auth/auth.types';
+import type { productResponse, ProductListResponse } from './products.service';
 
 @Controller('api/products')
 export class ProductsController {
@@ -38,13 +39,15 @@ export class ProductsController {
 
   /** 상품 목록 조회 (비로그인 가능) */
   @Get()
-  async findAll(@Query() query: FindProductsQueryDto): Promise<Product[]> {
+  async findAll(
+    @Query() query: FindProductsQueryDto,
+  ): Promise<ProductListResponse> {
     return this.productsService.findAll(query);
   }
 
   /** 상품 상세 조회 (비로그인 가능) */
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ProductWithStore> {
+  async findOne(@Param('id') id: string): Promise<productResponse> {
     return this.productsService.findOne(id);
   }
 

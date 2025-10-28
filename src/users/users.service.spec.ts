@@ -10,6 +10,7 @@ import type { Prisma, User, UserType, GradeLevel } from '@prisma/client';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
 import { toUserPayload, type UserPayload } from './users.mapper';
+import { S3Service } from '../s3/s3.service';
 
 // bcrypt Mock
 const bcryptCompare = jest.fn(
@@ -89,6 +90,16 @@ const createRepoMock = (): UsersRepoMock => ({
   deleteById: jest.fn<Promise<void>, [string]>(),
 });
 
+// S3Service Mock
+type S3Mock = {
+  uploadFile: jest.Mock<Promise<{ url: string }>, [Express.Multer.File]>;
+};
+const createS3Mock = (): S3Mock => ({
+  uploadFile: jest.fn<Promise<{ url: string }>, [Express.Multer.File]>(() =>
+    Promise.resolve({ url: 'https://s3.local/fake.png' }),
+  ),
+});
+
 // 테스트용 타입
 type CreateReturn = Awaited<ReturnType<UsersService['create']>>;
 type GetMeReturn = Awaited<ReturnType<UsersService['getMe']>>;
@@ -98,12 +109,18 @@ type UpdateMeReturn = Awaited<ReturnType<UsersService['updateMe']>>;
 describe('UsersService', () => {
   let service: UsersService;
   let repo: UsersRepoMock;
+  let s3: S3Mock;
 
   beforeEach(async () => {
     repo = createRepoMock();
+    s3 = createS3Mock();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [UsersService, { provide: UsersRepository, useValue: repo }],
+      providers: [
+        UsersService,
+        { provide: UsersRepository, useValue: repo },
+        { provide: S3Service, useValue: s3 },
+      ],
     }).compile();
 
     service = moduleRef.get(UsersService);
@@ -237,6 +254,7 @@ describe('UsersService', () => {
       expect(updCalls.length).toBe(1);
       const [id, data] = updCalls[0];
       expect(id).toBe('u1');
+
       expect(data).toEqual(
         expect.objectContaining({
           name: '바뀜',
@@ -244,7 +262,8 @@ describe('UsersService', () => {
         }),
       );
 
-      expect(data.passwordHash).toBeUndefined();
+      const pwd = data.passwordHash;
+      expect(pwd).toBeUndefined();
 
       expect(out).toEqual(payloadOf(updated));
     });
@@ -267,7 +286,12 @@ describe('UsersService', () => {
       expect(updCalls.length).toBe(1);
       const [id, data] = updCalls[0];
       expect(id).toBe('u1');
-      expect(data.passwordHash).toBe('hashed:newPW');
+
+      const pwd = data.passwordHash;
+
+      const pwdValue = typeof pwd === 'string' ? pwd : pwd?.set;
+
+      expect(pwdValue).toBe('hashed:newPW');
 
       expect(out).toEqual(payloadOf(updated));
     });
