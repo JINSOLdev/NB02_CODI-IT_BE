@@ -17,11 +17,11 @@ import {
   Product,
   Inquiry,
   AnswerStatus,
-  Review,
   Stock,
   Category,
 } from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
+
 export type ProductListResponse = {
   list: Array<{
     id: string;
@@ -44,7 +44,7 @@ export type ProductListResponse = {
   totalCount: number;
 };
 
-export type productResponse = {
+export type ProductResponse = {
   id: string;
   storeId: string;
   storeName: string;
@@ -89,9 +89,14 @@ export interface ProductWithStore extends Product {
   };
 }
 
+export type InquiryResponse = {
+  list: InquiryWithRelations[];
+  totalCount: number;
+};
+
 @Injectable()
 export class ProductsService {
-  constructor(private readonly productsRepository: ProductsRepository) {}
+  constructor(private readonly productsRepository: ProductsRepository) { }
 
   /** 🔧 stocks 변환: sizeName → sizeId */
   private async transformStocks(
@@ -193,18 +198,23 @@ export class ProductsService {
   }
 
   /** 상품 상세 조회 */
-  async findOne(productId: string): Promise<productResponse> {
+  async findOne(productId: string): Promise<ProductResponse> {
     const product = await this.productsRepository.findOne(productId);
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
     const reviewsRating =
       product.reviews.reduce((sum, review) => sum + review.rating, 0) /
       product.reviews.length;
     const reviews = {
-      rate1Length: product.reviews.filter((review) => review.rating === 1).length,
-      rate2Length: product.reviews.filter((review) => review.rating === 2).length,
-      rate3Length: product.reviews.filter((review) => review.rating === 3).length,
-      rate4Length: product.reviews.filter((review) => review.rating === 4).length,
-      rate5Length: product.reviews.filter((review) => review.rating === 5).length,
+      rate1Length: product.reviews.filter((review) => review.rating === 1)
+        .length,
+      rate2Length: product.reviews.filter((review) => review.rating === 2)
+        .length,
+      rate3Length: product.reviews.filter((review) => review.rating === 3)
+        .length,
+      rate4Length: product.reviews.filter((review) => review.rating === 4)
+        .length,
+      rate5Length: product.reviews.filter((review) => review.rating === 5)
+        .length,
       // 평균 별점
       sumScore: product.reviews.reduce(
         (sum, review) => sum + review.rating / product.reviews.length,
@@ -357,7 +367,7 @@ export class ProductsService {
   async findInquiries(
     productId: string,
     userId: string,
-  ): Promise<InquiryWithRelations[]> {
+  ): Promise<InquiryResponse> {
     const product = (await this.productsRepository.findOne(
       productId,
     )) as ProductWithStore | null;
@@ -365,40 +375,37 @@ export class ProductsService {
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
 
     // ✅ 명시적 타입 지정 (ESLint no-unsafe-assignment 방지)
-    const inquiries = (await this.productsRepository.findInquiries(
-      productId,
-    )) as Array<{
-      id: string;
-      title?: string | null;
-      content: string;
-      status: AnswerStatus | null;
-      isSecret: boolean | null;
-      createdAt: Date;
-      updatedAt: Date;
-      userId: string;
-      productId: string;
-      user: { id: string; name: string };
-      reply: {
-        id: string;
-        content: string;
-        createdAt: Date;
-        updatedAt: Date;
-        user: { id: string; name: string };
-      } | null;
-    }>;
+    const result = await this.productsRepository.findInquiries(productId);
+    const { list, totalCount } = result;
+    const inquiries: InquiryResponse = { list, totalCount };
 
-    return inquiries.map((inq) => {
+    const transformedList: InquiryWithRelations[] = list.map((inq) => {
       // ✅ 비밀글 접근 권한 확인
       if (inq.isSecret) {
         const isOwner = inq.userId === userId;
         const isSeller = product.store.sellerId === userId;
         if (!isOwner && !isSeller) {
-          throw new ForbiddenException('비밀글을 조회할 권한이 없습니다.');
+          return {
+            id: inq.id,
+            title: '비밀 문의',
+            content: '비밀문의\n',
+            status: inq.status ?? AnswerStatus.WaitingAnswer,
+            isSecret: inq.isSecret ?? false,
+            createdAt: inq.createdAt,
+            updatedAt: inq.updatedAt,
+            userId: inq.userId,
+            productId: inq.productId,
+            user: {
+              id: inq.user.id,
+              name: inq.user.name,
+            },
+            reply: null, // 답변도 비공개
+          };
         }
       }
 
       // ✅ reply: 단일 객체 또는 null
-      const transformed: InquiryWithRelations = {
+      return {
         id: inq.id,
         title: inq.title ?? '',
         content: inq.content,
@@ -414,19 +421,19 @@ export class ProductsService {
         },
         reply: inq.reply
           ? {
-              id: inq.reply.id,
-              content: inq.reply.content,
-              createdAt: inq.reply.createdAt,
-              updatedAt: inq.reply.updatedAt,
-              user: {
-                id: inq.reply.user.id,
-                name: inq.reply.user.name,
-              },
-            }
+            id: inq.reply.id,
+            content: inq.reply.content,
+            createdAt: inq.reply.createdAt,
+            updatedAt: inq.reply.updatedAt,
+            user: {
+              id: inq.reply.user.id,
+              name: inq.reply.user.name,
+            },
+          }
           : null,
       };
-
-      return transformed;
     });
+
+    return { list: transformedList, totalCount: inquiries.totalCount };
   }
 }
