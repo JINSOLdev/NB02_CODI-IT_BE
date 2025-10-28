@@ -147,12 +147,7 @@ export class CartService {
         totalQuantityForCart,
         tx,
       );
-      //5. 최종 결과 반환
-      const updatedCart = await this.cartRepository.getCartByBuyerId(
-        userId,
-        tx,
-      );
-      return updatedCart!;
+      return { message: '장바구니 아이템 삭제 성공' };
     });
   }
 }

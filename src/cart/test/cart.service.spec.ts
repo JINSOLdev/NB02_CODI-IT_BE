@@ -374,6 +374,27 @@ describe('CartService', () => {
     it('장바구니 아이템 삭제', async () => {
       const buyerId = 'user123';
       const cartItemId = 'cartItem1';
+      const mockCart = {
+        id: 'cart1',
+        buyerId,
+        quantity: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        buyer: {
+          id: 'user123',
+          name: 'user123',
+          email: 'user123',
+          passwordHash: 'user123',
+          type: 'BUYER',
+          image: 'user123',
+          points: 0,
+          gradeLevel: 'GREEN',
+          createdAt: new Date('2025-10-16T14:08:32.000Z'),
+          updatedAt: new Date('2025-10-16T14:08:32.000Z'),
+          deletedAt: null,
+        },
+        items: [],
+      };
       const mockCartItem = {
         id: cartItemId,
         cartId: 'cart1',
@@ -406,13 +427,22 @@ describe('CartService', () => {
 
       //레포 목킹
       (cartRepository.getCartItem as jest.Mock).mockResolvedValue(mockCartItem);
-      (cartRepository.deleteCartItem as jest.Mock).mockResolvedValue(
-        mockCartItem,
+      (cartRepository.getCartByBuyerId as jest.Mock).mockResolvedValue(
+        mockCart,
+      );
+      (cartRepository.deleteCartItem as jest.Mock).mockResolvedValue(undefined);
+      (cartRepository.updateCartTotalQuantity as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+      (cartRepository.executeTransaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return await callback('tx');
+        },
       );
 
       //서비스 테스트
       const response = await cartService.deleteCartItem(buyerId, cartItemId);
-      expect(response).toEqual(mockCartItem);
+      expect(response).toEqual({ message: '장바구니 아이템 삭제 성공' });
     });
 
     it('장바구니 아이템 삭제 실패', async () => {
