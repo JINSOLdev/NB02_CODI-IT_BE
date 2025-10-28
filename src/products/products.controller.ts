@@ -23,7 +23,6 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry } from '@prisma/client';
-import { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { RequestWithUser } from '../auth/auth.types';
 import type { productResponse, ProductListResponse } from './products.service';
@@ -173,7 +172,7 @@ export class ProductsController {
   async findInquiries(
     @Param('id') productId: string,
     @Req() req: RequestWithUser,
-  ): Promise<InquiryWithRelations[]> {
+  ): Promise<CreateInquiryDto[]> {
     return this.productsService.findInquiries(productId, req.user.userId);
   }
 }

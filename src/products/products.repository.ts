@@ -4,10 +4,12 @@ import { Prisma, Product, Inquiry, CategoryType } from '@prisma/client';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { TransformedStock } from './dto/create-product.dto';
+import type { InquiryWithRelations } from '../types/inquiry-with-relations.type'; // ✅ 추가
 
+// 🔧 Relation 포함된 타입 정의
 export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
-    store: { select: { name: true; image: true } };
+    store: { select: { name: true } };
     reviews: { select: { rating: true } };
     stocks: { include: { size: true } };
   };
@@ -19,12 +21,7 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
     category: true;
     stocks: { include: { size: true } };
     reviews: true;
-    inquiries: {
-      include: {
-        user: true;
-        reply: { include: { user: true } };
-      };
-    };
+    inquiries: true;
   };
 }>;
 
@@ -32,58 +29,24 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 export class ProductsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** ✅ 기본 이미지 경로 */
-  private readonly DEFAULT_PRODUCT_IMAGE =
-    'https://nb02-codiit-team2.s3.ap-northeast-2.amazonaws.com/default-product.png';
-  private readonly DEFAULT_STORE_IMAGE =
-    'https://nb02-codiit-team2.s3.ap-northeast-2.amazonaws.com/default-store.png';
-  private readonly DEFAULT_PROFILE_IMAGE =
-    'https://nb02-codiit-team2.s3.ap-northeast-2.amazonaws.com/default-profile.png';
-
   /** ✅ 스토어 ID로 조회 (PK) */
   async findStoreById(storeId: string) {
-    const store = await this.prisma.store.findUnique({
-      where: { id: storeId },
-    });
-    if (!store) return null;
-    return {
-      ...store,
-      image:
-        store.image && store.image.trim() !== ''
-          ? store.image
-          : this.DEFAULT_STORE_IMAGE,
-    };
+    return this.prisma.store.findUnique({ where: { id: storeId } });
   }
 
   /** ✅ 판매자 ID로 스토어 조회 (unique) */
   async findStoreBySellerId(sellerId: string) {
-    const store = await this.prisma.store.findUnique({ where: { sellerId } });
-    if (!store) return null;
-    return {
-      ...store,
-      image:
-        store.image && store.image.trim() !== ''
-          ? store.image
-          : this.DEFAULT_STORE_IMAGE,
-    };
+    return this.prisma.store.findUnique({ where: { sellerId } });
   }
 
-  /** ⚙️ 카테고리명으로 카테고리 조회 */
-  async findCategoryByName(name: string) {
-    return this.prisma.category.findFirst({
-      where: { name: name.toUpperCase() as CategoryType },
-    });
+  /** ⚙️ 카테고리명으로 카테고리 조회 (name은 unique 아님 → findFirst) */
+  async findCategoryByName(name: CategoryType) {
+    return this.prisma.category.findFirst({ where: { name } });
   }
 
-  /** ⚙️ 사이즈명으로 사이즈 조회 (기존 코드 유지) */
+  /** ⚙️ 사이즈명으로 사이즈 조회 (unique 아님 → findFirst 유지) */
   async findStockSizeByName(name: string) {
     return this.prisma.stockSize.findFirst({ where: { name } });
-  }
-
-  /** ⚙️ 사이즈ID로 사이즈 조회 (ProductsService용) */
-  async findStockSizeById(id: string) {
-    // ✅ string
-    return this.prisma.stockSize.findUnique({ where: { id } });
   }
 
   /** ✅ 상품 등록 */
@@ -104,10 +67,7 @@ export class ProductsRepository {
       data: {
         name: data.name,
         content: data.content,
-        image:
-          data.image && data.image.trim() !== ''
-            ? data.image
-            : this.DEFAULT_PRODUCT_IMAGE,
+        image: data.image,
         price: data.price,
         discountRate: data.discountRate,
         discountPrice: data.discountPrice,
@@ -129,48 +89,32 @@ export class ProductsRepository {
     });
   }
 
-  /** ✅ 상품 목록 조회 (기본 이미지 포함) */
+  /** ✅ 상품 목록 조회 */
   async findAll(query: FindProductsQueryDto): Promise<ProductWithRelations[]> {
     const where: Prisma.ProductWhereInput = {};
-
-    if (query.categoryName) {
-      where.category = {
-        name: query.categoryName.toUpperCase() as CategoryType,
-      };
-    }
-
-    if (query.search) {
-      where.name = { contains: query.search };
-    }
+    if (query.categoryName) where.category = { name: query.categoryName };
+    if (query.search) where.name = { contains: query.search };
 
     const products = await this.prisma.product.findMany({
       where,
       skip: query.skip,
       take: query.take,
       include: {
-        store: { select: { name: true, image: true } },
+        store: { select: { name: true } },
         reviews: { select: { rating: true } },
         stocks: { include: { size: true } },
       },
     });
 
-    return products.map((product) => ({
-      ...product,
-      image:
-        product.image && product.image.trim() !== ''
-          ? product.image
-          : this.DEFAULT_PRODUCT_IMAGE,
-      store: {
-        ...product.store,
-        image:
-          product.store?.image && product.store.image.trim() !== ''
-            ? product.store.image
-            : this.DEFAULT_STORE_IMAGE,
-      },
+    // ✅ discountPrice가 null이면 price로 대체
+    return products.map((p) => ({
+      ...p,
+      discountRate: p.discountRate ?? 0,
+      discountPrice: p.discountPrice ?? p.price,
     }));
   }
 
-  /** ✅ 상품 상세 조회 (기본 이미지 + 문의 작성자 이미지 포함) */
+  /** ✅ 상품 상세 조회 (PK) */
   async findOne(productId: string): Promise<ProductDetailWithRelations | null> {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
@@ -179,52 +123,17 @@ export class ProductsRepository {
         category: true,
         stocks: { include: { size: true } },
         reviews: true,
-        inquiries: {
-          include: {
-            user: true,
-            reply: { include: { user: true } },
-          },
-        },
+        inquiries: true,
       },
     });
 
     if (!product) return null;
 
+    // ✅ discountPrice가 null이면 price로 대체
     return {
       ...product,
-      image:
-        product.image && product.image.trim() !== ''
-          ? product.image
-          : this.DEFAULT_PRODUCT_IMAGE,
-      store: {
-        ...product.store,
-        image:
-          product.store?.image && product.store.image.trim() !== ''
-            ? product.store.image
-            : this.DEFAULT_STORE_IMAGE,
-      },
-      inquiries: product.inquiries.map((inq) => ({
-        ...inq,
-        user: {
-          ...inq.user,
-          image:
-            inq.user?.image && inq.user.image.trim() !== ''
-              ? inq.user.image
-              : this.DEFAULT_PROFILE_IMAGE,
-        },
-        reply: inq.reply
-          ? {
-              ...inq.reply,
-              user: {
-                ...inq.reply.user,
-                image:
-                  inq.reply.user?.image && inq.reply.user.image.trim() !== ''
-                    ? inq.reply.user.image
-                    : this.DEFAULT_PROFILE_IMAGE,
-              },
-            }
-          : null,
-      })),
+      discountRate: product.discountRate ?? 0,
+      discountPrice: product.discountPrice ?? product.price,
     };
   }
 
@@ -250,10 +159,6 @@ export class ProductsRepository {
       where: { id: productId },
       data: {
         ...safeData,
-        image:
-          data.image && data.image.trim() !== ''
-            ? data.image
-            : this.DEFAULT_PRODUCT_IMAGE,
         stocks: stocks
           ? {
               deleteMany: { productId },
@@ -297,37 +202,24 @@ export class ProductsRepository {
     });
   }
 
-  /** ✅ 상품 문의 조회 */
-  async findInquiries(productId: string) {
-    const inquiries = await this.prisma.inquiry.findMany({
+  /** ✅ 상품 문의 조회 (reply 포함) */
+  async findInquiries(
+    productId: string,
+  ): Promise<{ list: InquiryWithRelations[]; totalCount: number }> {
+    const list = await this.prisma.inquiry.findMany({
       where: { productId },
       include: {
         user: true,
-        reply: { include: { user: true } },
+        reply: {
+          include: {
+            user: true,
+          },
+        },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return inquiries.map((inq) => ({
-      ...inq,
-      user: {
-        ...inq.user,
-        image:
-          inq.user?.image && inq.user.image.trim() !== ''
-            ? inq.user.image
-            : this.DEFAULT_PROFILE_IMAGE,
-      },
-      reply: inq.reply
-        ? {
-            ...inq.reply,
-            user: {
-              ...inq.reply.user,
-              image:
-                inq.reply.user?.image && inq.reply.user.image.trim() !== ''
-                  ? inq.reply.user.image
-                  : this.DEFAULT_PROFILE_IMAGE,
-            },
-          }
-        : null,
-    }));
+    const totalCount = list.length;
+    return { list, totalCount };
   }
 }
