@@ -266,4 +266,9 @@
 ## 🧠 프로젝트 회고 및 발표자료
 
 
----
+## Test Coverage
+<!-- COVERAGE:START -->
+| Statements | Branches | Functions | Lines |
+| -----------|----------|-----------|-------|
+| ![Statements](https://img.shields.io/badge/statements-62.47%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-48.02%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-39.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-60.83%25-red.svg?style=flat) |
+<!-- COVERAGE:END -->
