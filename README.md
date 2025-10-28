@@ -68,6 +68,15 @@
 
 ### 💻 권나현
 
+- Auth 모듈: 로그인, 리프레시 토큰 재발급, 로그아웃
+- User 모듈: 회원가입, 내 정보 조회 및 수정, 관심 스토어 조회, 회원 탈퇴
+- Point 모듈: 내 포인트 조회
+- Grade 모듈: 내 등급 조회
+- 전역 로깅 미들웨어: 요청(Request)과 응답(Response) 정보를 콘솔에 출력하도록 구현
+- 테스트 및 검증
+   - Auth, User, Point, Grade 모듈의 유닛 테스트 코드 작성
+   - 주요 기능 동작 및 예외 처리 검증을 통해 안정성 확보
+
 ### 💻 김진솔
 
 ### 💻 조가현
@@ -259,11 +268,15 @@
 
 ## 📊 ERD (Entity Relationship Diagram)
 
-
+- [Codi‐It ERD 설계](https://github.com/nb02-CODIIT-team2/CODIIT-backend/wiki/Codi%E2%80%90It-ERD-%EC%84%A4%EA%B3%84)
 
 ---
 
 ## 🧠 프로젝트 회고 및 발표자료
-
+- 차수연 
+- 권나현 (https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
+- 김진솔
+- 조가현
+- 진성남
 
 ---
