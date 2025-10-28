@@ -129,8 +129,8 @@ export class CartRepository {
   }
 
   //장바구니 아이템 삭제
-  async deleteCartItem(cartItemId: string) {
-    const cartItem = await this.prisma.cartItem.delete({
+  async deleteCartItem(cartItemId: string, tx: Prisma.TransactionClient) {
+    const cartItem = await tx.cartItem.delete({
       where: {
         id: cartItemId,
       },

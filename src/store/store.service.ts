@@ -23,26 +23,35 @@ import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 export class StoreService {
   constructor(private readonly storeRepo: StoreRepository) {}
 
-  async createStore(sellerId: string, userType: UserType, dto: CreateStoreDto) {
-    if (userType !== UserType.SELLER) {
-      throw new ForbiddenException('SELLER만 스토어를 생성할 수 있습니다.');
+  async createStore(
+    sellerId: string,
+    userType: UserType,
+    dto: CreateStoreDto,
+  ): Promise<Store> {
+    try {
+      if (userType !== UserType.SELLER) {
+        throw new ForbiddenException('SELLER만 스토어를 생성할 수 있습니다.');
+      }
+
+      const existStore = await this.storeRepo.getBySellerId(sellerId);
+      if (existStore)
+        throw new ConflictException('이미 등록된 스토어가 있습니다.');
+
+      const data: Prisma.StoreCreateInput = {
+        name: dto.name,
+        address: dto.address,
+        detailAddress: dto.detailAddress ?? '',
+        phoneNumber: dto.phoneNumber,
+        content: dto.content,
+        image: dto.image ?? undefined,
+        seller: { connect: { id: sellerId } },
+      };
+
+      return this.storeRepo.createStore(data);
+    } catch (error) {
+      console.error('store/create service error:', error);
+      throw error;
     }
-
-    const existStore = await this.storeRepo.getBySellerId(sellerId);
-    if (existStore)
-      throw new ConflictException('이미 등록된 스토어가 있습니다.');
-
-    const data: Prisma.StoreCreateInput = {
-      name: dto.name,
-      address: dto.address,
-      detailAddress: dto.detailAddress,
-      phoneNumber: dto.phoneNumber,
-      content: dto.content,
-      image: dto.image ?? null,
-      seller: { connect: { id: sellerId } },
-    };
-
-    return this.storeRepo.createStore(data);
   }
 
   async updateStore(
