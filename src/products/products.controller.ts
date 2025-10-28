@@ -25,7 +25,11 @@ import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { Product, Inquiry } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import type { RequestWithUser } from '../auth/auth.types';
-import type { productResponse, ProductListResponse } from './products.service';
+import type {
+  ProductResponse,
+  ProductListResponse,
+  InquiryResponse,
+} from './products.service';
 import { S3Service } from '../s3/s3.service';
 import { imageFileFilter } from '../s3/s3.controller';
 
@@ -129,7 +133,7 @@ export class ProductsController {
 
   /** ✅ 상품 상세 조회 */
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<productResponse> {
+  async findOne(@Param('id') id: string): Promise<ProductResponse> {
     return this.productsService.findOne(id);
   }
 
@@ -172,7 +176,8 @@ export class ProductsController {
   async findInquiries(
     @Param('id') productId: string,
     @Req() req: RequestWithUser,
-  ): Promise<CreateInquiryDto[]> {
+  ): Promise<InquiryResponse> {
+    // ✅ 반환 타입 수정
     return this.productsService.findInquiries(productId, req.user.userId);
   }
 }

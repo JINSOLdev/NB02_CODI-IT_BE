@@ -49,6 +49,11 @@ export class ProductsRepository {
     return this.prisma.stockSize.findFirst({ where: { name } });
   }
 
+  /** ✅ 사이즈 ID로 조회 (PK) — 👈 여기에 추가 */
+  async findStockSizeById(sizeId: string) {
+    return this.prisma.stockSize.findUnique({ where: { id: sizeId } });
+  }
+
   /** ✅ 상품 등록 */
   async create(data: {
     name: string;

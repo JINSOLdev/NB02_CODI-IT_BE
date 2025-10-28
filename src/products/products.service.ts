@@ -109,7 +109,9 @@ export class ProductsService {
           throw new NotFoundException('사이즈 ID가 필요합니다.');
         }
 
-        const size = await this.productsRepository.findStoreById(stock.sizeId);
+        const size = await this.productsRepository.findStockSizeById(
+          stock.sizeId,
+        );
 
         if (!size) {
           throw new NotFoundException(
@@ -140,7 +142,7 @@ export class ProductsService {
         const resolvedCategoryName: CategoryType =
           typeof categoryName === 'object'
             ? (categoryName as Category).name
-            : (categoryName as unknown as CategoryType);
+            : (categoryName.toUpperCase() as CategoryType);
 
         const category =
           await this.productsRepository.findCategoryByName(
