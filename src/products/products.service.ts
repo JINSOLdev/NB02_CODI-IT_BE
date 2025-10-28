@@ -17,11 +17,11 @@ import {
   Product,
   Inquiry,
   AnswerStatus,
-  Review,
   Stock,
   Category,
 } from '@prisma/client';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
+
 export type ProductListResponse = {
   list: Array<{
     id: string;
@@ -93,52 +93,77 @@ export interface ProductWithStore extends Product {
 export class ProductsService {
   constructor(private readonly productsRepository: ProductsRepository) {}
 
-  /** 🔧 stocks 변환: sizeName → sizeId */
+  /** 🔧 stocks 변환: sizeId(string) → Prisma용 string ID */
   private async transformStocks(
     stocks: (CreateStockDto | UpdateStockDto)[],
   ): Promise<TransformedStock[]> {
     return Promise.all(
       stocks.map(async (stock) => {
-        if (!stock.sizeName) {
-          throw new NotFoundException('사이즈명이 필요합니다.');
+        if (!stock.sizeId) {
+          throw new NotFoundException('사이즈 ID가 필요합니다.');
         }
-        const size = await this.productsRepository.findStockSizeByName(
-          stock.sizeName,
+
+        const size = await this.productsRepository.findStockSizeById(
+          stock.sizeId,
         );
+
         if (!size) {
           throw new NotFoundException(
-            `사이즈 ${stock.sizeName}를 찾을 수 없습니다.`,
+            `해당 ID(${stock.sizeId})의 사이즈를 찾을 수 없습니다.`,
           );
         }
+
         return { sizeId: size.id, quantity: stock.quantity ?? 0 };
       }),
     );
   }
 
-  /** 상품 등록 */
+  /** ✅ 상품 등록 */
   async create(dto: CreateProductDto, sellerId: string): Promise<Product> {
     try {
-      const { price, discountRate, categoryName } = dto;
+      const { price, discountRate, categoryName, categoryId } = dto;
 
+      // ✅ 스토어 확인
       const store = await this.productsRepository.findStoreBySellerId(sellerId);
       if (!store) throw new NotFoundException('스토어를 찾을 수 없습니다.');
 
-      const category =
-        await this.productsRepository.findCategoryByName(categoryName);
-      if (!category) throw new NotFoundException('카테고리가 없습니다.');
+      // ✅ 카테고리 확인
+      let resolvedCategoryId: string;
+      if (categoryId) {
+        resolvedCategoryId = categoryId;
+      } else if (categoryName) {
+        const category =
+          await this.productsRepository.findCategoryByName(categoryName);
+        if (!category)
+          throw new NotFoundException(
+            `카테고리(${categoryName})를 찾을 수 없습니다.`,
+          );
+        resolvedCategoryId = category.id;
+      } else {
+        throw new NotFoundException('카테고리 정보가 없습니다.');
+      }
 
+      // ✅ 할인 가격 계산
       let discountPrice: number | undefined;
       if (discountRate !== undefined && discountRate >= 0) {
         discountPrice = Math.floor(price * (1 - discountRate / 100));
       }
 
+      // ✅ 사이즈 변환
       const stocks = dto.stocks ? await this.transformStocks(dto.stocks) : [];
 
+      // ✅ Prisma가 인식 가능한 데이터만 전송
       return await this.productsRepository.create({
-        ...dto,
-        storeId: store.id,
+        name: dto.name,
+        content: dto.content,
+        image: dto.image,
+        price: dto.price,
+        discountRate: dto.discountRate,
         discountPrice,
-        categoryId: category.id,
+        discountStartTime: dto.discountStartTime,
+        discountEndTime: dto.discountEndTime,
+        storeId: store.id,
+        categoryId: resolvedCategoryId,
         stocks,
       });
     } catch (err: unknown) {
@@ -159,14 +184,17 @@ export class ProductsService {
     }
   }
 
-  /** 상품 목록 조회 */
+  /** ✅ 상품 목록 조회 */
   async findAll(query: FindProductsQueryDto): Promise<ProductListResponse> {
     const products = await this.productsRepository.findAll(query);
-    // 상품 목록 가공
-    const List = products.map((product) => {
+
+    const list = products.map((product) => {
       const reviewsRating =
-        product.reviews.reduce((sum, review) => sum + review.rating, 0) /
-        product.reviews.length;
+        product.reviews.length > 0
+          ? product.reviews.reduce((sum, r) => sum + r.rating, 0) /
+            product.reviews.length
+          : 0;
+
       return {
         id: product.id,
         storeId: product.storeId,
@@ -179,39 +207,38 @@ export class ProductsService {
         discountStartTime: product.discountStartTime,
         discountEndTime: product.discountEndTime,
         reviewsCount: product.reviews.length,
-        reviewsRating: reviewsRating,
+        reviewsRating,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
         sales: product.sales,
-        isSoldOut: !product.stocks?.some((stock) => stock.quantity > 0),
+        isSoldOut: !product.stocks?.some((s) => s.quantity > 0),
       };
     });
-    return {
-      list: List,
-      totalCount: List.length,
-    };
+
+    return { list, totalCount: list.length };
   }
 
-  /** 상품 상세 조회 */
+  /** ✅ 상품 상세 조회 */
   async findOne(productId: string): Promise<productResponse> {
     const product = await this.productsRepository.findOne(productId);
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
+
     const reviewsRating =
-      product.reviews.reduce((sum, review) => sum + review.rating, 0) /
-      product.reviews.length;
+      product.reviews.length > 0
+        ? product.reviews.reduce((sum, r) => sum + r.rating, 0) /
+          product.reviews.length
+        : 0;
+
     const reviews = {
-      rate1Length: product.reviews.filter((review) => review.rating === 1).length,
-      rate2Length: product.reviews.filter((review) => review.rating === 2).length,
-      rate3Length: product.reviews.filter((review) => review.rating === 3).length,
-      rate4Length: product.reviews.filter((review) => review.rating === 4).length,
-      rate5Length: product.reviews.filter((review) => review.rating === 5).length,
-      // 평균 별점
-      sumScore: product.reviews.reduce(
-        (sum, review) => sum + review.rating / product.reviews.length,
-        0,
-      ),
+      rate1Length: product.reviews.filter((r) => r.rating === 1).length,
+      rate2Length: product.reviews.filter((r) => r.rating === 2).length,
+      rate3Length: product.reviews.filter((r) => r.rating === 3).length,
+      rate4Length: product.reviews.filter((r) => r.rating === 4).length,
+      rate5Length: product.reviews.filter((r) => r.rating === 5).length,
+      sumScore: reviewsRating,
     };
-    const response = {
+
+    return {
       id: product.id,
       storeId: product.storeId,
       storeName: product.store?.name,
@@ -223,20 +250,19 @@ export class ProductsService {
       discountStartTime: product.discountStartTime,
       discountEndTime: product.discountEndTime,
       reviewsCount: product.reviews.length,
-      reviewsRating: reviewsRating,
+      reviewsRating,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
       sales: product.sales,
-      isSoldOut: !product.stocks?.some((stock) => stock.quantity > 0),
+      isSoldOut: !product.stocks?.some((s) => s.quantity > 0),
       reviews,
       inquiries: product.inquiries,
       category: product.category,
       stocks: product.stocks,
     };
-    return response;
   }
 
-  /** 상품 수정 */
+  /** ✅ 상품 수정 */
   async update(
     productId: string,
     dto: UpdateProductDto,
@@ -256,13 +282,14 @@ export class ProductsService {
         const category = await this.productsRepository.findCategoryByName(
           dto.categoryName,
         );
-        if (!category) throw new NotFoundException('카테고리가 없습니다.');
+        if (!category)
+          throw new NotFoundException('카테고리를 찾을 수 없습니다.');
         categoryId = category.id;
       }
 
       const { price, discountRate, stocks, ...restDto } = dto;
-
       let discountPrice: number | undefined;
+
       if (discountRate !== undefined && discountRate >= 0) {
         discountPrice = Math.floor(
           (price ?? product.price) * (1 - discountRate / 100),
@@ -279,7 +306,6 @@ export class ProductsService {
       });
     } catch (err: unknown) {
       console.error('❌ Product update error:', err);
-
       if (
         err instanceof NotFoundException ||
         err instanceof ForbiddenException
@@ -297,7 +323,7 @@ export class ProductsService {
     }
   }
 
-  /** 상품 삭제 */
+  /** ✅ 상품 삭제 */
   async remove(productId: string, sellerId: string): Promise<void> {
     try {
       const product = await this.productsRepository.findOne(productId);
@@ -327,7 +353,7 @@ export class ProductsService {
     }
   }
 
-  /** 상품 문의 등록 */
+  /** ✅ 상품 문의 등록 */
   async createInquiry(
     productId: string,
     dto: CreateInquiryDto,
@@ -342,18 +368,16 @@ export class ProductsService {
       });
     } catch (err: unknown) {
       if (err instanceof NotFoundException) throw err;
-
       const safeErr = err as Record<string, unknown>;
       const errorMessage =
         typeof safeErr.message === 'string'
           ? safeErr.message
           : '상품 문의 등록 중 오류가 발생했습니다.';
-
       throw new InternalServerErrorException(errorMessage);
     }
   }
 
-  /** 상품 문의 조회 (타입 안전 매핑 + 비밀글 권한 확인) */
+  /** ✅ 상품 문의 조회 (비밀글 권한 확인) */
   async findInquiries(
     productId: string,
     userId: string,
@@ -361,34 +385,11 @@ export class ProductsService {
     const product = (await this.productsRepository.findOne(
       productId,
     )) as ProductWithStore | null;
-
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
 
-    // ✅ 명시적 타입 지정 (ESLint no-unsafe-assignment 방지)
-    const inquiries = (await this.productsRepository.findInquiries(
-      productId,
-    )) as Array<{
-      id: string;
-      title?: string | null;
-      content: string;
-      status: AnswerStatus | null;
-      isSecret: boolean | null;
-      createdAt: Date;
-      updatedAt: Date;
-      userId: string;
-      productId: string;
-      user: { id: string; name: string };
-      reply: {
-        id: string;
-        content: string;
-        createdAt: Date;
-        updatedAt: Date;
-        user: { id: string; name: string };
-      } | null;
-    }>;
+    const inquiries = await this.productsRepository.findInquiries(productId);
 
     return inquiries.map((inq) => {
-      // ✅ 비밀글 접근 권한 확인
       if (inq.isSecret) {
         const isOwner = inq.userId === userId;
         const isSeller = product.store.sellerId === userId;
@@ -397,8 +398,7 @@ export class ProductsService {
         }
       }
 
-      // ✅ reply: 단일 객체 또는 null
-      const transformed: InquiryWithRelations = {
+      return {
         id: inq.id,
         title: inq.title ?? '',
         content: inq.content,
@@ -408,25 +408,17 @@ export class ProductsService {
         updatedAt: inq.updatedAt,
         userId: inq.userId,
         productId: inq.productId,
-        user: {
-          id: inq.user.id,
-          name: inq.user.name,
-        },
+        user: inq.user,
         reply: inq.reply
           ? {
               id: inq.reply.id,
               content: inq.reply.content,
               createdAt: inq.reply.createdAt,
               updatedAt: inq.reply.updatedAt,
-              user: {
-                id: inq.reply.user.id,
-                name: inq.reply.user.name,
-              },
+              user: inq.reply.user,
             }
           : null,
       };
-
-      return transformed;
     });
   }
 }
