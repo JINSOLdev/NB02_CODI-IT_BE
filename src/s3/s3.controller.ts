@@ -43,7 +43,7 @@ export class S3Controller {
     description: '이미지 업로드 실패',
   })
   @UseInterceptors(
-    FileInterceptor('file', {
+    FileInterceptor('image', {
       fileFilter: imageFileFilter,
       limits: {
         fileSize: 1024 * 1024 * 10, // 파일 크기 제한 10MB
