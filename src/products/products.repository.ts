@@ -101,9 +101,21 @@ export class ProductsRepository {
       create: { name },
     });
   }
-  /** ✅ 사이즈 자동 생성 */
-  async createStockSize(data: { id: string; name: string }) {
-    return this.prisma.stockSize.create({ data });
+  /** ✅ 사이즈 자동 생성 (id 자동 생성, 중복 방지) */
+  async createStockSize(data: { id?: string; name: string }) {
+    // 이미 같은 이름의 사이즈가 있으면 그대로 반환
+    const existing = await this.prisma.stockSize.findFirst({
+      where: { name: data.name },
+    });
+
+    if (existing) return existing;
+
+    // 없으면 새로 생성 (id는 Prisma 기본 cuid() 사용)
+    return this.prisma.stockSize.create({
+      data: {
+        name: data.name,
+      },
+    });
   }
 
   /** ✅ 상품 목록 조회 */
