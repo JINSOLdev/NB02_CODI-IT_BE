@@ -99,31 +99,58 @@ export type InquiryResponse = {
 export class ProductsService {
   constructor(private readonly productsRepository: ProductsRepository) { }
 
-  /** 🔧 stocks 변환 (시드 없이도 자동 생성) */
+  /** 🔧 stocks 변환 (프론트 숫자 사이즈 대응 버전) */
   private async transformStocks(
     stocks: (CreateStockDto | UpdateStockDto)[],
   ): Promise<TransformedStock[]> {
+    // ✅ 허용된 사이즈 목록 (대문자 기준)
+    const allowedSizes = ['XS', 'S', 'M', 'L', 'XL', 'FREE'];
+
+    // ✅ 프론트에서 오는 숫자 → 사이즈 이름 매핑
+    const sizeIdMap: Record<string, string> = {
+      '1': 'XS',
+      '2': 'S',
+      '3': 'M',
+      '4': 'L',
+      '5': 'XL',
+      '6': 'FREE',
+    };
+
     return Promise.all(
       stocks.map(async (stock) => {
         if (!stock.sizeId) {
           throw new NotFoundException('사이즈 ID가 필요합니다.');
         }
 
-        // 기존 사이즈 찾기
+        // ✅ 1) ID로 먼저 조회 (문자열 변환 포함)
         const size = await this.productsRepository.findStockSizeById(
-          stock.sizeId,
+          String(stock.sizeId),
         );
 
-        if (!size) {
-          // ✅ 없는 사이즈면 자동 생성
-          const created = await this.productsRepository.createStockSize({
-            id: stock.sizeId,
-            name: `AUTO_${stock.sizeId}`, // 이름 자동 지정
-          });
-          return { sizeId: created.id, quantity: stock.quantity ?? 0 };
+        if (size) {
+          // ✅ 존재하면 그대로 사용
+          return { sizeId: size.id, quantity: stock.quantity ?? 0 };
         }
 
-        return { sizeId: size.id, quantity: stock.quantity ?? 0 };
+        // ✅ 2) 숫자 ID를 이름으로 매핑 (프론트가 보낸 값)
+        const maybeMappedName = sizeIdMap[String(stock.sizeId)];
+        const maybeSizeName = maybeMappedName
+          ? maybeMappedName
+          : String(stock.sizeId).toUpperCase();
+
+        // ✅ 유효한 사이즈인지 검증
+        if (!allowedSizes.includes(maybeSizeName)) {
+          throw new NotFoundException(
+            `허용되지 않은 사이즈입니다: ${stock.sizeId}`,
+          );
+        }
+
+        // ✅ DB에 없으면 새로 생성
+        const created = await this.productsRepository.createStockSize({
+          name: maybeSizeName,
+        });
+
+        return { sizeId: created.id, quantity: stock.quantity ?? 0 };
       }),
     );
   }
