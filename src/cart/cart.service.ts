@@ -127,6 +127,27 @@ export class CartService {
       this.logger.error('장바구니 아이템 삭제 권한이 없습니다');
       throw new ForbiddenException('장바구니 아이템 삭제 권한이 없습니다');
     }
-    return this.cartRepository.deleteCartItem(cartItemId);
+    return this.cartRepository.executeTransaction(async (tx) => {
+      //1. 장바구니 아이템 삭제
+      await this.cartRepository.deleteCartItem(cartItemId, tx);
+      //2. 장바구니 조회
+      const cart = await this.cartRepository.getCartByBuyerId(userId, tx);
+      if (!cart) {
+        this.logger.error('장바구니 조회 실패');
+        throw new NotFoundException('장바구니를 찾을 수 없습니다');
+      }
+      //3. 장바구니의 총 수량 계산
+      const totalQuantityForCart = cart.items.reduce(
+        (total, item) => total + item.quantity,
+        0,
+      );
+      //4. 장바구니의 총 수량 업데이트
+      await this.cartRepository.updateCartTotalQuantity(
+        cart.id,
+        totalQuantityForCart,
+        tx,
+      );
+      return { message: '장바구니 아이템 삭제 성공' };
+    });
   }
 }

@@ -56,9 +56,10 @@ export class FindProductsQueryDto {
   })
   @IsOptional()
   @IsEnum(CategoryType)
-  @Transform(({ value }): CategoryType | undefined =>
-    value === '' ? undefined : (value as CategoryType),
-  )
+  @Transform(({ value }): CategoryType | undefined => {
+    if (value === '') return undefined;
+    return (value as string).toUpperCase() as CategoryType;
+  })
   categoryName?: CategoryType;
 
   /** 🔧 내부 계산용 (Prisma skip/take 매핑) */
