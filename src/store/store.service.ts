@@ -11,13 +11,13 @@ import { UserType, Prisma, Store } from '@prisma/client';
 import { StoreRepository, ProductListRow } from './store.repository';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { StoreDetailDto } from './dto/store-detail.dto';
-import { UpdateStoreDto } from './dto/update-store.dto';
 import { MyStoreDetailDto } from './dto/mystore-detail.dto';
 import { StoreResponseDto } from './dto/store-response.dto';
 import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
 import { MyStoreProductListItemDto } from './dto/store-product-list.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
+import { UpdateStoreDto } from './dto/update-store.dto';
 
 @Injectable()
 export class StoreService {
