@@ -93,6 +93,18 @@ export class ProductsRepository {
       },
     });
   }
+  // ✅ 카테고리 자동 생성 (없으면 생성, 있으면 그대로 반환)
+  async upsertCategory(name: CategoryType) {
+    return this.prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+  /** ✅ 사이즈 자동 생성 */
+  async createStockSize(data: { id: string; name: string }) {
+    return this.prisma.stockSize.create({ data });
+  }
 
   /** ✅ 상품 목록 조회 */
   async findAll(query: FindProductsQueryDto): Promise<ProductWithRelations[]> {
@@ -129,6 +141,7 @@ export class ProductsRepository {
       where,
       skip: query.skip,
       take: query.take,
+      orderBy,
       include: {
         store: { select: { name: true } },
         reviews: { select: { rating: true } },
