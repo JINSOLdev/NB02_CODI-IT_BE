@@ -91,9 +91,32 @@ export class ProductsRepository {
   /** ✅ 상품 목록 조회 */
   async findAll(query: FindProductsQueryDto): Promise<ProductWithRelations[]> {
     const where: Prisma.ProductWhereInput = {};
+    let orderBy: Prisma.ProductOrderByWithRelationInput | undefined;
     if (query.categoryName) where.category = { name: query.categoryName };
     if (query.search) where.name = { contains: query.search };
-
+    if (query.priceMin) where.price = { gte: query.priceMin };
+    if (query.priceMax) where.price = { lte: query.priceMax };
+    if (query.size) where.stocks = { some: { size: { name: query.size } } };
+    switch (query.sort) {
+      case 'mostReviewed':
+        orderBy = { reviews: { _count: 'desc' } };
+        break;
+      case 'highPrice':
+        orderBy = { price: 'desc' };
+        break;
+      case 'lowPrice':
+        orderBy = { price: 'asc' };
+        break;
+      case 'recent':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'salesRanking':
+        orderBy = { sales: 'desc' };
+        break;
+      case 'highRating':
+        orderBy = { reviews: { _count: 'desc' } };
+        break;
+    }
     return this.prisma.product.findMany({
       where,
       skip: query.skip,
@@ -103,6 +126,7 @@ export class ProductsRepository {
         reviews: { select: { rating: true } },
         stocks: { include: { size: true } },
       },
+      orderBy,
     });
   }
 

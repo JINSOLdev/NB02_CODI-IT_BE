@@ -29,8 +29,9 @@ import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStoreResponseDto } from './dto/create-store-response.dto';
 import { S3Service } from '../s3/s3.service';
-import { memoryStorage } from 'multer';
 import { imageFileFilter } from 'src/s3/s3.controller';
+import { UpdateStoreFormDto } from './dto/update-store-form.dto';
+import { memoryStorage } from 'multer';
 
 @ApiTags('stores')
 @Controller('api/stores')
@@ -45,6 +46,7 @@ export class StoreController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('image', {
+      storage: memoryStorage(),
       fileFilter: imageFileFilter,
       limits: { fileSize: 10 * 1024 * 1024 },
     }),
@@ -74,9 +76,6 @@ export class StoreController {
       user.type,
       dto,
     );
-
-    console.log('store/create body:', dto);
-    console.log('store/create file:', !!file, file?.mimetype, file?.size);
 
     return {
       id: createdStore.id,
@@ -141,12 +140,48 @@ export class StoreController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':storeId')
-  updateStore(
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async updateStore(
     @Param('storeId', ParseCuidPipe) storeId: string,
     @Req() req: Request & { user: { userId: string; type: any } },
-    @Body() dto: UpdateStoreDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /(jpg|jpeg|png|gif)$/i,
+        })
+        .addMaxSizeValidator({ maxSize: 10 * 1024 * 1024 })
+        .build({ fileIsRequired: false }),
+    )
+    file: Express.Multer.File | undefined,
+    @Body()
+    form: UpdateStoreFormDto,
   ): Promise<StoreResponseDto> {
-    const user = req.user;
-    return this.storeService.updateStore(storeId, user.userId, user.type, dto);
+    const { userId, type } = req.user;
+
+    const dto: UpdateStoreDto = {
+      name: form.name,
+      address: form.address,
+      detailAddress: form.detailAddress,
+      phoneNumber: form.phoneNumber,
+      content: form.content,
+      image: form.image,
+    };
+
+    if (form.removeImage?.toLowerCase() === 'true') dto.image = null;
+    else if (file) {
+      const { url } = await this.s3Service.uploadFile(file);
+      dto.image = url;
+    } else if (form.image) {
+      dto.image = form.image;
+    }
+
+    return this.storeService.updateStore(storeId, userId, type, dto);
   }
 }
