@@ -228,6 +228,9 @@ export class ProductsService {
         isSoldOut: !product.stocks?.some((s) => s.quantity > 0),
       };
     });
+    if (query.sort === 'highRating') {
+      list.sort((a, b) => b.reviewsRating - a.reviewsRating);
+    }
 
     return { list, totalCount: list.length };
   }
