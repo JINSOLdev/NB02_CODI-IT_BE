@@ -4,6 +4,7 @@ import { Prisma, Product, Inquiry, CategoryType } from '@prisma/client';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { TransformedStock } from './dto/create-product.dto';
+import type { InquiryWithRelations } from '../types/inquiry-with-relations.type'; // ✅ 추가
 
 // 🔧 Relation 포함된 타입 정의
 export type ProductWithRelations = Prisma.ProductGetPayload<{
@@ -26,7 +27,7 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 
 @Injectable()
 export class ProductsRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /** ✅ 스토어 ID로 조회 (PK) */
   async findStoreById(storeId: string) {
@@ -46,6 +47,11 @@ export class ProductsRepository {
   /** ⚙️ 사이즈명으로 사이즈 조회 (unique 아님 → findFirst 유지) */
   async findStockSizeByName(name: string) {
     return this.prisma.stockSize.findFirst({ where: { name } });
+  }
+
+  /** ✅ 사이즈 ID로 조회 (PK) — 👈 여기에 추가 */
+  async findStockSizeById(sizeId: string) {
+    return this.prisma.stockSize.findUnique({ where: { id: sizeId } });
   }
 
   /** ✅ 상품 등록 */
@@ -94,6 +100,7 @@ export class ProductsRepository {
     let orderBy: Prisma.ProductOrderByWithRelationInput | undefined;
     if (query.categoryName) where.category = { name: query.categoryName };
     if (query.search) where.name = { contains: query.search };
+
     if (query.priceMin) where.price = { gte: query.priceMin };
     if (query.priceMax) where.price = { lte: query.priceMax };
     if (query.size) where.stocks = { some: { size: { name: query.size } } };
@@ -117,7 +124,8 @@ export class ProductsRepository {
         orderBy = { reviews: { _count: 'desc' } };
         break;
     }
-    return this.prisma.product.findMany({
+
+    const products = await this.prisma.product.findMany({
       where,
       skip: query.skip,
       take: query.take,
@@ -128,11 +136,18 @@ export class ProductsRepository {
       },
       orderBy,
     });
+
+    // ✅ discountPrice가 null이면 price로 대체
+    return products.map((p) => ({
+      ...p,
+      discountRate: p.discountRate ?? 0,
+      discountPrice: p.discountPrice ?? p.price,
+    }));
   }
 
   /** ✅ 상품 상세 조회 (PK) */
   async findOne(productId: string): Promise<ProductDetailWithRelations | null> {
-    return this.prisma.product.findUnique({
+    const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
         store: true,
@@ -142,6 +157,15 @@ export class ProductsRepository {
         inquiries: true,
       },
     });
+
+    if (!product) return null;
+
+    // ✅ discountPrice가 null이면 price로 대체
+    return {
+      ...product,
+      discountRate: product.discountRate ?? 0,
+      discountPrice: product.discountPrice ?? product.price,
+    };
   }
 
   /** ✅ 상품 수정 */
@@ -168,12 +192,12 @@ export class ProductsRepository {
         ...safeData,
         stocks: stocks
           ? {
-            deleteMany: { productId },
-            create: stocks.map((s) => ({
-              sizeId: s.sizeId,
-              quantity: s.quantity ?? 0,
-            })),
-          }
+              deleteMany: { productId },
+              create: stocks.map((s) => ({
+                sizeId: s.sizeId,
+                quantity: s.quantity ?? 0,
+              })),
+            }
           : undefined,
       },
     });
@@ -210,25 +234,23 @@ export class ProductsRepository {
   }
 
   /** ✅ 상품 문의 조회 (reply 포함) */
-  async findInquiries(productId: string) {
-    const inquiries = await this.prisma.$transaction(async (tx) => {
-      const list = await tx.inquiry.findMany({
-        where: { productId },
-        include: {
-          user: true,
-          reply: {
-            include: {
-              user: true,
-            },
+  async findInquiries(
+    productId: string,
+  ): Promise<{ list: InquiryWithRelations[]; totalCount: number }> {
+    const list = await this.prisma.inquiry.findMany({
+      where: { productId },
+      include: {
+        user: true,
+        reply: {
+          include: {
+            user: true,
           },
         },
-      });
-
-      const totalCount = await tx.inquiry.count({ where: { productId } });
-
-      return { list, totalCount };
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return inquiries;
+    const totalCount = list.length;
+    return { list, totalCount };
   }
 }
