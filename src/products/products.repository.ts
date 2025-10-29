@@ -141,7 +141,6 @@ export class ProductsRepository {
       where,
       skip: query.skip,
       take: query.take,
-      orderBy,
       include: {
         store: { select: { name: true } },
         reviews: { select: { rating: true } },
