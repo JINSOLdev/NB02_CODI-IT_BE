@@ -134,6 +134,7 @@ export class ProductsRepository {
         reviews: { select: { rating: true } },
         stocks: { include: { size: true } },
       },
+      orderBy,
     });
 
     // ✅ discountPrice가 null이면 price로 대체
