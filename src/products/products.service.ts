@@ -99,7 +99,7 @@ export type InquiryResponse = {
 export class ProductsService {
   constructor(private readonly productsRepository: ProductsRepository) { }
 
-  /** 🔧 stocks 변환 */
+  /** 🔧 stocks 변환 (시드 없이도 자동 생성) */
   private async transformStocks(
     stocks: (CreateStockDto | UpdateStockDto)[],
   ): Promise<TransformedStock[]> {
@@ -109,14 +109,18 @@ export class ProductsService {
           throw new NotFoundException('사이즈 ID가 필요합니다.');
         }
 
+        // 기존 사이즈 찾기
         const size = await this.productsRepository.findStockSizeById(
           stock.sizeId,
         );
 
         if (!size) {
-          throw new NotFoundException(
-            `해당 ID(${stock.sizeId})의 사이즈를 찾을 수 없습니다.`,
-          );
+          // ✅ 없는 사이즈면 자동 생성
+          const created = await this.productsRepository.createStockSize({
+            id: stock.sizeId,
+            name: `AUTO_${stock.sizeId}`, // 이름 자동 지정
+          });
+          return { sizeId: created.id, quantity: stock.quantity ?? 0 };
         }
 
         return { sizeId: size.id, quantity: stock.quantity ?? 0 };
@@ -133,29 +137,34 @@ export class ProductsService {
       const store = await this.productsRepository.findStoreBySellerId(sellerId);
       if (!store) throw new NotFoundException('스토어를 찾을 수 없습니다.');
 
-      // ✅ 카테고리 확인
+      // ✅ 카테고리 확인 (seed 불필요, enum 기반 자동 생성)
       let resolvedCategoryId: string;
+
       if (categoryId) {
         resolvedCategoryId = categoryId;
       } else if (categoryName) {
-        // string 또는 Category 객체 모두 처리
-        const resolvedCategoryName: CategoryType =
+        const resolvedCategoryName = (
           typeof categoryName === 'object'
             ? (categoryName as Category).name
-            : (categoryName.toUpperCase() as CategoryType);
+            : categoryName.toUpperCase()
+        ) as CategoryType;
 
-        const category =
-          await this.productsRepository.findCategoryByName(
-            resolvedCategoryName,
-          );
-
-        if (!category)
+        // 유효한 enum 값인지 검증
+        const isValidCategory =
+          Object.values(CategoryType).includes(resolvedCategoryName);
+        if (!isValidCategory) {
           throw new NotFoundException(
-            `카테고리(${resolvedCategoryName})를 찾을 수 없습니다.`,
+            `유효하지 않은 카테고리: ${categoryName}`,
           );
+        }
+
+        // DB에 존재하지 않으면 자동 생성
+        const category =
+          await this.productsRepository.upsertCategory(resolvedCategoryName);
 
         resolvedCategoryId = category.id;
       } else {
+        // ③ categoryId나 categoryName 둘 다 없으면 예외
         throw new NotFoundException('카테고리 정보가 없습니다.');
       }
 
