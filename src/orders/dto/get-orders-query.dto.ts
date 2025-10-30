@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus } from '@prisma/client'; // ✅ OrderStatus로 변경
 import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class GetOrdersQueryDto {
   @ApiPropertyOptional({
@@ -16,11 +17,13 @@ export class GetOrdersQueryDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   limit?: number;
 
   @ApiPropertyOptional({ description: '페이지 번호', example: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   page?: number;
 }
