@@ -7,6 +7,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 /**
  * 주문 상품 요청 DTO
@@ -18,6 +19,7 @@ export class OrderItemRequestDto {
 
   @ApiProperty({ example: 3, description: '사이즈 ID' })
   @IsInt()
+  @Transform(({ value }) => Number(value))
   sizeId: number;
 
   @ApiProperty({ example: 1, description: '수량 (1 이상)' })
