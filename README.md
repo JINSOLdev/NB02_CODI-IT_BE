@@ -291,5 +291,5 @@
 <!-- COVERAGE:START -->
 | Statements | Branches | Functions | Lines |
 | -----------|----------|-----------|-------|
-| ![Statements](https://img.shields.io/badge/statements-67.33%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-53.16%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-47.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-66.09%25-red.svg?style=flat) |
+| ![Statements](https://img.shields.io/badge/statements-68.7%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-54.55%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-47.8%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-67.46%25-red.svg?style=flat) |
 <!-- COVERAGE:END -->
