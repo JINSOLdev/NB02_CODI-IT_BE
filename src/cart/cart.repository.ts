@@ -36,6 +36,11 @@ export class CartRepository {
             product: {
               include: {
                 store: true,
+                stocks: {
+                  include: {
+                    size: true,
+                  },
+                },
               },
             },
             size: true,
