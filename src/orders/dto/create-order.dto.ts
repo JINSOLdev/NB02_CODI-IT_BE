@@ -25,6 +25,7 @@ export class OrderItemRequestDto {
   @ApiProperty({ example: 1, description: '수량 (1 이상)' })
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   quantity: number;
 }
 
@@ -55,5 +56,6 @@ export class CreateOrderDto {
   @ApiProperty({ example: 1000, description: '사용 포인트', required: false })
   @IsInt()
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   usePoint: number = 0;
 }
