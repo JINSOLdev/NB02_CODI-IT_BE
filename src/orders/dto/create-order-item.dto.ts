@@ -1,5 +1,6 @@
 import { IsString, IsInt, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class CreateOrderItemDto {
   @ApiProperty({
@@ -11,10 +12,12 @@ export class CreateOrderItemDto {
 
   @ApiProperty({ example: 3, description: '사이즈 ID' })
   @IsInt()
+  @Transform(({ value }) => Number(value))
   sizeId: number;
 
   @ApiProperty({ example: 1, description: '수량' })
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   quantity: number;
 }
