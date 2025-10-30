@@ -17,7 +17,7 @@ export interface SalesPeriod {
   changeRate: { totalOrders: number; totalSales: number };
 }
 
-interface TopSale {
+export interface TopSale {
   totalOrders: number;
   product: { id: string; name: string; price: number };
 }
@@ -155,7 +155,17 @@ export class DashboardService {
         sales: 'desc',
       },
     });
-    return topSales;
+    const response: TopSale[] = topSales.map((item) => {
+      return {
+        totalOrders: item.sales,
+        product: {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+        },
+      };
+    });
+    return response.slice(0, 5); //top5 상품 반환
   }
 
   // 가격대별 매출 조회
