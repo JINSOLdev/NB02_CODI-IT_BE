@@ -8,14 +8,17 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class GetInquiriesDto {
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   page: number = 1;
 
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   pageSize: number = 16;
 
   @IsOptional()
