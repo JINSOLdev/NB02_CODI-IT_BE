@@ -1,4 +1,5 @@
 import { AnswerStatus } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsOptional,
   IsEnum,
@@ -10,10 +11,12 @@ import {
 } from 'class-validator';
 
 export class GetInquiriesDto {
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page: number = 1;
 
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   pageSize: number = 16;
