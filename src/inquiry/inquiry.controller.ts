@@ -14,26 +14,33 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
 import { AuthUser } from 'src/auth/auth.types';
 import { InquiryService } from './inquiry.service';
-import { GetInquiriesDto, UpdateInquiryDto, ReplyContentDto } from './inquiry.dto';
+import {
+  GetInquiriesDto,
+  UpdateInquiryDto,
+  ReplyContentDto,
+} from './inquiry.dto';
 import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('api/inquiries')
 export class InquiryController {
   constructor(private inquiryService: InquiryService) { }
 
-  // 내가 작성한 문의 목록 조회
+  // 내 문의 목록 조회 (BUYER - 본인이 작성 / SELLER - 본인 상품에 달린 문의)
   @UseGuards(JwtAuthGuard)
   @Get()
-  getMyInquiries(@Req() req: { user: AuthUser }, @Query() query: GetInquiriesDto) {
-    const userId = req.user.userId;
+  getMyInquiries(
+    @Req() req: { user: AuthUser },
+    @Query() query: GetInquiriesDto,
+  ) {
+    const { userId, type } = req.user;
 
-    return this.inquiryService.getMyInquiries(userId, query);
+    return this.inquiryService.getMyInquiries(userId, type, query);
   }
 
   // 문의 상세 조회
   @UseGuards(JwtAuthGuard)
   @Get(':inquiryId')
-  getInquiryDetail(@Param('inquiryId') inquiryId: string) {
+  getInquiryDetail(@Param('inquiryId', ParseCuidPipe) inquiryId: string) {
     return this.inquiryService.getInquiryDetail(inquiryId);
   }
 
@@ -50,7 +57,9 @@ export class InquiryController {
 
     // 수정 요청 시 최소 1개의 필드가 입력되어야 함
     if (title === undefined && content === undefined && isSecret === undefined)
-      throw new BadRequestException('수정할 필드를 최소 1개 이상 입력해주세요.');
+      throw new BadRequestException(
+        '수정할 필드를 최소 1개 이상 입력해주세요.',
+      );
 
     // undefined 값만 필터링
     const updateData: Partial<UpdateInquiryDto> = {};
@@ -83,7 +92,8 @@ export class InquiryController {
   ) {
     const userId = req.user.userId;
 
-    if (body.content === undefined) throw new BadRequestException('내용을 입력해주세요.');
+    if (body.content === undefined)
+      throw new BadRequestException('내용을 입력해주세요.');
 
     return this.inquiryService.createReply(userId, inquiryId, body);
   }
@@ -103,7 +113,8 @@ export class InquiryController {
     @Body() body: ReplyContentDto,
   ) {
     const userId = req.user.userId;
-    if (body.content === undefined) throw new BadRequestException('내용을 입력해주세요.');
+    if (body.content === undefined)
+      throw new BadRequestException('내용을 입력해주세요.');
 
     return this.inquiryService.updateReply(userId, replyId, body);
   }
@@ -111,7 +122,10 @@ export class InquiryController {
   // 문의 답변 삭제
   @UseGuards(JwtAuthGuard)
   @Delete(':replyId/replies')
-  deleteReply(@Req() req: { user: AuthUser }, @Param('replyId', ParseCuidPipe) replyId: string) {
+  deleteReply(
+    @Req() req: { user: AuthUser },
+    @Param('replyId', ParseCuidPipe) replyId: string,
+  ) {
     const userId = req.user.userId;
 
     return this.inquiryService.deleteReply(userId, replyId);
