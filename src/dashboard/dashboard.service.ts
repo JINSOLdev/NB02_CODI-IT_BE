@@ -83,7 +83,6 @@ export class DashboardService {
         where: {
           storeId: store.id,
           createdAt: { gte: period.start },
-          // status: 'COMPLETEDPAYMENT',
         },
         _count: { id: true },
         _sum: { totalPrice: true },
@@ -94,7 +93,6 @@ export class DashboardService {
         where: {
           storeId: store.id,
           createdAt: { gte: period.previous, lt: period.start },
-          // status: 'COMPLETEDPAYMENT',
         },
         _count: { id: true },
         _sum: { totalPrice: true },
