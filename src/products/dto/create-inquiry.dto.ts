@@ -12,8 +12,4 @@ export class CreateInquiryDto {
   @IsBoolean()
   @IsOptional()
   isSecret?: boolean;
-
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
 }

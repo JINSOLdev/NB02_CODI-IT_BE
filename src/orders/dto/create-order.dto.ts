@@ -7,6 +7,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 /**
  * 주문 상품 요청 DTO
@@ -18,11 +19,13 @@ export class OrderItemRequestDto {
 
   @ApiProperty({ example: 3, description: '사이즈 ID' })
   @IsInt()
+  @Transform(({ value }) => Number(value))
   sizeId: number;
 
   @ApiProperty({ example: 1, description: '수량 (1 이상)' })
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number(value))
   quantity: number;
 }
 
@@ -53,5 +56,6 @@ export class CreateOrderDto {
   @ApiProperty({ example: 1000, description: '사용 포인트', required: false })
   @IsInt()
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   usePoint: number = 0;
 }

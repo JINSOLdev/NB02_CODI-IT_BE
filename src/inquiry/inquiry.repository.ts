@@ -1,18 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import { AnswerStatus } from '@prisma/client';
+import { AnswerStatus, UserType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class InquiryRepository {
   constructor(private prisma: PrismaService) { }
 
-  // 내가 작성한 문의 목록 조회
-  async getMyInquiries(userId: string, page: number, pageSize: number, status?: AnswerStatus) {
+  // 내 문의 목록 조회 (BUYER - 본인이 작성 / SELLER - 본인 상품에 달린 문의)
+  async getMyInquiries(
+    userId: string,
+    userType: UserType,
+    page: number,
+    pageSize: number,
+    status?: AnswerStatus,
+  ) {
+    const where =
+      userType === UserType.BUYER
+        ? { userId, ...(status && { status }) }
+        : {
+          product: { store: { sellerId: userId } },
+          ...(status && { status }),
+        };
+
     // 트랜잭션으로 묶어서 리스트와 count 처리
     const result = await this.prisma.$transaction(async (tx) => {
       // 문의 리스트
       const list = await tx.inquiry.findMany({
-        where: { userId, ...(status && { status }) },
+        where,
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: {
@@ -37,7 +51,7 @@ export class InquiryRepository {
 
       // 문의 총 개수
       const totalCount = await tx.inquiry.count({
-        where: { userId, ...(status && { status }) },
+        where,
       });
 
       return { list, totalCount };
@@ -76,7 +90,12 @@ export class InquiryRepository {
   }
 
   // 문의 수정
-  async updateInquiry(inquiryId: string, title?: string, content?: string, isSecret?: boolean) {
+  async updateInquiry(
+    inquiryId: string,
+    title?: string,
+    content?: string,
+    isSecret?: boolean,
+  ) {
     return this.prisma.inquiry.update({
       where: { id: inquiryId },
       data: { title, content, isSecret },

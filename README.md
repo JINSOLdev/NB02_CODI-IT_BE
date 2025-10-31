@@ -52,12 +52,12 @@
 
 ## 🛠️ 기술 스택
 
-- **Backend:** Nest.js, TYpeScript  
+- **Backend:** Nest.js, TypeScript  
 - **Database:** PostgreSQL, Prisma, AWS RDS/S3
 - **API 문서화:** Swagger
 - **테스트:** Jest,SuperTest, ESLint
 - **협업 도구:** Git & GitHub, Discord, Notion
-- **배포/운영:** AWS EC2, Nginx, PM2
+- **배포/운영:** AWS EC2, Docker, Nginx
 - **CI/CD:** Gitgub Actions
 
 ---
@@ -78,7 +78,15 @@
    - 주요 기능 동작 및 예외 처리 검증을 통해 안정성 확보
 
 ### 💻 김진솔
-
+- Store API : 스토어 생성, 수정, 상세조회, 내 스토어 상세 조회, 관심 스토어 등록/해제
+- Notification API : 주문, 문의, 등 이벤트 발생 시 알람을 생성하고, 사용자 유형에 따라 다른 알람 제공
+- CI/CD & 인프라
+  - CI/CD 파이프라인 구축
+    - GitHub Actiosn를 활용해 빌드 > 테스트 > Docker 이미지 빌드 > EC2 배포 자동화
+    - PR 및 main 브랜치에 push 시 워크플로우 자동 실행
+  - 무중단 배포 (Blue-Green Deployment)
+    - Nginx Reverse Proxy와 Docker 컨테이너 활용해서 서비스 중단없이 배포
+  
 ### 💻 조가현
 
 ### 💻 진성남
