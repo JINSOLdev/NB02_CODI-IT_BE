@@ -83,7 +83,7 @@ export class DashboardService {
         where: {
           storeId: store.id,
           createdAt: { gte: period.start },
-          status: 'COMPLETEDPAYMENT',
+          // status: 'COMPLETEDPAYMENT',
         },
         _count: { id: true },
         _sum: { totalPrice: true },
@@ -94,7 +94,7 @@ export class DashboardService {
         where: {
           storeId: store.id,
           createdAt: { gte: period.previous, lt: period.start },
-          status: 'COMPLETEDPAYMENT',
+          // status: 'COMPLETEDPAYMENT',
         },
         _count: { id: true },
         _sum: { totalPrice: true },
@@ -184,7 +184,6 @@ export class DashboardService {
     FROM "OrderItem" oi
     JOIN "Order" o ON o.id = oi."orderId"
     WHERE o."storeId" = ${store.id}
-      AND o.status = 'COMPLETEDPAYMENT'
     GROUP BY price_range
     ORDER BY MIN(oi.price);
   `;
