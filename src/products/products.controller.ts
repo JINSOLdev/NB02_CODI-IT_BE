@@ -1,3 +1,4 @@
+// 📁 src/products/products.controller.ts
 import {
   Controller,
   Get,
@@ -41,7 +42,7 @@ export class ProductsController {
     private readonly s3Service: S3Service,
   ) {}
 
-  /** ✅ 상품 등록 (이미지 포함) */
+  /** ✅ 상품 등록 (이미지 포함 FormData) */
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '상품 등록 (FormData)' })
@@ -53,8 +54,9 @@ export class ProductsController {
       properties: {
         name: { type: 'string', example: '운동화' },
         price: { type: 'number', example: 10000 },
-        categoryName: { type: 'string', example: 'top' },
+        categoryName: { type: 'string', example: 'TOP' },
         content: { type: 'string', example: '<p>상품 설명입니다.</p>' },
+        discountRate: { type: 'number', example: 10 },
         image: {
           type: 'string',
           format: 'binary',
@@ -84,7 +86,7 @@ export class ProductsController {
     // ✅ DTO 변환
     const dto = {
       ...body,
-      price: Number(body.price), // ✅ 문자열 → 숫자 변환
+      price: Number(body.price),
       discountRate:
         body.discountRate !== undefined ? Number(body.discountRate) : undefined,
     } as unknown as CreateProductDto;
@@ -110,9 +112,8 @@ export class ProductsController {
           throw new BadRequestException('Stocks must be an array');
         }
 
-        // ✅ string | number → string 변환 (Prisma cuid 호환)
         dto.stocks = parsed.map((item) => ({
-          sizeId: String(item.sizeId), // ✅ 핵심 수정: Number → String
+          sizeId: String(item.sizeId),
           quantity: Number(item.quantity),
         })) as CreateStockDto[];
       } catch {
@@ -137,15 +138,106 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
-  /** ✅ 상품 수정 */
+  /** ✅ 상품 수정 (FormData 대응 + 이미지 업로드 포함) */
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '상품 수정 (FormData)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: '상품 수정 요청',
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: '수정된 운동화' },
+        price: { type: 'number', example: 12000 },
+        categoryName: { type: 'string', example: 'TOP' },
+        content: { type: 'string', example: '<p>수정된 상품 설명입니다.</p>' },
+        discountRate: { type: 'number', example: 5 },
+        image: {
+          type: 'string',
+          format: 'binary',
+          description: '새 이미지 파일',
+        },
+        stocks: {
+          type: 'string',
+          example:
+            '[{"sizeId":"clvxyz123","quantity":20},{"sizeId":"clvxyz456","quantity":8}]',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 1024 * 1024 * 10 },
+    }),
+  )
   async update(
     @Param('id') id: string,
-    @Body() dto: UpdateProductDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser,
   ): Promise<Product> {
-    return this.productsService.update(id, dto, req.user.userId);
+    const sellerId = req.user.userId;
+
+    // ✅ DTO 변환
+    const dto = {
+      ...body,
+      price:
+        body.price !== undefined && body.price !== ''
+          ? Number(body.price)
+          : undefined,
+      discountRate:
+        body.discountRate !== undefined && body.discountRate !== ''
+          ? Number(body.discountRate)
+          : undefined,
+      discountStartTime:
+        typeof body.discountStartTime === 'string'
+          ? body.discountStartTime
+          : body.discountStartTime
+            ? new Date(
+                body.discountStartTime as string | number | Date,
+              ).toISOString()
+            : undefined,
+
+      discountEndTime:
+        typeof body.discountEndTime === 'string'
+          ? body.discountEndTime
+          : body.discountEndTime
+            ? new Date(
+                body.discountEndTime as string | number | Date,
+              ).toISOString()
+            : undefined,
+    } as unknown as UpdateProductDto;
+
+    // ✅ 이미지 업로드 (S3 or 기존 유지)
+    if (file) {
+      const result = await this.s3Service.uploadFile(file);
+      dto.image = result.url;
+    } else if (typeof body.image === 'string' && body.image !== '') {
+      dto.image = String(body.image); // 기존 이미지 유지
+    } else {
+      dto.image = undefined;
+    }
+
+    // ✅ stocks 문자열 → JSON 변환
+    if (typeof dto.stocks === 'string') {
+      try {
+        const parsed = JSON.parse(dto.stocks) as Array<{
+          sizeId: string | number;
+          quantity: number;
+        }>;
+
+        dto.stocks = parsed.map((item) => ({
+          sizeId: String(item.sizeId),
+          quantity: Number(item.quantity),
+        }));
+      } catch {
+        throw new BadRequestException('Invalid stocks format');
+      }
+    }
+
+    return this.productsService.update(id, dto, sellerId);
   }
 
   /** ✅ 상품 삭제 */
@@ -177,7 +269,6 @@ export class ProductsController {
     @Param('id') productId: string,
     @Req() req: RequestWithUser,
   ): Promise<InquiryResponse> {
-    // ✅ 반환 타입 수정
     return this.productsService.findInquiries(productId, req.user.userId);
   }
 }
