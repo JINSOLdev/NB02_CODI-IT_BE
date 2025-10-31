@@ -49,6 +49,7 @@ export type ProductResponse = {
   id: string;
   storeId: string;
   storeName: string;
+  content: string | null;
   name: string;
   image: string | null;
   price: number;
@@ -251,6 +252,7 @@ export class ProductsService {
         storeName: product.store?.name,
         name: product.name,
         image: product.image,
+        content: product.content,
         price: product.price,
         discountPrice: product.discountPrice ?? product.price,
         discountRate: product.discountRate ?? 0,
@@ -305,6 +307,7 @@ export class ProductsService {
       storeId: product.storeId,
       storeName: product.store?.name,
       name: product.name,
+      content: product.content,
       image: product.image,
       price: product.price,
       discountPrice: product.discountPrice ?? product.price,
@@ -324,7 +327,7 @@ export class ProductsService {
     };
   }
 
-  /** ✅ 상품 수정 */
+  /** ✅ 상품 수정 (category 자동 생성 포함) */
   async update(
     productId: string,
     dto: UpdateProductDto,
@@ -339,36 +342,65 @@ export class ProductsService {
         throw new ForbiddenException('이 상품을 수정할 권한이 없습니다.');
       }
 
-      let categoryId: string | undefined;
-      if (dto.categoryName) {
-        const resolvedCategoryName: CategoryType =
-          typeof dto.categoryName === 'object'
-            ? (dto.categoryName as Category).name
-            : (dto.categoryName as unknown as CategoryType);
+      // ✅ category 처리
+      let resolvedCategoryId: string | undefined;
 
-        const category =
-          await this.productsRepository.findCategoryByName(
-            resolvedCategoryName,
+      if (dto.categoryId) {
+        // categoryId를 enum name으로 취급
+        const categoryName = dto.categoryId.toUpperCase() as CategoryType;
+        const isValidCategory =
+          Object.values(CategoryType).includes(categoryName);
+        if (!isValidCategory) {
+          throw new NotFoundException(
+            `유효하지 않은 카테고리: ${dto.categoryId}`,
           );
-
+        }
+        const category =
+          await this.productsRepository.findCategoryByName(categoryName);
         if (!category)
           throw new NotFoundException('카테고리를 찾을 수 없습니다.');
+        resolvedCategoryId = category.id;
+      } else if (dto.categoryName) {
+        const resolvedCategoryName = (
+          typeof dto.categoryName === 'object'
+            ? (dto.categoryName as Category).name
+            : String(dto.categoryName).toUpperCase()
+        ) as CategoryType;
 
-        categoryId = category.id;
+        const isValidCategory =
+          Object.values(CategoryType).includes(resolvedCategoryName);
+        if (!isValidCategory) {
+          throw new NotFoundException(
+            `유효하지 않은 카테고리: ${dto.categoryName}`,
+          );
+        }
+        const category =
+          await this.productsRepository.upsertCategory(resolvedCategoryName);
+        resolvedCategoryId = category.id;
       }
 
+      // ✅ Prisma에 넘기기 전 categoryName 제거
       const { price, discountRate, stocks, ...restDto } = dto;
+
+      // restDto를 Record<string, unknown>으로 선언해 안전하게 캐스팅
+      const safeRestDto: Record<string, unknown> = { ...restDto };
+
+      // 타입 안전하게 삭제
+      delete safeRestDto.categoryName;
+
+      // ✅ 할인 계산
       const discountPrice =
         discountRate !== undefined && discountRate > 0
           ? Math.floor((price ?? product.price) * (1 - discountRate / 100))
           : (price ?? product.price);
 
+      // ✅ 최종 업데이트
       return await this.productsRepository.update(productId, {
-        ...restDto,
+        ...safeRestDto,
         price,
         discountRate,
         discountPrice,
-        ...(categoryId && { categoryId }),
+        ...(resolvedCategoryId && { categoryId: resolvedCategoryId }),
         ...(stocks && { stocks: await this.transformStocks(stocks) }),
       });
     } catch (err: unknown) {

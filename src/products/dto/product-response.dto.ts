@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 class StockResponseDto {
   @ApiProperty()
   id: string;
@@ -8,6 +9,14 @@ class StockResponseDto {
 
   @ApiProperty()
   quantity: number;
+}
+
+class CategoryResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
 }
 
 export class ProductResponseDto {
@@ -56,8 +65,8 @@ export class ProductResponseDto {
   @ApiProperty()
   reviewsCount: number;
 
-  @ApiProperty({ type: () => [String] })
-  categories: string[];
+  @ApiProperty({ type: () => CategoryResponseDto })
+  category: CategoryResponseDto; // ✅ 단일 객체로 변경
 
   @ApiProperty({ type: () => [StockResponseDto] })
   stocks: StockResponseDto[];
