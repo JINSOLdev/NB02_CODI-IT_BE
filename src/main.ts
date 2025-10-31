@@ -7,6 +7,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { setupSentry } from './common/logger/sentry.config';
 import { SentryGlobalFilter } from './common/logger/sentry.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 
 // 콤마 구분 환경변수 파서
 function parseCommaSeparatedEnv(keys: string[]): string[] {
@@ -115,6 +116,8 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+  app.use(json({ limit: '5mb' }));
+  app.use(urlencoded({ limit: '5mb', extended: true }));
 
   const UPLOAD_DIR =
     process.env.UPLOAD_DIR || resolve(process.cwd(), 'uploads');
