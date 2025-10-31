@@ -299,5 +299,5 @@ _아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이�
 <!-- COVERAGE:START -->
 | Statements | Branches | Functions | Lines |
 | -----------|----------|-----------|-------|
-| ![Statements](https://img.shields.io/badge/statements-64.63%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-51.14%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-46.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-63.07%25-red.svg?style=flat) |
+| ![Statements](https://img.shields.io/badge/statements-64.72%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-51.14%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-46.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-63.17%25-red.svg?style=flat) |
 <!-- COVERAGE:END -->
