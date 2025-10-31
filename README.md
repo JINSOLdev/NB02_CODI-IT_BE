@@ -1,11 +1,13 @@
-#  2팀 - CODI_IT 프로젝트
+# 2팀 - CODI_IT 프로젝트
 
 📄 [2팀 프로젝트 계획서 보기](https://www.notion.so/2-26f02c9656f581a2b5ebcc7f12204fcb)
 
 ---
 
 ## 👨‍👩‍👧‍👦 팀원 구성
-*아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이동합니다.*
+
+_아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이동합니다._
+
 <table>
   <tr>
     <td align="center">
@@ -44,15 +46,15 @@
 
 ## 📌 프로젝트 소개
 
-- **프로젝트 이름:** CODI_IT 
-- **프로젝트 주제:** 패션 이커머스 플랫폼 백엔드 시스템 구축  
-- **진행 기간:** 2025.09.15 ~ 2025.11.03  
+- **프로젝트 이름:** CODI_IT
+- **프로젝트 주제:** 패션 이커머스 플랫폼 백엔드 시스템 구축
+- **진행 기간:** 2025.09.15 ~ 2025.11.03
 
 ---
 
 ## 🛠️ 기술 스택
 
-- **Backend:** Nest.js, TypeScript  
+- **Backend:** Nest.js, TypeScript
 - **Database:** PostgreSQL, Prisma, AWS RDS/S3
 - **API 문서화:** Swagger
 - **테스트:** Jest,SuperTest, ESLint
@@ -74,10 +76,11 @@
 - Grade 모듈: 내 등급 조회
 - 전역 로깅 미들웨어: 요청(Request)과 응답(Response) 정보를 콘솔에 출력하도록 구현
 - 테스트 및 검증
-   - Auth, User, Point, Grade 모듈의 유닛 테스트 코드 작성
-   - 주요 기능 동작 및 예외 처리 검증을 통해 안정성 확보
+  - Auth, User, Point, Grade 모듈의 유닛 테스트 코드 작성
+  - 주요 기능 동작 및 예외 처리 검증을 통해 안정성 확보
 
 ### 💻 김진솔
+
 - Store API : 스토어 생성, 수정, 상세조회, 내 스토어 상세 조회, 관심 스토어 등록/해제
 - Notification API : 주문, 문의, 등 이벤트 발생 시 알람을 생성하고, 사용자 유형에 따라 다른 알람 제공
 - CI/CD & 인프라
@@ -86,16 +89,20 @@
     - PR 및 main 브랜치에 push 시 워크플로우 자동 실행
   - 무중단 배포 (Blue-Green Deployment)
     - Nginx Reverse Proxy와 Docker 컨테이너 활용해서 서비스 중단없이 배포
-  
+
 ### 💻 조가현
 
-### 💻 진성남
+- Review API : 상품 리뷰 등록/수정/삭제, 리뷰 목록/상세 조회
+- Inquiry API : 상품 문의 등록/수정/삭제, 판매자 답변 등록/수정/삭제, 문의/답변 상세 조회
 
+### 💻 진성남
 
 ---
 
 ## 📁 프로젝트 파일 구조
+
 📦 프로젝트 루트
+
 ```
 📦 project-root
 ├── 🐳 Dockerfile
@@ -266,7 +273,7 @@
 
 ## 🌐 구현 홈페이지
 
-- **프론트엔드**: [https://nb-02-moon-shot-fe.vercel.app/login](https://nb-02-codi-it-fe.vercel.app/))
+- **프론트엔드**: [https://nb-02-codi-it-fe.vercel.app/](https://nb-02-codi-it-fe.vercel.app/))
 
 - **백엔드**: [https://codi-it.shop/api)](https://codi-it.shop/api)
 
@@ -281,10 +288,11 @@
 ---
 
 ## 🧠 프로젝트 회고 및 발표자료
-- 차수연 
+
+- 차수연
 - 권나현 (https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
 - 김진솔
-- 조가현
+- 조가현 (https://github.com/jrkgus413/nb02-CODIIT-team2-report)
 - 진성남
 
 ---
