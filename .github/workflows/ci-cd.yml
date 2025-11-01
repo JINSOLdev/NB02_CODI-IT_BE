@@ -213,15 +213,42 @@ jobs:
               -p 127.0.0.1:${IDLE_PORT}:3000 \
               "$IMAGE:latest"
 
-            # 1) 비활성 포트 헬스체크
-            wait_health "$IDLE_PORT"
+            echo "Show just-started logs (10s tail)"
+            sleep 2
+            docker logs --tail=200 "$IDLE_NAME" || true
 
-            # 2) 활성 포트 상태도 점검
-            if ! wait_health "$ACTIVE_PORT"; then
-              echo "WARNING: active(${ACTIVE_PORT}) unhealthy — continue rolling anyway"
+            # 헬스체크 경로: secret 없으면 /health 기본값
+            HEALTH_PATH="${{ secrets.HEALTHCHECK_PATH }}"
+            [ -z "${HEALTH_PATH:-}" ] && HEALTH_PATH="/health"
+
+            echo "Health check idle: http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}"
+
+            # 상태코드/본문 일부를 같이 찍어서 디버깅
+            ok=0
+            for i in $(seq 1 40); do
+              code=$(curl -s -o /tmp/hbody -w "%{http_code}" "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || echo "000")
+              if [ "$code" = "200" ]; then
+                ok=1
+                break
+              fi
+              echo "[$i] waiting health... code=$code"
+              if [ "$i" -eq 1 ] || [ "$i" -eq 10 ] || [ "$i" -eq 20 ] || [ "$i" -eq 30 ]; then
+                echo "--- partial logs ---"
+                docker logs --tail=200 "$IDLE_NAME" || true
+              fi
+              sleep 1
+            done
+
+            if [ "$ok" -ne 1 ]; then
+              echo "ERROR: Health check failed"
+              echo "Last HTTP code: $code"
+              echo "--- last 200 logs ---"
+              docker logs --tail=200 "$IDLE_NAME" || true
+              echo "--- docker ps ---"
+              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+              exit 1
             fi
 
-            # 3) Nginx 활성 전환
             echo "Switch Nginx to $IDLE_COLOR"
             if [ "$IDLE_COLOR" = "blue" ]; then
               sudo ln -sf "$BLUE_CONF" "$ACTIVE_LINK"
