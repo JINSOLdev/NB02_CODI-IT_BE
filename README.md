@@ -67,6 +67,10 @@ _아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이�
 ## 🧩 팀원별 구현 기능
 
 ### 💻 차수연
+- S3 (이미지 업로드) 모듈: 이미지 업로드
+- Cart 모듈: 장바구니 생성, 조회, 수정
+- Dashboard 모듈: 대시보드 조회
+- 로깅, 에러 추적기: winston 로거, sentry 추적기 추가 
 
 ### 💻 권나현
 
@@ -289,7 +293,8 @@ _아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이�
 
 ## 🧠 프로젝트 회고 및 발표자료
 
-- 차수연
+- 차수연 [개인 개발 리포트](https://github.com/chya-chya/NB02_CODI-IT-Team2-Report/blob/main/README.md), 
+       [개인 발표 자료](https://www.notion.so/2957b119cb4b80819391eb6291272aff)
 - 권나현 (https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
 - 김진솔
 - 조가현 (https://github.com/jrkgus413/nb02-CODIIT-team2-report)
