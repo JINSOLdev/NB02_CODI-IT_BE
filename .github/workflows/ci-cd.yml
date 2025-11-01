@@ -129,10 +129,12 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
             set -euo pipefail
+            set -x  # 디버그 출력 (필요 없으면 제거)
 
             IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}"
             APP_DIR="$HOME/apps/NB02_CODI-IT_BE"
             ENV_FILE="$APP_DIR/.env"
+
             CONTAINER_BASENAME="${{ secrets.CONTAINER_NAME }}"
             [ -z "$CONTAINER_BASENAME" ] && CONTAINER_BASENAME="codiit-backend"
 
@@ -150,6 +152,10 @@ jobs:
             echo "Check .env"
             test -f "$ENV_FILE" || (echo "ERROR: $ENV_FILE not found"; exit 1)
             grep -qE '^DATABASE_URL=' "$ENV_FILE" || (echo "ERROR: DATABASE_URL missing"; exit 1)
+
+            if ! command -v curl >/dev/null 2>&1; then
+              sudo yum install -y curl || true
+            fi
 
             echo "Docker login & pull"
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
@@ -199,6 +205,7 @@ jobs:
             echo "Run idle container: $IDLE_NAME"
             docker stop "$IDLE_NAME" || true
             docker rm   "$IDLE_NAME" || true
+
             docker run -d \
               --name "$IDLE_NAME" \
               --restart unless-stopped \

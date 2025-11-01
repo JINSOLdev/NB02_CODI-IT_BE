@@ -12,7 +12,10 @@ import { interval, shareReplay } from 'rxjs';
   providers: [
     NotificationsService,
     NotificationsRepository,
-    { provide: TICKER$, useFactory: () => interval(30_000).pipe(shareReplay(1)) },
+    {
+      provide: TICKER$,
+      useFactory: () => interval(30_000).pipe(shareReplay(1)),
+    },
   ],
   exports: [NotificationsService],
 })

@@ -98,7 +98,7 @@ export type InquiryResponse = {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly productsRepository: ProductsRepository) {}
+  constructor(private readonly productsRepository: ProductsRepository) { }
 
   /** 🔧 stocks 변환 (프론트 숫자 사이즈 대응 버전) */
   private async transformStocks(
@@ -500,15 +500,15 @@ export class ProductsService {
         user: inq.user,
         reply: inq.reply
           ? {
-              id: inq.reply.id,
-              content: inq.reply.content,
-              createdAt: inq.reply.createdAt,
-              updatedAt: inq.reply.updatedAt,
-              user: {
-                id: inq.reply.user.id,
-                name: inq.reply.user.name,
-              },
-            }
+            id: inq.reply.id,
+            content: inq.reply.content,
+            createdAt: inq.reply.createdAt,
+            updatedAt: inq.reply.updatedAt,
+            user: {
+              id: inq.reply.user.id,
+              name: inq.reply.user.name,
+            },
+          }
           : null,
       };
     });

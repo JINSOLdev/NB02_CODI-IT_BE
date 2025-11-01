@@ -28,7 +28,7 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 
 @Injectable()
 export class ProductsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /** ✅ 스토어 ID로 조회 (PK) */
   async findStoreById(storeId: string) {
@@ -154,12 +154,12 @@ export class ProductsRepository {
       where,
       skip: query.skip,
       take: query.take,
-      orderBy,
       include: {
         store: { select: { name: true } },
         reviews: { select: { rating: true } },
         stocks: { include: { size: true } },
       },
+      orderBy,
     });
 
     return products.map((p) => ({
@@ -237,12 +237,12 @@ export class ProductsRepository {
         ...safeData,
         stocks: stocks
           ? {
-              deleteMany: { productId },
-              create: stocks.map((s) => ({
-                sizeId: s.sizeId,
-                quantity: s.quantity ?? 0,
-              })),
-            }
+            deleteMany: { productId },
+            create: stocks.map((s) => ({
+              sizeId: s.sizeId,
+              quantity: s.quantity ?? 0,
+            })),
+          }
           : undefined,
       },
     });
