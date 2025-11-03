@@ -217,10 +217,6 @@ jobs:
             sleep 2
             docker logs --tail=200 "$IDLE_NAME" || true
 
-            # 헬스체크 경로: secret 없으면 /health 기본값
-            HEALTH_PATH="${{ secrets.HEALTHCHECK_PATH }}"
-            [ -z "${HEALTH_PATH:-}" ] && HEALTH_PATH="/health"
-
             echo "Health check idle: http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}"
 
             # 상태코드/본문 일부를 같이 찍어서 디버깅
