@@ -6,12 +6,14 @@ import { NotificationType, UserType } from '@prisma/client';
 export class NotificationsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // 특정 사용자 소유의 알림 1건 조회
   async findByIdAndUser(alarmId: string, userId: string) {
     return this.prisma.notification.findFirst({
       where: { id: alarmId, userId },
     });
   }
 
+  // 사용자 타입 조회
   async findUserType(userId: string): Promise<UserType> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -22,6 +24,7 @@ export class NotificationsRepository {
     return user.type;
   }
 
+  // 알림 목록 조회
   async findMany(params: {
     userId: string;
     isRead?: boolean;
@@ -38,6 +41,7 @@ export class NotificationsRepository {
     });
   }
 
+  // 읽음 처리
   async markRead(id: string) {
     return this.prisma.notification.update({
       where: { id },

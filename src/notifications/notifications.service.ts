@@ -12,6 +12,7 @@ import { allowedByUserType } from './types/allowed-types.type';
 export class NotificationsService {
   constructor(private readonly repository: NotificationsRepository) {}
 
+  // 30초마다 미확인 알림 전송
   async unread(userId: string) {
     const userType = await this.repository.findUserType(userId);
     const allowed = allowedByUserType(userType);
@@ -26,6 +27,7 @@ export class NotificationsService {
     return list.map(toAlarmResponse);
   }
 
+  // 목록 조회
   async list(userId: string) {
     if (!userId) throw new BadRequestException('잘못된 요청 입니다.');
 
@@ -41,6 +43,7 @@ export class NotificationsService {
     return list.map(toAlarmResponse);
   }
 
+  // 읽음 처리
   async check(userId: string, alarmId: string) {
     const alarm = await this.repository.findByIdAndUser(alarmId, userId);
     if (!alarm) throw new NotFoundException('해당 알람이 없습니다.');

@@ -277,11 +277,11 @@ _아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이�
 
 ## 🌐 구현 홈페이지
 
-- **프론트엔드**: [https://nb-02-codi-it-fe.vercel.app/](https://nb-02-codi-it-fe.vercel.app/))
+- **프론트엔드**: [https://nb-02-codi-it-fe.vercel.app/](https://nb-02-codi-it-fe.vercel.app/)
 
-- **백엔드**: [https://codi-it.shop/api)](https://codi-it.shop/api)
+- **백엔드**: [https://codi-it.shop/api](https://codi-it.shop)
 
-- **Swagger**: [https://codi-it.shop/api/docs)](https://codi-it.shop/api/docs)
+- **Swagger**: [https://codi-it.shop/api/docs](https://codi-it.shop/api/docs)
 
 ---
 
@@ -295,14 +295,14 @@ _아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이�
 
 - 차수연 [개인 개발 리포트](https://github.com/chya-chya/NB02_CODI-IT-Team2-Report/blob/main/README.md), 
        [개인 발표 자료](https://www.notion.so/2957b119cb4b80819391eb6291272aff)
-- 권나현 (https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
-- 김진솔
-- 조가현 (https://github.com/jrkgus413/nb02-CODIIT-team2-report)
+- 권나현 [개인 개발 리포트](https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
+- 김진솔 [개인 개발 리포트](https://www.notion.so/jinsoldev/26f985c9419580ec8f6fcf49138abf38?source=copy_link)
+- 조가현 [개인 개발 리포트](https://github.com/jrkgus413/nb02-CODIIT-team2-report)
 - 진성남
 
 ## Test Coverage
 <!-- COVERAGE:START -->
 | Statements | Branches | Functions | Lines |
 | -----------|----------|-----------|-------|
-| ![Statements](https://img.shields.io/badge/statements-64.63%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-51.14%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-46.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-63.07%25-red.svg?style=flat) |
+| ![Statements](https://img.shields.io/badge/statements-64.64%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-51.14%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-46.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-63.09%25-red.svg?style=flat) |
 <!-- COVERAGE:END -->
