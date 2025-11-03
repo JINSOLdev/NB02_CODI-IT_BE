@@ -48,7 +48,7 @@ export class NotificationsController {
   @ApiOperation({ summary: '알림 목록 조회' })
   @ApiResponse({
     status: 200,
-    description: '스토어 등록 상품 정보를 반환합니다.',
+    description: '알림 목록을 반환합니다.',
   })
   @ApiResponse({
     status: 400,
