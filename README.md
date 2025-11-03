@@ -298,7 +298,7 @@ _아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이�
 - 권나현 [개인 개발 리포트](https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
 - 김진솔 [개인 개발 리포트](https://www.notion.so/jinsoldev/26f985c9419580ec8f6fcf49138abf38?source=copy_link)
 - 조가현 [개인 개발 리포트](https://github.com/jrkgus413/nb02-CODIIT-team2-report)
-- 진성남
+- 진성남 [개인 개발 리포트](https://github.com/jinseongnam/CODIIT-backend-reports)
 
 ## Test Coverage
 <!-- COVERAGE:START -->
