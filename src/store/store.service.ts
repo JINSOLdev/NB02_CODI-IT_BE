@@ -23,6 +23,7 @@ import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 export class StoreService {
   constructor(private readonly storeRepo: StoreRepository) {}
 
+  // 새 스토어 등록
   async createStore(
     sellerId: string,
     userType: UserType,
@@ -54,6 +55,7 @@ export class StoreService {
     }
   }
 
+  // 스토어 수정
   async updateStore(
     storeId: string,
     userId: string,
@@ -96,6 +98,7 @@ export class StoreService {
     };
   }
 
+  // 스토어 상세 조회
   async getStoreDetail(storeId: string): Promise<StoreDetailDto> {
     const store = await this.storeRepo.findByStoreId(storeId);
     if (!store) throw new NotFoundException('스토어를 찾을 수 없습니다.');
@@ -118,6 +121,7 @@ export class StoreService {
     return result;
   }
 
+  // 내 스토어 상세 조회
   async getMyStoreDetail(
     sellerId: string,
     usertype: UserType,
@@ -154,6 +158,7 @@ export class StoreService {
     };
   }
 
+  // 내 스토어 상품 목록 조회
   async getMyStoreProducts(
     userId: string,
     userType: UserType,
@@ -253,6 +258,7 @@ export class StoreService {
     };
   }
 
+  // 관심 스토어 등록
   async registerInterestStore(
     storeId: string,
     userId: string,
@@ -273,6 +279,7 @@ export class StoreService {
     return { store: this.interestStoreDto(store) };
   }
 
+  // 관심 스토어 해제
   async deleteInterestStore(
     storeId: string,
     userId: string,

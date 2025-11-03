@@ -25,7 +25,12 @@ import { MyInterestStoreDto } from './dto/register-interest-store.dto';
 import { MyStoreProductQueryDto } from './dto/store-product-query.dto';
 import { MyStoreProductListWrapperDto } from './dto/store-product-wrapper.dto';
 import { ParseCuidPipe } from '../common/pipes/parse-cuid.pipe';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStoreResponseDto } from './dto/create-store-response.dto';
 import { S3Service } from '../s3/s3.service';
@@ -41,7 +46,13 @@ export class StoreController {
     private readonly s3Service: S3Service,
   ) {}
 
+  // 새 스토어 등록
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '새 스토어 등록' })
+  @ApiResponse({
+    status: 201,
+    description: '등록된 스토어 정보를 반환합니다.',
+  })
   @Post()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -94,14 +105,26 @@ export class StoreController {
     };
   }
 
+  // 내 스토어 상세 조회
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내 스토어 상세 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '스토어 정보를 반환합니다.',
+  })
   @Get('detail/my')
   getMyStoreDetail(@Req() req: { user: AuthUser }): Promise<MyStoreDetailDto> {
     const user = req.user;
     return this.storeService.getMyStoreDetail(user.userId, user.type);
   }
 
+  // 내 스토어 상품 목록 조회
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내 스토어 상품 목록 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '스토어 등록 상품 정보를 반환합니다.',
+  })
   @Get('detail/my/product')
   getMyStoreProducts(
     @Req() req: { user: AuthUser },
@@ -111,7 +134,13 @@ export class StoreController {
     return this.storeService.getMyStoreProducts(userId, type, query);
   }
 
+  // 관심 스토어 등록
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '관심 스토어 등록' })
+  @ApiResponse({
+    status: 201,
+    description: '관심 스토어 등록',
+  })
   @Post(':storeId/favorite')
   registerInterestStore(
     @Param('storeId', ParseCuidPipe) storeId: string,
@@ -121,7 +150,13 @@ export class StoreController {
     return this.storeService.registerInterestStore(storeId, user.userId);
   }
 
+  // 관심 스토어 해제
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '관심 스토어 해제' })
+  @ApiResponse({
+    status: 200,
+    description: '관심 스토어 해제',
+  })
   @Delete(':storeId/favorite')
   deleteInterestStore(
     @Param('storeId', ParseCuidPipe) storeId: string,
@@ -131,6 +166,12 @@ export class StoreController {
     return this.storeService.deleteInterestStore(storeId, user.userId);
   }
 
+  // 스토어 상세 조회
+  @ApiOperation({ summary: '스토어 상세 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '스토어 정보를 반환합니다.',
+  })
   @Get(':storeId')
   getStoreDetail(
     @Param('storeId', ParseCuidPipe) storeId: string,
@@ -138,7 +179,13 @@ export class StoreController {
     return this.storeService.getStoreDetail(storeId);
   }
 
+  // 스토어 수정
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '스토어 수정' })
+  @ApiResponse({
+    status: 200,
+    description: '수정된 스토어 정보를 반환합니다.',
+  })
   @Patch(':storeId')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
