@@ -1,6 +1,6 @@
 # 2팀 - CODI_IT 프로젝트
 
-📄 [2팀 프로젝트 계획서 보기](https://www.notion.so/2-26f02c9656f581a2b5ebcc7f12204fcb)
+📄 [2팀 프로젝트 계획서 보기](https://www.notion.so/jinsoldev/2-26f985c9419581aea95bfa87b7151a01?source=copy_link)
 
 ---
 
