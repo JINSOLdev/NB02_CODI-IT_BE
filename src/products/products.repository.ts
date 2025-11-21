@@ -1,4 +1,3 @@
-// 📁 src/products/products.repository.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Product, Inquiry, CategoryType } from '@prisma/client';
@@ -7,7 +6,7 @@ import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { TransformedStock } from './dto/create-product.dto';
 import type { InquiryWithRelations } from '../types/inquiry-with-relations.type';
 
-// 🔧 Relation 포함된 타입 정의
+// Relation 포함된 타입 정의
 export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
     store: { select: { name: true } };
@@ -28,36 +27,36 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 
 @Injectable()
 export class ProductsRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-  /** ✅ 스토어 ID로 조회 (PK) */
+  /** 스토어 ID로 조회 */
   async findStoreById(storeId: string) {
     return this.prisma.store.findUnique({ where: { id: storeId } });
   }
 
-  /** ✅ 판매자 ID로 스토어 조회 (unique) */
+  /**판매자 ID로 스토어 조회*/
   async findStoreBySellerId(sellerId: string) {
     return this.prisma.store.findUnique({ where: { sellerId } });
   }
 
-  /** ⚙️ 카테고리명으로 카테고리 조회 */
+  /** 카테고리명으로 카테고리 조회 */
   async findCategoryByName(name: CategoryType) {
     return this.prisma.category.findFirst({
       where: { name: name as Prisma.EnumCategoryTypeFilter<'Category'> },
     });
   }
 
-  /** ⚙️ 사이즈명으로 사이즈 조회 */
+  /** 사이즈명으로 사이즈 조회 */
   async findStockSizeByName(name: string) {
     return this.prisma.stockSize.findFirst({ where: { name } });
   }
 
-  /** ✅ 사이즈 ID로 조회 */
+  /** 사이즈 ID로 조회 */
   async findStockSizeById(sizeId: string) {
     return this.prisma.stockSize.findUnique({ where: { id: sizeId } });
   }
 
-  /** ✅ 상품 등록 */
+  /** 상품 등록 */
   async create(data: {
     name: string;
     content?: string;
@@ -123,6 +122,7 @@ export class ProductsRepository {
     const where: Prisma.ProductWhereInput = {};
     let orderBy: Prisma.ProductOrderByWithRelationInput | undefined;
 
+    if (query.storeId) where.storeId = query.storeId;
     if (query.categoryName) where.category = { name: query.categoryName };
     if (query.search) where.name = { contains: query.search };
     if (query.priceMin) where.price = { gte: query.priceMin };
@@ -237,12 +237,12 @@ export class ProductsRepository {
         ...safeData,
         stocks: stocks
           ? {
-            deleteMany: { productId },
-            create: stocks.map((s) => ({
-              sizeId: s.sizeId,
-              quantity: s.quantity ?? 0,
-            })),
-          }
+              deleteMany: { productId },
+              create: stocks.map((s) => ({
+                sizeId: s.sizeId,
+                quantity: s.quantity ?? 0,
+              })),
+            }
           : undefined,
       },
     });

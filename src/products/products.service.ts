@@ -236,8 +236,13 @@ export class ProductsService {
   }
 
   /** ✅ 상품 목록 조회 */
+  // products.service.ts
   async findAll(query: FindProductsQueryDto): Promise<ProductListResponse> {
-    const products = await this.productsRepository.findAll(query);
+    // 호출 전에 storeId 정규화
+    const storeId = query.storeId ?? query.favoriteStore ?? undefined;
+    const normalized: FindProductsQueryDto = { ...query, storeId };
+
+    const products = await this.productsRepository.findAll(normalized);
 
     const list = products.map((product) => {
       const reviewsRating =
@@ -266,7 +271,8 @@ export class ProductsService {
         isSoldOut: !product.stocks?.some((s) => s.quantity > 0),
       };
     });
-    if (query.sort === 'highRating') {
+
+    if (normalized.sort === 'highRating') {
       list.sort((a, b) => b.reviewsRating - a.reviewsRating);
     }
 

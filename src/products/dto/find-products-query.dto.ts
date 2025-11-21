@@ -62,6 +62,10 @@ export class FindProductsQueryDto {
   })
   categoryName?: CategoryType;
 
+  @IsOptional()
+  @IsString()
+  storeId?: string;
+
   /** 🔧 내부 계산용 (Prisma skip/take 매핑) */
   get skip(): number {
     return this.page && this.pageSize ? (this.page - 1) * this.pageSize : 0;
