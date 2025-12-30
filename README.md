@@ -1,316 +1,105 @@
-# 2팀 - CODI_IT 프로젝트
+## 👗 CodiIt
 
-📄 [2팀 프로젝트 계획서 보기](https://www.notion.so/jinsoldev/2-26f985c9419581aea95bfa87b7151a01?source=copy_link)
+**2025.09.15 ~ 2025.11.03** </br>
+패션 상품을 거래할 수 있는 패션 이커머스 플랫폼 서비스 백엔드 </br>
 
----
+📄 [프로젝트 계획서](https://www.notion.so/jinsoldev/2-26f985c9419581aea95bfa87b7151a01?source=copy_link)
 
-## 👨‍👩‍👧‍👦 팀원 구성
+<p>
+  <img src=""/>
+</p>
 
-_아래 프로필 사진을 클릭하면 각 팀원의 GitHub 프로필로 이동합니다._
+## 1. 서비스 링크
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/chya-chya">
-        <img src="https://avatars.githubusercontent.com/u/112245738?v=4" width="150px;" alt="차수연"/>
-      </a><br />
-      <sub><b>차수연</b></sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/kwonnahyun0125">
-        <img src="https://avatars.githubusercontent.com/u/207654272?v=4" width="150px;" alt="권나현"/>
-      </a><br />
-      <sub><b>권나현</b></sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/JINSOLdev">
-        <img src="https://avatars.githubusercontent.com/u/130561876?v=4" width="150px;" alt="김진솔"/>
-      </a><br />
-      <sub><b>김진솔</b></sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/jrkgus413">
-        <img src="https://avatars.githubusercontent.com/u/122591484?v=4" width="150px;" alt="조가현"/>
-      </a><br />
-      <sub><b>조가현</b></sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/jinseongnam">
-        <img src="https://avatars.githubusercontent.com/u/208552129?v=4" width="150px;" alt="진성남"/>
-      </a><br />
-      <sub><b>진성남</b></sub>
-  </tr>
-</table>
+- **[코디잇](https://nb-02-codi-it-fe.vercel.app/login)**
 
----
+## 2. 프로젝트 아키텍처
+<img alt="image" src="public/architecture.png" />
 
-## 📌 프로젝트 소개
+## 3. 기술 스택
 
-- **프로젝트 이름:** CODI_IT
-- **프로젝트 주제:** 패션 이커머스 플랫폼 백엔드 시스템 구축
-- **진행 기간:** 2025.09.15 ~ 2025.11.03
+| 구분           | 기술                          |
+| -------------- | ----------------------------- |
+| Backend        | NestJS, TypeScript            |
+| ORM            | Prisma                        |
+| Database       | PostgreSQL, AWS RDS/S3        |
+| API 문서화     | Swagger                       |
+| 테스트         | Jest,SuperTest, ESLint.       |
+| 협업 도구      | Git & GitHub, Discord, Notion |
+| Infra / Deploy | AWS EC2, Docker, Nginx        |
+| CI/CD          | GitHub Actions                |
 
----
+## 4. 팀 구성
 
-## 🛠️ 기술 스택
+| 이름        | 역할                          |
+| ----------- | --------------------------- |
+| 차수연      | Cart / S3 / Dashboard         |
+| 권나현      | Auth / User / Point & Grade   |
+| **김진솔** | **Store / Notification / CI&CD / Deploy** |
+| 조가현      | Review / Inquiry                |
+| 진성남      | Product / Order                  |
 
-- **Backend:** Nest.js, TypeScript
-- **Database:** PostgreSQL, Prisma, AWS RDS/S3
-- **API 문서화:** Swagger
-- **테스트:** Jest,SuperTest, ESLint
-- **협업 도구:** Git & GitHub, Discord, Notion
-- **배포/운영:** AWS EC2, Docker, Nginx
-- **CI/CD:** Gitgub Actions
+## 5. 담당 기능
+### Store (스토어 API)
+- 판매자의 스토어 생성, 수정, 상품 등록, 상세 조회
+- 구매자의 스토어 상세 조회, 관심 스토어 등록 및 해제
 
----
+### Notification (알림 API)
+- SSE를 활용한 실시간 알림 기능 구현
+- 유저 타입에 따른 알림 제공 
+  - 구매자: 장바구니 또는 주문하기에 담긴 상품 품절, 문의글에 대한 답변이 달렸을 경우
+  - 판매자: 판매중인 상품 품절, 상품에 대한 새로운 문의 글이 작성되었을 경우
+- 알림 읽음 처리
 
-## 🏛️ 프로젝트 아키텍처
-<img width="1201" height="674" alt="스크린샷 2025-10-29 오후 6 23 02" src="https://github.com/user-attachments/assets/8986d3f5-4bf9-4899-a86a-96813a55ca6d" />
+### CI&CD / Deploy (배포 및 인프라 관리)
+- GitHub Actions를 활용한 CI/CD 파이프라인 구축
+- Docker와 Nginx를 활용한 AWS EC2 배포 자동화
 
----
-
-## 🧩 팀원별 구현 기능
-
-### 💻 차수연
-- S3 (이미지 업로드) 모듈: 이미지 업로드
-- Cart 모듈: 장바구니 생성, 조회, 수정
-- Dashboard 모듈: 대시보드 조회
-- 로깅, 에러 추적기: winston 로거, sentry 추적기 추가 
-
-### 💻 권나현
-
-- Auth 모듈: 로그인, 리프레시 토큰 재발급, 로그아웃
-- User 모듈: 회원가입, 내 정보 조회 및 수정, 관심 스토어 조회, 회원 탈퇴
-- Point 모듈: 내 포인트 조회
-- Grade 모듈: 내 등급 조회
-- 전역 로깅 미들웨어: 요청(Request)과 응답(Response) 정보를 콘솔에 출력하도록 구현
-- 테스트 및 검증
-  - Auth, User, Point, Grade 모듈의 유닛 테스트 코드 작성
-  - 주요 기능 동작 및 예외 처리 검증을 통해 안정성 확보
-
-### 💻 김진솔
-
-- Store API : 스토어 생성, 수정, 상세조회, 내 스토어 상세 조회, 관심 스토어 등록/해제
-- Notification API : 주문, 문의, 등 이벤트 발생 시 알람을 생성하고, 사용자 유형에 따라 다른 알람 제공
-- CI/CD & 인프라
-  - CI/CD 파이프라인 구축
-    - GitHub Actiosn를 활용해 빌드 > 테스트 > Docker 이미지 빌드 > EC2 배포 자동화
-    - PR 및 main 브랜치에 push 시 워크플로우 자동 실행
-  - 무중단 배포 (Blue-Green Deployment)
-    - Nginx Reverse Proxy와 Docker 컨테이너 활용해서 서비스 중단없이 배포
-
-### 💻 조가현
-
-- Review API : 상품 리뷰 등록/수정/삭제, 리뷰 목록/상세 조회
-- Inquiry API : 상품 문의 등록/수정/삭제, 판매자 답변 등록/수정/삭제, 문의/답변 상세 조회
-
-### 💻 진성남
-
-- Product API : 상품 등록/수정/삭제, 상품 문의 등록/조회
-- Order API : 주문 목록 조회/생성, 주문 상세 조회, 주문 취소, 주문 정보 수정(이름/전화번호/배송지)
-  
----
-
-## 📁 프로젝트 파일 구조
-
-📦 프로젝트 루트
-
+## 6. 프로젝트 구조
 ```
-📦 project-root
-├── 🐳 Dockerfile
-├── ⚙️ eslint.config.mjs
-├── 📘 nest-cli.json
-├── 📦 package.json
-├── 🔒 package-lock.json
-├── 🧱 tsconfig.json
-├── 🧱 tsconfig.build.json
-├── 📄 README.md
-│
-├── 🪵 logs/
-│   └── ❗ error.log
-│
-├── 🧩 prisma/
-│   ├── 📜 schema.prisma
-│   ├── 🌱 seed.ts
-│   ├── 🌱 seedForDashboard.ts
-│   └── 🧭 migrations/
-│
-├── 💻 src/
-│   ├── 🚀 main.ts
-│   ├── 🧩 app.module.ts
-│   ├── 🎛️ app.controller.ts
-│   ├── ⚙️ app.service.ts
-│   │
-│   ├── 🔐 auth/
-│   │   ├── 📁 dto/
-│   │   │   └── 📝 login.dto.ts
-│   │   ├── 🎛️ auth.controller.ts
-│   │   ├── ⚙️ auth.service.ts
-│   │   ├── 🧩 auth.module.ts
-│   │   ├── 🛡️ jwt.guard.ts
-│   │   ├── 🧠 jwt.strategy.ts
-│   │   └── 🧰 utils/
-│   │       ├── 🍪 cookie.util.ts
-│   │       └── 🙋 current-user.decorator.ts
-│   │
-│   ├── 🛒 cart/
-│   │   ├── 🎛️ cart.controller.ts
-│   │   ├── ⚙️ cart.service.ts
-│   │   ├── 💾 cart.repository.ts
-│   │   ├── 🧩 cart.module.ts
-│   │   └── 🧪 test/
-│   │       ├── 🧫 cart.e2e.spec.ts
-│   │       └── 🔍 cart.service.spec.ts
-│   │
-│   ├── 🧱 common/
-│   │   ├── 🛡️ guard/
-│   │   │   ├── 👤 buyer.guard.ts
-│   │   │   └── 🧍 seller.guard.ts
-│   │   ├── 🪶 logger/
-│   │   │   ├── 🪶 sentry.config.ts
-│   │   │   ├── ⚠️ sentry.filter.ts
-│   │   │   └── 🧱 winston.config.ts
-│   │   ├── 🧩 middleware/
-│   │   │   └── 🪵 logger.middleware.ts
-│   │   ├── 🧮 pipes/
-│   │   │   └── 🧩 parse-cuid.pipe.ts
-│   │   └── 🧾 prisma-tx.type.ts
-│   │
-│   ├── 📊 dashboard/
-│   │   ├── 🎛️ dashboard.controller.ts
-│   │   ├── ⚙️ dashboard.service.ts
-│   │   └── 🧩 dashboard.module.ts
-│   │
-│   ├── 🎓 grades/
-│   │   ├── 🧩 grade.module.ts
-│   │   ├── 💾 grade.repository.ts
-│   │   ├── ⚙️ grade.service.ts
-│   │   └── 🧮 grade.util.ts
-│   │
-│   ├── 💬 inquiry/
-│   │   ├── 🎛️ inquiry.controller.ts
-│   │   ├── ⚙️ inquiry.service.ts
-│   │   ├── 💾 inquiry.repository.ts
-│   │   ├── 🧩 inquiry.module.ts
-│   │   └── 📝 inquiry.dto.ts
-│   │
-│   ├── 🔔 notifications/
-│   │   ├── 🎛️ notifications.controller.ts
-│   │   ├── ⚙️ notifications.service.ts
-│   │   ├── 💾 notifications.repository.ts
-│   │   ├── 🧩 notifications.module.ts
-│   │   ├── 🔄 notifications.mapper.ts
-│   │   ├── 🎯 ticker.token.ts
-│   │   └── 🧩 types/
-│   │       └── 🧾 allowed-types.type.ts
-│   │
-│   ├── 🧾 orders/
-│   │   ├── 📁 dto/
-│   │   │   ├── 📝 create-order.dto.ts
-│   │   │   ├── 📝 update-order.dto.ts
-│   │   │   ├── 🔍 get-orders-query.dto.ts
-│   │   │   └── 📦 order-response.dto.ts
-│   │   ├── 🎛️ orders.controller.ts
-│   │   ├── ⚙️ orders.service.ts
-│   │   ├── 💾 orders.repository.ts
-│   │   └── 🧩 orders.module.ts
-│   │
-│   ├── 💰 points/
-│   │   ├── 🎛️ points.controller.ts
-│   │   ├── ⚙️ points.service.ts
-│   │   ├── 💾 points.repository.ts
-│   │   ├── 🧩 points.module.ts
-│   │   └── 🧾 points.types.ts
-│   │
-│   ├── 🧩 prisma/
-│   │   ├── ⚙️ prisma.service.ts
-│   │   └── 🧩 prisma.module.ts
-│   │
-│   ├── 🛍️ products/
-│   │   ├── 📁 dto/
-│   │   │   ├── 📝 create-product.dto.ts
-│   │   │   ├── 📝 update-product.dto.ts
-│   │   │   ├── 📦 product-response.dto.ts
-│   │   │   └── 🔍 product-detail-response.dto.ts
-│   │   ├── 🎛️ products.controller.ts
-│   │   ├── ⚙️ products.service.ts
-│   │   ├── 💾 products.repository.ts
-│   │   └── 🧩 products.module.ts
-│   │
-│   ├── 📝 review/
-│   │   ├── 🎛️ review.controller.ts
-│   │   ├── ⚙️ review.service.ts
-│   │   ├── 💾 review.repository.ts
-│   │   ├── 🧩 review.module.ts
-│   │   └── 🧾 review.dto.ts
-│   │
-│   ├── ☁️ s3/
-│   │   ├── 🎛️ s3.controller.ts
-│   │   ├── ⚙️ s3.service.ts
-│   │   └── 🧩 s3.module.ts
-│   │
-│   ├── 🏪 store/
-│   │   ├── 📁 dto/
-│   │   │   ├── 📝 create-store.dto.ts
-│   │   │   ├── 📝 update-store.dto.ts
-│   │   │   ├── 🏬 store-detail.dto.ts
-│   │   │   └── 📦 store-response.dto.ts
-│   │   ├── 🎛️ store.controller.ts
-│   │   ├── ⚙️ store.service.ts
-│   │   ├── 💾 store.repository.ts
-│   │   └── 🧩 store.module.ts
-│   │
-│   ├── 👥 users/
-│   │   ├── 📁 dto/
-│   │   │   ├── 📝 create-user.dto.ts
-│   │   │   └── 📝 update-user.dto.ts
-│   │   ├── 🎛️ users.controller.ts
-│   │   ├── ⚙️ users.service.ts
-│   │   ├── 💾 users.repository.ts
-│   │   └── 🧩 users.module.ts
-│   │
-│   └── 🧰 utils/
-│       └── (공용 유틸)
-│
-└── 🧪 test/
-    ├── 🧫 app.e2e-spec.ts
-    ├── 🧩 jest-e2e.json
-    ├── 🧪 mocks/
-    │   └── 🧱 prisma.mock.ts
-    └── 🧰 utils/
-        └── 🧩 mocks.ts
+src
+ ┣ auth            # 인증/인가 (JWT, Guard, Decorator, Cookie)
+ ┣ users           # 사용자 도메인
+ ┣ store           # 상점 도메인
+ ┣ products        # 상품 도메인
+ ┣ cart            # 장바구니 도메인
+ ┣ orders          # 주문 도메인
+ ┣ review          # 리뷰 도메인
+ ┣ inquiry         # 문의 도메인
+ ┣ points          # 포인트 도메인
+ ┣ notifications   # 알림 도메인 (SSE/실시간)
+ ┣ dashboard       # 관리자 대시보드
+ ┣ grades          # 등급/정책 로직
+ ┣ s3              # 파일 업로드 (S3)
+ ┣ health          # 헬스체크
+
+ ┣ common          # 공통 모듈
+ ┃ ┣ guard         # 역할 기반 Guard (buyer/seller)
+ ┃ ┣ middleware    # 로깅 미들웨어
+ ┃ ┣ pipes         # 커스텀 Pipe
+ ┃ ┣ logger        # Winston, Sentry 설정
+ ┃ ┗ prisma-tx     # Prisma 트랜잭션 타입
+
+ ┣ prisma          # Prisma Service / Module
+ ┣ types           # 전역 타입 정의
+
+ ┣ app.module.ts
+ ┣ app.controller.ts
+ ┣ app.service.ts
+ ┗ main.ts
 ```
 
----
+## 7. 회고
+API와 실시간 알림 구현, 그리고 자동 배포까지 평소 꼭 한 번은 직접 경험해 보고 싶었던 기능들을 모두 구현해 볼 수 있었던 프로젝트였다. 
+단순히 기능을 만드는 데 그치지 않고, 실제 서비스 운영을 고려한 백엔드 전반의 흐름을 끝까지 경험했다는 점에서 개인적으로 의미가 컸다. </br>
 
-## 🌐 구현 홈페이지
+처음 접하는 NestJS 프레임워크를 사용한다는 점에서 걱정과 설렘이 공존했지만, 공식 문서와 다양한 레퍼런스를 꾸준히 참고하여 빠르게 적응할 수 있었다.
+특히 SSE(Server-Sent Events)를 활용한 실시간 알림 기능을 구현하면서 비동기 프로그래밍과 이벤트 기반 아키텍처에 대한 이해도가 한층 높아졌고, 
+사용자 경험을 직접적으로 개선할 수 있다는 점에서 큰 성취감을 느꼈다. </br>
 
-- **프론트엔드**: [https://nb-02-codi-it-fe.vercel.app/](https://nb-02-codi-it-fe.vercel.app/)
+또한, GitHub Actions를 활용한 CI/CD 파이프라인 구축, Docker와 Nginx를 이용한 AWS EC2 배포 자동화를 통해 개발부터 배포까지의
+과정을 효율적으로 관리할 수 있었다. 이 과정에서 DevOps 관점에서의 흐름을 직접 경험하며, 단순한 기능 개발을 넘어 실제 서비스 운영에 필요한 
+기술과 고민들을 체감할 수 있었다. </br>
 
-- **백엔드**: [https://codi-it.shop/api](https://codi-it.shop)
-
-- **Swagger**: [https://codi-it.shop/api/docs](https://codi-it.shop/api/docs)
-
----
-
-## 📊 ERD (Entity Relationship Diagram)
-
-- [Codi‐It ERD 설계](https://github.com/nb02-CODIIT-team2/CODIIT-backend/wiki/Codi%E2%80%90It-ERD-%EC%84%A4%EA%B3%84)
-
----
-
-## 🧠 프로젝트 회고 및 발표자료
-
-- 차수연 [개인 개발 리포트](https://github.com/chya-chya/NB02_CODI-IT-Team2-Report/blob/main/README.md), 
-       [개인 발표 자료](https://www.notion.so/2957b119cb4b80819391eb6291272aff)
-- 권나현 [개인 개발 리포트](https://github.com/kwonnahyun0125/NB02_CODI-IT-Team2-Report)
-- 김진솔 [개인 개발 리포트](https://www.notion.so/jinsoldev/26f985c9419580ec8f6fcf49138abf38?source=copy_link)
-- 조가현 [개인 개발 리포트](https://github.com/jrkgus413/nb02-CODIIT-team2-report)
-- 진성남 [개인 개발 리포트](https://github.com/jinseongnam/CODIIT-backend-reports)
-
-## Test Coverage
-<!-- COVERAGE:START -->
-| Statements | Branches | Functions | Lines |
-| -----------|----------|-----------|-------|
-| ![Statements](https://img.shields.io/badge/statements-64.64%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-51.14%25-red.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-46.15%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-63.09%25-red.svg?style=flat) |
-<!-- COVERAGE:END -->
+이번 프로젝트를 통해 백엔드 개발자로서의 기술적 깊이와 시야를 동시에 확장할 수 있었고, 설계의 이유를 설명할 수 있고 운영을 고려하는 백엔드 개발자로
+한 단계 성장할 수 있었다고 느낀다.  앞으로도 새로운 기술을 두려워하지 않고 적극적으로 탐구하며, 실제 문제를 해결하는 방향으로 계속 도전해 나가고 싶다. 
