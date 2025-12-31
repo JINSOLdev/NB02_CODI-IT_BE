@@ -67,6 +67,13 @@ jobs:
           docker push "$IMAGE:latest"
           docker push "$IMAGE:${{ github.sha }}"
 
+      # HOST 디버그 출력
+      - name: Debug HOST resolution
+        run: |
+          echo "HOST is set (length only): ${#HOST}"
+        env:
+          HOST: ${{ secrets.HOST }}
+
       # .env 파일 EC2에 업로드
       - name: Upload .env to EC2
         uses: appleboy/ssh-action@v1.0.3
