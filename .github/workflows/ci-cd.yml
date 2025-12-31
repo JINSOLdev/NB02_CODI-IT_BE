@@ -74,6 +74,24 @@ jobs:
         env:
           HOST: ${{ secrets.HOST }}
 
+      # HOST 해석 시도
+      - name: Resolve HOST
+        run: |
+          echo "HOST length: ${#HOST}"
+          getent hosts "$HOST" || true
+          nslookup "$HOST" || true
+        env:
+          HOST: ${{ secrets.HOST }}
+
+      # TCP 22 포트 체크
+      - name: Check TCP 22 from runner
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y netcat-openbsd
+          nc -vz "$HOST" 22 -w 5
+        env:
+          HOST: ${{ secrets.HOST }}
+
       # .env 파일 EC2에 업로드
       - name: Upload .env to EC2
         uses: appleboy/ssh-action@v1.0.3
