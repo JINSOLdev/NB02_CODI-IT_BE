@@ -88,24 +88,24 @@ jobs:
       # - name: Upload .env to EC2
       #   uses: appleboy/ssh-action@v1.0.3
       #   with:
-          # host: ${{ secrets.HOST }}
-          # username: ${{ secrets.SSH_USER }}
-          # port: 22
-          # key: ${{ secrets.PRIVATE_KEY_B64 }}
-          # key_path: /tmp/deploy_key.pem
-          # timeout: 120s
-          # command_timeout: 10m
-          # debug: true
-          # script_stop: true
-          # script: |
-          #   set -euxo pipefail
-          #   echo "connected"
-          #   whoami
-          #   hostname
-            # mkdir -p ~/apps/NB02_CODI-IT_BE
-            # cat > ~/apps/NB02_CODI-IT_BE/.env << 'EOF'
-            # ${{ secrets.ENV_PROD }}
-            # EOF
+      # host: ${{ secrets.HOST }}
+      # username: ${{ secrets.SSH_USER }}
+      # port: 22
+      # key: ${{ secrets.PRIVATE_KEY_B64 }}
+      # key_path: /tmp/deploy_key.pem
+      # timeout: 120s
+      # command_timeout: 10m
+      # debug: true
+      # script_stop: true
+      # script: |
+      #   set -euxo pipefail
+      #   echo "connected"
+      #   whoami
+      #   hostname
+      # mkdir -p ~/apps/NB02_CODI-IT_BE
+      # cat > ~/apps/NB02_CODI-IT_BE/.env << 'EOF'
+      # ${{ secrets.ENV_PROD }}
+      # EOF
 
       # EC2에서 Docker Hub 로그인
       - name: Login Docker Hub on EC2
@@ -171,21 +171,26 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            set -x  # 디버그 출력 (필요 없으면 제거)
+            set -x  # 디버그 출력
 
             IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}"
             APP_DIR="$HOME/apps/NB02_CODI-IT_BE"
             ENV_FILE="$APP_DIR/.env"
 
             CONTAINER_BASENAME="${{ secrets.CONTAINER_NAME }}"
-            [ -z "$CONTAINER_BASENAME" ] && CONTAINER_BASENAME="codiit-backend"
+            [ -z "${CONTAINER_BASENAME:-}" ] && CONTAINER_BASENAME="codiit-backend"
 
             BLUE_PORT=3001
             GREEN_PORT=3002
 
             DOMAIN="https://codi-it.shop"
             HEALTH_PATH="${{ secrets.HEALTHCHECK_PATH }}"
+
+            # ✅ HEALTH_PATH 안전 정규화 (공백 제거 + 슬래시 보정 + 기본값)
+            HEALTH_PATH="${HEALTH_PATH//[[:space:]]/}"
             [ -z "${HEALTH_PATH:-}" ] && HEALTH_PATH="/api/health"
+            [[ "$HEALTH_PATH" != /* ]] && HEALTH_PATH="/$HEALTH_PATH"
+            echo "Using HEALTH_PATH=$HEALTH_PATH"
 
             ACTIVE_LINK="/etc/nginx/conf.d/upstreams/active.conf"
             BLUE_CONF="/etc/nginx/conf.d/upstreams/blue.conf"
@@ -203,22 +208,11 @@ jobs:
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             docker pull "$IMAGE:latest"
 
-            # 포트 헬스체크 함수
-            wait_health () {
-              local PORT="$1"
-              local RETRIES="${2:-30}"
-              local SLEEP_SECS="${3:-1}"
-              for i in $(seq 1 "$RETRIES"); do
-                if curl -fsS "http://127.0.0.1:${PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
-                  echo "Health OK on ${PORT}"
-                  return 0
-                fi
-                echo "Waiting health on ${PORT}... ($i/$RETRIES)"
-                sleep "$SLEEP_SECS"
-              done
-              echo "ERROR: Health check failed on ${PORT}"
-              return 1
-            }
+            # ✅ upstream 파일/폴더가 없으면 nginx 스위칭에서 터지니 사전 보장
+            sudo mkdir -p /etc/nginx/conf.d/upstreams
+            sudo test -f "$BLUE_CONF"  || echo 'include /etc/nginx/conf.d/upstreams/blue.upstream;'  | sudo tee "$BLUE_CONF"  >/dev/null
+            sudo test -f "$GREEN_CONF" || echo 'include /etc/nginx/conf.d/upstreams/green.upstream;' | sudo tee "$GREEN_CONF" >/dev/null
+            sudo test -L "$ACTIVE_LINK" || sudo ln -sf "$BLUE_CONF" "$ACTIVE_LINK" || true
 
             # 현재 활성 판단
             ACTIVE_COLOR="blue"
@@ -231,7 +225,7 @@ jobs:
             fi
 
             if [ "$ACTIVE_COLOR" = "blue" ]; then
-              IDLE_COLOR="green"; IDLE_PORT=$GREEN_PORT 
+              IDLE_COLOR="green"; IDLE_PORT=$GREEN_PORT
               ACTIVE_PORT=$BLUE_PORT
             else
               IDLE_COLOR="blue"; IDLE_PORT=$BLUE_PORT
@@ -255,35 +249,66 @@ jobs:
               -p 127.0.0.1:${IDLE_PORT}:3000 \
               "$IMAGE:latest"
 
-            echo "Show just-started logs (10s tail)"
+            # ✅ 컨테이너가 바로 죽는지 먼저 확인
+            echo "--- docker ps (idle) ---"
+            docker ps -a --filter "name=$IDLE_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            echo "Show just-started logs (tail 200)"
             sleep 2
             docker logs --tail=200 "$IDLE_NAME" || true
 
+            # ✅ 호스트에서 포트가 실제로 열렸는지(리스닝) 확인
+            echo "--- host listen check ---"
+            if command -v ss >/dev/null 2>&1; then
+              ss -lntp | grep ":${IDLE_PORT} " || true
+            else
+              sudo yum install -y net-tools || true
+              netstat -lntp | grep ":${IDLE_PORT} " || true
+            fi
+
             echo "Health check idle: http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}"
 
-            # 상태코드/본문 일부를 같이 찍어서 디버깅
             ok=0
+            last_code="000"
+
             for i in $(seq 1 40); do
-              code=$(curl -s -o /tmp/hbody -w "%{http_code}" "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || echo "000")
+              # ✅ http_code 계산 버그 수정 (실패 시 정확히 000)
+              code=$(curl -sS -o /tmp/hbody -w "%{http_code}" "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || printf "000")
+              last_code="$code"
+
               if [ "$code" = "200" ]; then
                 ok=1
                 break
               fi
+
               echo "[$i] waiting health... code=$code"
+
+              # ✅ 처음/중간에 상태 + exitcode + 로그를 같이 확인
               if [ "$i" -eq 1 ] || [ "$i" -eq 10 ] || [ "$i" -eq 20 ] || [ "$i" -eq 30 ]; then
+                echo "--- inspect (idle) ---"
+                docker inspect "$IDLE_NAME" --format 'State={{.State.Status}} Exit={{.State.ExitCode}} Error={{.State.Error}}' || true
+
                 echo "--- partial logs ---"
                 docker logs --tail=200 "$IDLE_NAME" || true
+
+                echo "--- curl verbose once (no secret) ---"
+                curl -v "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || true
               fi
+
               sleep 1
             done
 
             if [ "$ok" -ne 1 ]; then
               echo "ERROR: Health check failed"
-              echo "Last HTTP code: $code"
+              echo "Last HTTP code: $last_code"
               echo "--- last 200 logs ---"
               docker logs --tail=200 "$IDLE_NAME" || true
               echo "--- docker ps ---"
-              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+              docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+              echo "--- inspect (idle) ---"
+              docker inspect "$IDLE_NAME" --format 'State={{.State.Status}} Exit={{.State.ExitCode}} Error={{.State.Error}}' || true
+              echo "--- last response body (first 200 chars) ---"
+              head -c 200 /tmp/hbody || true
               exit 1
             fi
 
@@ -293,10 +318,11 @@ jobs:
             else
               sudo ln -sf "$GREEN_CONF" "$ACTIVE_LINK"
             fi
+
             sudo nginx -t
             sudo nginx -s reload
 
-            # 4) 전환 후, 도메인(443) 경유 헬스체크 (프록시/SSL 포함)
+            # 도메인(443) 경유 헬스체크
             for i in $(seq 1 20); do
               if curl -fsS "${DOMAIN}${HEALTH_PATH}" >/dev/null 2>&1; then
                 echo "Domain health OK: ${DOMAIN}${HEALTH_PATH}"
@@ -310,18 +336,17 @@ jobs:
               fi
             done
 
-            # 5) Swagger 접근성도 확인
+            # Swagger 체크
             if curl -fsSIL "${DOMAIN}/api/docs" >/dev/null 2>&1; then
               echo "Swagger reachable"
             else
               echo "WARNING: Swagger not reachable (check prod swagger setting or nginx routes)"
             fi
 
-            # 6) 이전 활성 컨테이너 정리
+            # 이전 활성 컨테이너 정리
             echo "Stop old active: $ACTIVE_NAME"
             docker stop "$ACTIVE_NAME" || true
             docker rm   "$ACTIVE_NAME" || true
 
-            # 7) 이미지 정리
             echo "Prune images"
             docker image prune -f || true
