@@ -186,7 +186,7 @@ jobs:
             DOMAIN="https://codi-it.shop"
             HEALTH_PATH="${{ secrets.HEALTHCHECK_PATH }}"
 
-            # ✅ HEALTH_PATH 안전 정규화 (공백 제거 + 슬래시 보정 + 기본값)
+            # HEALTH_PATH 안전 정규화 (공백 제거 + 슬래시 보정 + 기본값)
             HEALTH_PATH="${HEALTH_PATH//[[:space:]]/}"
             [ -z "${HEALTH_PATH:-}" ] && HEALTH_PATH="/api/health"
             [[ "$HEALTH_PATH" != /* ]] && HEALTH_PATH="/$HEALTH_PATH"
@@ -208,11 +208,30 @@ jobs:
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             docker pull "$IMAGE:latest"
 
-            # ✅ upstream 파일/폴더가 없으면 nginx 스위칭에서 터지니 사전 보장
+            # ✅ upstream 파일/폴더가 없으면 nginx 스위칭에서 터지니 사전 보장 (정상 upstream 블록으로 생성)
+            echo "Ensure nginx upstream files exist"
             sudo mkdir -p /etc/nginx/conf.d/upstreams
-            sudo test -f "$BLUE_CONF"  || echo 'include /etc/nginx/conf.d/upstreams/blue.upstream;'  | sudo tee "$BLUE_CONF"  >/dev/null
-            sudo test -f "$GREEN_CONF" || echo 'include /etc/nginx/conf.d/upstreams/green.upstream;' | sudo tee "$GREEN_CONF" >/dev/null
-            sudo test -L "$ACTIVE_LINK" || sudo ln -sf "$BLUE_CONF" "$ACTIVE_LINK" || true
+
+            if [ ! -f "$BLUE_CONF" ]; then
+              sudo tee "$BLUE_CONF" >/dev/null <<EOF
+                upstream backend_upstream {
+                  server 127.0.0.1:${BLUE_PORT};
+                }
+                EOF
+                      fi
+
+                      if [ ! -f "$GREEN_CONF" ]; then
+                        sudo tee "$GREEN_CONF" >/dev/null <<EOF
+                upstream backend_upstream {
+                  server 127.0.0.1:${GREEN_PORT};
+                }
+                EOF
+            fi
+
+            # active.conf가 링크도 아니고 파일도 없으면 blue로 초기화
+            if [ ! -L "$ACTIVE_LINK" ] && [ ! -f "$ACTIVE_LINK" ]; then
+              sudo ln -sf "$BLUE_CONF" "$ACTIVE_LINK"
+            fi
 
             # 현재 활성 판단
             ACTIVE_COLOR="blue"
@@ -249,7 +268,7 @@ jobs:
               -p 127.0.0.1:${IDLE_PORT}:3000 \
               "$IMAGE:latest"
 
-            # ✅ 컨테이너가 바로 죽는지 먼저 확인
+            # 컨테이너가 바로 죽는지 먼저 확인
             echo "--- docker ps (idle) ---"
             docker ps -a --filter "name=$IDLE_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
@@ -257,7 +276,7 @@ jobs:
             sleep 2
             docker logs --tail=200 "$IDLE_NAME" || true
 
-            # ✅ 호스트에서 포트가 실제로 열렸는지(리스닝) 확인
+            # 호스트에서 포트가 실제로 열렸는지(리스닝) 확인
             echo "--- host listen check ---"
             if command -v ss >/dev/null 2>&1; then
               ss -lntp | grep ":${IDLE_PORT} " || true
@@ -272,7 +291,7 @@ jobs:
             last_code="000"
 
             for i in $(seq 1 40); do
-              # ✅ http_code 계산 버그 수정 (실패 시 정확히 000)
+              # http_code 계산 (실패 시 정확히 000)
               code=$(curl -sS -o /tmp/hbody -w "%{http_code}" "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || printf "000")
               last_code="$code"
 
@@ -283,7 +302,6 @@ jobs:
 
               echo "[$i] waiting health... code=$code"
 
-              # ✅ 처음/중간에 상태 + exitcode + 로그를 같이 확인
               if [ "$i" -eq 1 ] || [ "$i" -eq 10 ] || [ "$i" -eq 20 ] || [ "$i" -eq 30 ]; then
                 echo "--- inspect (idle) ---"
                 docker inspect "$IDLE_NAME" --format 'State={{.State.Status}} Exit={{.State.ExitCode}} Error={{.State.Error}}' || true
@@ -291,7 +309,7 @@ jobs:
                 echo "--- partial logs ---"
                 docker logs --tail=200 "$IDLE_NAME" || true
 
-                echo "--- curl verbose once (no secret) ---"
+                echo "--- curl verbose once ---"
                 curl -v "http://127.0.0.1:${IDLE_PORT}${HEALTH_PATH}" || true
               fi
 
@@ -319,6 +337,7 @@ jobs:
               sudo ln -sf "$GREEN_CONF" "$ACTIVE_LINK"
             fi
 
+            echo "Active link points to: $(readlink -f "$ACTIVE_LINK" || true)"
             sudo nginx -t
             sudo nginx -s reload
 
@@ -350,3 +369,4 @@ jobs:
 
             echo "Prune images"
             docker image prune -f || true
+
