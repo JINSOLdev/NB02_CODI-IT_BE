@@ -95,8 +95,8 @@ jobs:
       # SSH 파일 복원
       - name: Restore SSH key file
         run: |
-          echo "${{ secrets.PRIVATE_KEY_B64 }}" | base64 -d > /Users/lea/Downloads/codiit.pem
-          chmod 600 /Users/lea/Downloads/codiit.pem
+          echo "${{ secrets.PRIVATE_KEY_B64 }}" | base64 -d > /tmp/deploy_key.pem
+          chmod 600 /tmp/deploy_key.pem 
 
       # .env 파일 EC2에 업로드
       - name: Upload .env to EC2
@@ -106,7 +106,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           port: 22
           key: ${{ secrets.PRIVATE_KEY_B64 }}
-          key_path: /Users/lea/Downloads/codiit.pem
+          key_path: /tmp/deploy_key.pem
           timeout: 120s
           command_timeout: 10m
           debug: true
