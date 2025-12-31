@@ -74,11 +74,19 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.PRIVATE_KEY }}
+          timeout: 120s
+          command_timeout: 10m
+          debug: true
+          script_stop: true
           script: |
-            mkdir -p ~/apps/NB02_CODI-IT_BE
-            cat > ~/apps/NB02_CODI-IT_BE/.env << 'EOF'
-            ${{ secrets.ENV_PROD }}
-            EOF
+            set -eux
+            echo "connected"
+            whoami
+            hostname
+            # mkdir -p ~/apps/NB02_CODI-IT_BE
+            # cat > ~/apps/NB02_CODI-IT_BE/.env << 'EOF'
+            # ${{ secrets.ENV_PROD }}
+            # EOF
 
       # EC2에서 Docker Hub 로그인
       - name: Login Docker Hub on EC2
