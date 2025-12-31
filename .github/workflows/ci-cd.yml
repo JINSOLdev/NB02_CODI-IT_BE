@@ -67,36 +67,11 @@ jobs:
           docker push "$IMAGE:latest"
           docker push "$IMAGE:${{ github.sha }}"
 
-      # HOST 디버그 출력
-      - name: Debug HOST resolution
-        run: |
-          echo "HOST is set (length only): ${#HOST}"
-        env:
-          HOST: ${{ secrets.HOST }}
-
-      # HOST 해석 시도
-      - name: Resolve HOST
-        run: |
-          echo "HOST length: ${#HOST}"
-          getent hosts "$HOST" || true
-          nslookup "$HOST" || true
-        env:
-          HOST: ${{ secrets.HOST }}
-
-      # TCP 22 포트 체크
-      - name: Check TCP 22 from runner
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y netcat-openbsd
-          nc -vz "$HOST" 22 -w 5
-        env:
-          HOST: ${{ secrets.HOST }}
-
       # SSH 파일 복원
       - name: Restore SSH key file
         run: |
           echo "${{ secrets.PRIVATE_KEY_B64 }}" | base64 -d > /tmp/deploy_key.pem
-          chmod 600 /tmp/deploy_key.pem 
+          chmod 600 /tmp/deploy_key.pem
 
       # .env 파일 EC2에 업로드
       - name: Upload .env to EC2
