@@ -117,6 +117,21 @@ jobs:
           script: |
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      # 자동 청소 스크립트
+      - name: Cleanup Docker on EC2 (before pull)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            set -e
+            df -h
+            docker system df || true
+            docker system prune -af --volumes || true
+            docker builder prune -af || true
+            df -h
+
       # Prisma migrate 실행
       - name: Run Prisma Migrate on EC2
         uses: appleboy/ssh-action@v1.0.3
