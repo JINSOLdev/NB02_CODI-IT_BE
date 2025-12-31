@@ -169,6 +169,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.PRIVATE_KEY }}
+          request_pty: true
           script: |
             set -euo pipefail
             set -x  # 디버그 출력
