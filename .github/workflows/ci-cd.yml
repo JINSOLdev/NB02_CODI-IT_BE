@@ -213,24 +213,24 @@ jobs:
             sudo mkdir -p /etc/nginx/conf.d/upstreams
 
             if [ ! -f "$BLUE_CONF" ]; then
-              sudo tee "$BLUE_CONF" >/dev/null <<EOF
-                upstream backend_upstream {
-                  server 127.0.0.1:${BLUE_PORT};
-                }
-                EOF
-                      fi
+            sudo tee "$BLUE_CONF" >/dev/null <<EOF
+            upstream backend_upstream {
+              server 127.0.0.1:${BLUE_PORT};
+            }
+            EOF
+            fi
 
-                      if [ ! -f "$GREEN_CONF" ]; then
-                        sudo tee "$GREEN_CONF" >/dev/null <<EOF
-                upstream backend_upstream {
-                  server 127.0.0.1:${GREEN_PORT};
-                }
-                EOF
+            if [ ! -f "$GREEN_CONF" ]; then
+            sudo tee "$GREEN_CONF" >/dev/null <<EOF
+            upstream backend_upstream {
+              server 127.0.0.1:${GREEN_PORT};
+            }
+            EOF
             fi
 
             # active.conf가 링크도 아니고 파일도 없으면 blue로 초기화
             if [ ! -L "$ACTIVE_LINK" ] && [ ! -f "$ACTIVE_LINK" ]; then
-              sudo ln -sf "$BLUE_CONF" "$ACTIVE_LINK"
+            sudo ln -sf "$BLUE_CONF" "$ACTIVE_LINK"
             fi
 
             # 현재 활성 판단
