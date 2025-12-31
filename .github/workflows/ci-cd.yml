@@ -162,7 +162,7 @@ jobs:
             docker pull "$IMAGE:latest"
             docker run --rm --env-file "$ENV_FILE" "$IMAGE:latest" npx prisma migrate deploy
 
-      # Blue/Green 배포 + 헬스체크
+      # Blue/Green Deploy
       - name: Deploy Blue, Green on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
