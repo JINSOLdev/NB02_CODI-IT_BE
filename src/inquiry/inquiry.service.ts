@@ -14,7 +14,7 @@ import {
 
 @Injectable()
 export class InquiryService {
-  constructor(private inquiryRepository: InquiryRepository) { }
+  constructor(private inquiryRepository: InquiryRepository) {}
 
   // 내 문의 목록 조회 (BUYER - 본인이 작성 / SELLER - 본인 상품에 달린 문의)
   async getMyInquiries(

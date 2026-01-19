@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class InquiryRepository {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // 내 문의 목록 조회 (BUYER - 본인이 작성 / SELLER - 본인 상품에 달린 문의)
   async getMyInquiries(
@@ -18,9 +18,9 @@ export class InquiryRepository {
       userType === UserType.BUYER
         ? { userId, ...(status && { status }) }
         : {
-          product: { store: { sellerId: userId } },
-          ...(status && { status }),
-        };
+            product: { store: { sellerId: userId } },
+            ...(status && { status }),
+          };
 
     // 트랜잭션으로 묶어서 리스트와 count 처리
     const result = await this.prisma.$transaction(async (tx) => {

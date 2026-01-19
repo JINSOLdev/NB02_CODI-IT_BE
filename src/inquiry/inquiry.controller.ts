@@ -23,7 +23,7 @@ import { ParseCuidPipe } from 'src/common/pipes/parse-cuid.pipe';
 
 @Controller('api/inquiries')
 export class InquiryController {
-  constructor(private inquiryService: InquiryService) { }
+  constructor(private inquiryService: InquiryService) {}
 
   // 내 문의 목록 조회 (BUYER - 본인이 작성 / SELLER - 본인 상품에 달린 문의)
   @UseGuards(JwtAuthGuard)
