@@ -1,7 +1,7 @@
 // 📁 src/products/products.repository.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, Product, Inquiry, CategoryType } from '@prisma/client';
+import { Prisma, Product, CategoryType } from '@prisma/client';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { TransformedStock } from './dto/create-product.dto';
@@ -28,7 +28,7 @@ export type ProductDetailWithRelations = Prisma.ProductGetPayload<{
 
 @Injectable()
 export class ProductsRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /** ✅ 스토어 ID로 조회 (PK) */
   async findStoreById(storeId: string) {
@@ -237,12 +237,12 @@ export class ProductsRepository {
         ...safeData,
         stocks: stocks
           ? {
-            deleteMany: { productId },
-            create: stocks.map((s) => ({
-              sizeId: s.sizeId,
-              quantity: s.quantity ?? 0,
-            })),
-          }
+              deleteMany: { productId },
+              create: stocks.map((s) => ({
+                sizeId: s.sizeId,
+                quantity: s.quantity ?? 0,
+              })),
+            }
           : undefined,
       },
     });
@@ -268,15 +268,55 @@ export class ProductsRepository {
   async createInquiry(
     productId: string,
     dto: CreateInquiryDto & { userId: string },
-  ): Promise<Inquiry> {
-    return this.prisma.inquiry.create({
-      data: {
-        title: dto.title,
-        content: dto.content,
-        isSecret: dto.isSecret ?? false,
-        userId: dto.userId,
-        productId,
-      },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: productId },
+        select: {
+          id: true,
+          name: true,
+          store: { select: { sellerId: true } },
+        },
+      });
+      if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
+
+      const inquiry = await tx.inquiry.create({
+        data: {
+          title: dto.title,
+          content: dto.content,
+          isSecret: dto.isSecret ?? false,
+          userId: dto.userId,
+          productId,
+        },
+      });
+
+      // 판매자 알림 (NEW_INQUIRY)
+      await tx.notification.create({
+        data: {
+          userId: product.store.sellerId,
+          type: 'NEW_INQUIRY',
+          title: '새 문의가 등록되었습니다',
+          message: product.name
+            ? `상품 "${product.name}"에 새 문의가 도착했어요.`
+            : '상품에 새 문의가 도착했어요.',
+          productId,
+          inquiryId: inquiry.id,
+        },
+      });
+
+      // 구매자 알림
+      await tx.notification.create({
+        data: {
+          userId: dto.userId,
+          type: 'SYSTEM',
+          title: '문의가 등록되었습니다',
+          message: '판매자가 답변하면 알림으로 알려드릴게요.',
+          productId,
+          inquiryId: inquiry.id,
+        },
+      });
+
+      return inquiry;
     });
   }
 
