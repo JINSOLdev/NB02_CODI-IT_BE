@@ -47,8 +47,9 @@ export class OrdersService {
       if (!user) throw new NotFoundException('존재하지 않는 사용자입니다.');
 
       // ✅ 포인트 초과 사용 방지
-      if (usePoint > user.points)
+      if (usePoint > user.points) {
         throw new BadRequestException('보유 포인트를 초과할 수 없습니다.');
+      }
 
       // ✅ 상품 유효성 검증
       type ProductWithRelations = Prisma.ProductGetPayload<{
@@ -84,9 +85,17 @@ export class OrdersService {
         return acc + (product ? product.price * item.quantity : 0);
       }, 0);
 
-      // ✅ 트랜잭션 처리
+      // ✅ 주문 생성 + 재고 차감 + 알림 트랜잭션
       const result: { createdOrder: Order; payment: Payment } =
         await this.ordersRepository.$transaction(async (tx) => {
+          // sellerId 1회 조회
+          const store = await tx.store.findUnique({
+            where: { id: storeId },
+            select: { sellerId: true },
+          });
+          if (!store) throw new NotFoundException('상점을 찾을 수 없습니다.');
+
+          // 주문 생성
           const createdOrder: Order = await tx.order.create({
             data: {
               userId,
@@ -102,20 +111,69 @@ export class OrdersService {
             },
           });
 
+          // 재고 차감(조건부) + 실패 시 알림 생성 후 throw
+          for (const item of orderItems) {
+            const updated = await tx.stock.updateMany({
+              where: {
+                productId: item.productId,
+                sizeId: String(item.sizeId),
+                quantity: { gte: item.quantity },
+              },
+              data: { quantity: { decrement: item.quantity } },
+            });
+
+            if (updated.count === 0) {
+              // 구매자: OUT_OF_STOCK_CART
+              await tx.notification.create({
+                data: {
+                  userId,
+                  type: 'OUT_OF_STOCK_CART',
+                  title: '재고 부족으로 주문 불가',
+                  message:
+                    '재고가 부족한 상품이 있어 주문할 수 없습니다. 장바구니를 확인해주세요.',
+                  productId: item.productId,
+                  orderId: createdOrder.id,
+                  storeId,
+                },
+              });
+
+              // 판매자: OUT_OF_STOCK_ORDER
+              await tx.notification.create({
+                data: {
+                  userId: store.sellerId,
+                  type: 'OUT_OF_STOCK_ORDER',
+                  title: '품절 상품 주문 시도',
+                  message: '재고가 부족한 상품 주문이 시도되었습니다.',
+                  productId: item.productId,
+                  orderId: createdOrder.id,
+                  storeId,
+                },
+              });
+
+              throw new BadRequestException(
+                '재고가 부족한 상품이 있어 주문할 수 없습니다.',
+              );
+            }
+          }
+
+          // 주문 아이템 생성 -> sizeId 저장
           await tx.orderItem.createMany({
             data: orderItems.map((item) => {
               const product = products.find((p) => p.id === item.productId);
               if (!product)
                 throw new BadRequestException('상품 정보를 찾을 수 없습니다.');
+
               return {
                 orderId: createdOrder.id,
                 productId: item.productId,
+                sizeId: String(item.sizeId),
                 quantity: item.quantity,
                 price: product.price,
               };
             }),
           });
 
+          // 결제 생성
           const payment: Payment = await tx.payment.create({
             data: {
               orderId: createdOrder.id,
@@ -123,6 +181,35 @@ export class OrdersService {
               status: PaymentStatus.PENDING,
             },
           });
+
+          // 차감 후 수량이 0된 재고가 있으면 판매자 품절 알림
+          const zeroStocks = await tx.stock.findMany({
+            where: {
+              productId: { in: orderItems.map((i) => i.productId) },
+              sizeId: { in: orderItems.map((i) => String(i.sizeId)) },
+              quantity: 0,
+            },
+            select: { productId: true },
+          });
+
+          const outOfStockProductIds = [
+            ...new Set(zeroStocks.map((s) => s.productId)),
+          ];
+
+          if (outOfStockProductIds.length > 0) {
+            await tx.notification.createMany({
+              data: outOfStockProductIds.map((pid) => ({
+                userId: store.sellerId,
+                type: 'OUT_OF_STOCK_SELLER',
+                title: '상품 품절',
+                message: '상품이 품절되었습니다. 재고를 확인해주세요.',
+                productId: pid,
+                orderId: createdOrder.id,
+                storeId,
+              })),
+              skipDuplicates: true,
+            });
+          }
 
           return { createdOrder, payment };
         });
@@ -136,15 +223,14 @@ export class OrdersService {
         );
       }
 
-      // ✅ 재조회 (relations 포함)
+      // ✅ 재조회 (relations 포함) - 이제 items.size로 주문한 사이즈 응답 가능
       const fullOrder = await this.ordersRepository.findOrderById(
         result.createdOrder.id,
       );
-
       if (!fullOrder)
         throw new InternalServerErrorException('주문을 조회할 수 없습니다.');
 
-      // ✅ 응답 변환 (null-safe 접근 적용)
+      // ✅ 응답 변환 (주문한 사이즈 = item.size)
       return plainToInstance(OrderResponseDto, {
         id: fullOrder.id,
         name: fullOrder.recipientName,
@@ -154,12 +240,14 @@ export class OrdersService {
         totalQuantity: fullOrder.totalQuantity,
         usePoint,
         createdAt: fullOrder.createdAt,
+
         orderItems: fullOrder.items.map((item) => ({
           id: item.id,
           price: item.price,
           quantity: item.quantity,
           productId: item.productId,
           isReviewed: false,
+
           product: {
             id: item.product?.id ?? 'unknown',
             name: item.product?.name ?? '알 수 없는 상품',
@@ -171,14 +259,14 @@ export class OrdersService {
               image: item.product?.store?.image ?? null,
             },
           },
+
+          // “주문한 사이즈를 item.size로 내려줌
           size: {
-            id: item.product?.stocks?.[0]?.size?.id ?? 0,
-            size: item.product?.stocks?.[0]?.size ?? {
-              en: 'M',
-              ko: 'M',
-            },
+            id: item.size?.id ?? '',
+            size: item.size ?? { en: 'M', ko: 'M' },
           },
         })),
+
         payments: {
           id: fullOrder.payments?.id ?? '',
           price: fullOrder.payments?.price ?? 0,
@@ -198,6 +286,7 @@ export class OrdersService {
       }
       if (err instanceof Error)
         this.logger.error(`❌ 주문 생성 중 오류: ${err.message}`, err.stack);
+
       throw new InternalServerErrorException(
         '주문 생성 중 오류가 발생했습니다.',
       );
@@ -424,15 +513,8 @@ export class OrdersService {
             createdAt: item.product.createdAt,
             updatedAt: item.product.updatedAt,
             store: item.product.store,
-            stocks: item.product.stocks.map((s) => ({
-              id: s.id,
-              productId: s.productId,
-              sizeId: s.sizeId,
-              quantity: s.quantity,
-              size: s.size,
-            })),
           },
-          size: item.product.stocks?.[0]?.size ?? null,
+          size: item.size ?? null, // 주문한 사이즈는 OrderItem.size relation으로 내려줌
         })),
         payments: order.payments,
       });
