@@ -13,7 +13,7 @@ export class CreateOrderItemDto {
   @ApiProperty({ example: 3, description: '사이즈 ID' })
   @IsInt()
   @Transform(({ value }) => Number(value))
-  sizeId: number;
+  sizeId: string;
 
   @ApiProperty({ example: 1, description: '수량' })
   @IsInt()

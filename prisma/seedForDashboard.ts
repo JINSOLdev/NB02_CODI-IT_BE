@@ -372,8 +372,8 @@ async function main() {
         totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
         items: {
           create: items.map((item) => ({
-            id: `test_orderitem_${date.toISOString()}_${item.productId}`,
             productId: item.productId,
+            sizeId: sizes[0].id, // M 사이즈로 통일
             quantity: item.quantity,
             price: item.price,
           })),

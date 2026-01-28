@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { AnswerStatus, UserType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -113,7 +113,7 @@ export class InquiryRepository {
   async createReply(userId: string, inquiryId: string, content: string) {
     return this.prisma.$transaction(async (tx) => {
       // 답변 생성
-      const answer = await tx.answer.create({
+      const inquiryAnswer = await tx.answer.create({
         data: {
           content,
           inquiryId,
@@ -130,13 +130,43 @@ export class InquiryRepository {
         },
       });
 
+      // 문의 정보 조회 (구매자, 상품 정보 필요)
+      const inquiry = await tx.inquiry.findUnique({
+        where: { id: inquiryId },
+        select: {
+          id: true,
+          userId: true,
+          productId: true,
+          product: { select: { name: true } },
+        },
+      });
+
+      if (!inquiry) throw new NotFoundException('문의글을 찾을 수 없습니다.');
+
       // 문의 상태를 '답변 완료'로 변경
       await tx.inquiry.update({
         where: { id: inquiryId },
         data: { status: AnswerStatus.CompletedAnswer },
       });
 
-      return answer;
+      // 구매자 알림
+      await tx.notification.createMany({
+        data: [
+          {
+            userId: inquiry.userId,
+            type: 'INQUIRY_ANSWERED',
+            title: '문의에 답변이 등록되었습니다',
+            message: inquiry.product.name
+              ? `상품 "${inquiry.product.name}"의 문의에 답변이 달렸어요.`
+              : '문의에 답변이 달렸어요.',
+            productId: inquiry.productId,
+            inquiryId: inquiry.id,
+          },
+        ],
+        skipDuplicates: true,
+      });
+
+      return inquiryAnswer;
     });
   }
 

@@ -36,13 +36,9 @@ export class OrdersRepository {
             product: {
               include: {
                 store: true,
-                stocks: {
-                  include: {
-                    size: true,
-                  },
-                },
               },
             },
+            size: true, // OrderItem.size -> item.size로 주문한 사이즈 응답에서 사용 가능
           },
         },
         payments: true,

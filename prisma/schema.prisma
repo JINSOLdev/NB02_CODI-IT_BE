@@ -221,8 +221,9 @@ model StockSize {
   id   String @id @default(cuid())
   name String
 
-  stocks    Stock[]
-  cartItems CartItem[]
+  stocks     Stock[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 }
 
 /**
@@ -277,9 +278,15 @@ model OrderItem {
   productId String
   quantity  Int
   price     Int // 주문 당시 가격 (할인 반영 가능)
+  sizeId    String
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order   Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  size    StockSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([sizeId])
 }
 
 enum OrderStatus {
@@ -287,6 +294,7 @@ enum OrderStatus {
   CANCELED
   PROCESSING
   SHIPPED
+  
 }
 
 /**
